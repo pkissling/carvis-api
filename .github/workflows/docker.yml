@@ -1,0 +1,70 @@
+name: "Docker"
+on: [push, pull_request]
+
+env:
+  AWS_REGION: eu-west-1
+  ECR_REGISTRY: 547284448024.dkr.ecr.eu-west-1.amazonaws.com
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      function_names: ${{ steps.dirs.outputs.dir }}
+      tag: ${{ steps.vars.outputs.branch }}
+      tag_w_ref: ${{ steps.vars.outputs.branch }}-${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@v2
+
+      - name: Find all Lambda directories
+        id: dirs
+        # Define step output named dir base on ls command transformed to JSON thanks to jq
+        run: echo "::set-output name=dir::$(ls -d * | jq -R -s -c 'split("\n")[:-1]')"
+
+      - name: Declare build variables
+        id: vars
+        shell: bash
+        run: |
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+  loop:
+    name: Create and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    strategy:
+      matrix:
+        function_name: ${{ fromjson(needs.prepare.outputs.function_names) }}
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@v2
+
+      - name: Login to AWS ECR
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.ECR_REGISTRY }}
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build, tag, and push image to AWS ECR
+        working-directory: ${{ matrix.function_name }}
+        env:
+          FUNCTION_NAME: ${{ matrix.function_name }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          TAG_W_REF: ${{ needs.prepare.outputs.tag_w_ref }}
+        run: |
+          docker build . \
+            --tag $ECR_REGISTRY/$FUNCTION_NAME:$TAG \
+            --tag $ECR_REGISTRY/$FUNCTION_NAME:$TAG_W_REF
+          docker push $ECR_REGISTRY/$FUNCTION_NAME --all-tags
+
+      - name: Update Lambda function
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          FUNCTION_NAME: ${{ matrix.function_name }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          aws lambda update-function-code \
+            --function-name $FUNCTION_NAME \
+            --image-uri $ECR_REGISTRY/$FUNCTION_NAME:$TAG
