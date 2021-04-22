@@ -7,6 +7,6 @@ RUN rustup target add x86_64-unknown-linux-musl
 RUN cargo build --release --target x86_64-unknown-linux-musl
 
 FROM alpine:3.13
-COPY --from=cargo-builder /code/target/x86_64-unknown-linux-musl/release/cars_get /usr/local/bin/bootstrap
+COPY --from=cargo-builder /code/target/x86_64-unknown-linux-musl/release/cars-get /usr/local/bin/bootstrap
 WORKDIR /
 ENTRYPOINT ["bootstrap"]
