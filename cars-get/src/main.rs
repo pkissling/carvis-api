@@ -1,9 +1,11 @@
+use rusoto_dynamodb::{DynamoDb, DynamoDbClient, ListTablesInput};
+use rusoto_core::Region;
+
 use lambda_http::{
     handler,
     lambda_runtime::{self, Context},
-    IntoResponse, Request, RequestExt, Response,
+    IntoResponse, Request, Response,
 };
-
 type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 #[tokio::main]
@@ -12,12 +14,18 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn func(event: Request, _: Context) -> Result<impl IntoResponse, Error> {
-    Ok(match event.query_string_parameters().get("first_name") {
-        Some(first_name) => format!("Hey, {}!", first_name).into_response(),
-        _ => Response::builder()
+async fn func(_: Request, _: Context) -> Result<impl IntoResponse, Error> {
+    let client = DynamoDbClient::new(Region::EuWest1);
+    let list_tables_input: ListTablesInput = Default::default();
+
+    return match client.list_tables(list_tables_input).await {
+        Ok(output) => {
+            let tables = output.table_names.expect("no tables");
+            Ok(format!("tables, {}!", tables.join(",")).into_response())
+        },
+        Err(err) => Ok(Response::builder()
             .status(400)
-            .body("first_name not provided".into())
-            .expect("failed to render response"),
-    })
+            .body(err.to_string().into())
+            .expect("failed to render response"))
+    }
 }
