@@ -44,8 +44,8 @@ async fn func(_: Request, _: Context) -> Result<impl IntoResponse, Error> {
             let mut items_string = Vec::<String>::new();
             for item in items {
                 let id = item.get("id").unwrap().s.as_ref().unwrap();
-                let name = item.get("name").unwrap().s.as_ref().unwrap();
-                items_string.push(format!("id = {}, name = {}", id, name))
+                let brand = item.get("brand").unwrap().s.as_ref().unwrap();
+                items_string.push(format!("id = {}, brand = {}", id, brand))
             }
 
             Ok(format!("items = {}", items_string.join(",")).into_response())
