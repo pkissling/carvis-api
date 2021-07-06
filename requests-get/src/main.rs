@@ -3,7 +3,7 @@ use rusoto_dynamodb::{DynamoDb, DynamoDbClient, GetItemInput, AttributeValue};
 use rusoto_core::Region;
 use std::env;
 use std::collections::HashMap;
-use http::StatusCode;
+use http::{StatusCode, HeaderValue, HeaderMap};
 use alcoholic_jwt::{token_kid, validate, Validation, JWKS, ValidationError};
 
 type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
@@ -56,7 +56,8 @@ fn auth(req: &Request) -> Result<User, ValidationError> {
         Validation::Issuer(authority),
         Validation::SubjectPresent
     ];
-    let token = req.headers().get("Authorization").map_or("", |header| header.to_str().expect("bla"));
+    let token = extract_token(req.headers());
+    println!("token: {}", token);
     let kid = token_kid(token)
         .expect("Failed to decode token headers")
         .expect("No 'kid' claim present in token");
@@ -73,4 +74,14 @@ fn fetch_jwks(uri: &str) -> Result<JWKS, Error> {
     let response = reqwest::blocking::get(uri)?;
     let val = response.json::<JWKS>()?;
     return Ok(val);
+}
+
+fn extract_token(headers: &HeaderMap<HeaderValue>) -> &str {
+    let auth_header = headers.get("Authorization").expect("No Authorization header provided.");
+    let auth_header_str = auth_header.to_str().expect("Unable to extract value from Authorization header");
+    if auth_header_str.to_lowercase().starts_with("bearer ") {
+        auth_header_str[7..].as_ref()
+    } else {
+        auth_header_str
+    }
 }
