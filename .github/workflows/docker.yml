@@ -47,13 +47,13 @@ jobs:
           password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Build, tag, and push image to AWS ECR
-        working-directory: lambdas/${{ matrix.function_name }}
         env:
           FUNCTION_NAME: ${{ matrix.function_name }}
           BRANCH: ${{ needs.prepare.outputs.branch }}
           BRANCH_W_SHA: ${{ needs.prepare.outputs.branch_w_sha }}
         run: |
           docker build . \
+            --build-arg FUNCTION_NAME=$FUNCTION_NAME \
             --tag $ECR_REGISTRY/$FUNCTION_NAME:$BRANCH \
             --tag $ECR_REGISTRY/$FUNCTION_NAME:$BRANCH_W_SHA
           docker push $ECR_REGISTRY/$FUNCTION_NAME --all-tags
