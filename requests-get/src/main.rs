@@ -4,12 +4,20 @@ use rusoto_core::Region;
 use std::env;
 use std::collections::HashMap;
 use http::{StatusCode, HeaderValue, HeaderMap};
-use alcoholic_jwt::{token_kid, validate, Validation, JWKS, ValidationError};
+use alcoholic_jwt::{token_kid, validate, Validation, JWKS, ValidationError, ValidJWT};
 
 type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 struct User {
     username: String,
+}
+
+impl From<ValidJWT> for User {
+    fn from(jwt: ValidJWT) -> Self {
+        User {
+            username: jwt.claims.get("sub").unwrap().as_str().unwrap().to_string()
+        }
+    }
 }
 
 #[tokio::main]
@@ -20,7 +28,12 @@ async fn main() -> Result<(), Error> {
 
 async fn func(req: Request, _: Context) -> Result<impl IntoResponse, Error> {
     let request_id = req.path_parameters().get("requestId").expect("requestId not present").to_string();
-    let user = auth(&req).expect("Unable to auth");
+    let auth_result = auth(&req);
+    if auth_result.is_err() {
+        return response(StatusCode::UNAUTHORIZED, format!("{:?}", auth_result.err().unwrap()).as_str());
+    }
+
+    let user = auth_result.unwrap();
 
     let client = DynamoDbClient::new(Region::EuWest1);
     let mut key_map = HashMap::new();
@@ -54,7 +67,8 @@ fn auth(req: &Request) -> Result<User, ValidationError> {
         .expect("failed to fetch jwks");
     let validations = vec![
         Validation::Issuer(authority),
-        Validation::SubjectPresent
+        Validation::SubjectPresent,
+        Validation::NotExpired
     ];
     let token = extract_token(req.headers());
     println!("token: {}", token);
@@ -63,11 +77,10 @@ fn auth(req: &Request) -> Result<User, ValidationError> {
         .expect("No 'kid' claim present in token");
 
     let jwk = jwks.find(&kid).expect("Specified key not found in set");
-    let claims = validate(token, jwk, validations)?.claims;
-
-    Ok(User {
-        username: claims.get("sub").unwrap().as_str().unwrap().to_string(),
-    })
+    match validate(token, jwk, validations) {
+        Ok(jwt) => Ok(User::from(jwt)),
+        Err(err) => Err(err)
+    }
 }
 
 fn fetch_jwks(uri: &str) -> Result<JWKS, Error> {
