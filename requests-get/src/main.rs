@@ -5,20 +5,52 @@ use std::env;
 use std::collections::HashMap;
 use http::{StatusCode, HeaderValue, HeaderMap};
 use alcoholic_jwt::{token_kid, validate, Validation, JWKS, ValidationError, ValidJWT};
+use serde_json::Value;
+use serde::{Serialize, Deserialize};
+
 
 type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
+#[derive(Serialize, Deserialize)]
 struct User {
     username: String,
+    roles: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ErrorResponse {
+    message: String,
 }
 
 impl From<ValidJWT> for User {
     fn from(jwt: ValidJWT) -> Self {
         User {
-            username: jwt.claims.get("sub").unwrap().as_str().unwrap().to_string()
+            username: jwt.claims.get("sub").unwrap().as_str().unwrap().to_string(),
+            roles: to_roles(jwt.claims),
         }
     }
 }
+
+fn to_roles(claims: Value) -> Vec<String> {
+    let roles = claims.get("https://carvis.cloud/roles");
+    if roles.is_none() {
+        return Vec::new();
+    }
+
+    let roles = roles.unwrap();
+    let roles_array = roles.as_array();
+    if roles_array.is_none() {
+        return Vec::new();
+    }
+
+    roles_array.unwrap().iter()
+        .map(|v| v.as_str())
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .map(|x| x.to_string())
+        .collect()
+}
+
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -49,7 +81,7 @@ async fn func(req: Request, _: Context) -> Result<impl IntoResponse, Error> {
 
     match client.get_item(input).await {
         // Ok(output) => response(StatusCode::OK, output.item.unwrap().get("created_at").unwrap().s.as_ref().expect("unable to unwrap output")),
-        Ok(_) => response(StatusCode::OK, user.username.as_str()),
+        Ok(_) => response(StatusCode::OK, serde_json::to_string(&user).expect("unable to create json from user struct").as_str()),
         Err(err) => response(StatusCode::INTERNAL_SERVER_ERROR, err.to_string().as_str())
     }
 }
