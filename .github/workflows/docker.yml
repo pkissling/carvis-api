@@ -19,7 +19,7 @@ jobs:
       - name: Find all Lambda directories
         id: dirs
         # Define step output named dir base on ls command transformed to JSON thanks to jq
-        run: echo "::set-output name=dir::$(ls -d * | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo "::set-output name=dir::$(cd lambdas && ls -d * | jq -R -s -c 'split("\n")[:-1]')"
 
       - name: Declare build variables
         id: vars
@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Build, tag, and push image to AWS ECR
-        working-directory: ${{ matrix.function_name }}
+        working-directory: lambdas/${{ matrix.function_name }}
         env:
           FUNCTION_NAME: ${{ matrix.function_name }}
           BRANCH: ${{ needs.prepare.outputs.branch }}
