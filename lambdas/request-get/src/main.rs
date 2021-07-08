@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use lambda_http::http::StatusCode;
 use model::{FooError};
 use auth::User;
+use lazy_static::lazy_static;
 
 extern crate auth;
 
@@ -17,11 +18,16 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
+lazy_static! {
+    static ref TABLE_NAME: String = env::var("DYNAMODB_REQUESTS_TABLE_NAME").expect("env var 'DYNAMODB_REQUESTS_TABLE_NAME' not set");
+    static ref AUTHORITY: String = env::var("AUTHORITY").expect("env var AUTHORITY not set");
+    static ref DB_CLIENT: DynamoDbClient = DynamoDbClient::new(Region::EuWest1);
+}
+
 async fn func(req: Request, _: Context) -> Result<impl IntoResponse, Error> {
     let request_id = req.path_parameters().get("requestId").expect("requestId not present").to_string();
 
-    let authority = std::env::var("AUTHORITY").expect("env var AUTHORITY not set");
-    let auth_result = auth::authenticate(&req, authority);
+    let auth_result = auth::authenticate(&req, &AUTHORITY);
 
     if auth_result.is_err() {
         let err = auth_result.err().unwrap();
@@ -30,7 +36,6 @@ async fn func(req: Request, _: Context) -> Result<impl IntoResponse, Error> {
 
     let user: User = auth_result.ok().unwrap();
 
-    let client = DynamoDbClient::new(Region::EuWest1);
     let mut key_map = HashMap::new();
     key_map.insert("id".to_string(), AttributeValue {
         s: Some(request_id.to_string()),
@@ -38,11 +43,11 @@ async fn func(req: Request, _: Context) -> Result<impl IntoResponse, Error> {
     });
     let input = GetItemInput {
         key: key_map,
-        table_name: env::var("DYNAMODB_REQUESTS_TABLE_NAME").expect("env var 'DYNAMODB_REQUESTS_TABLE_NAME' not set"),
+        table_name: TABLE_NAME.to_string(),
         ..Default::default()
     };
 
-    match client.get_item(input).await {
+    match DB_CLIENT.get_item(input).await {
         Ok(_) => response(200, serde_json::to_string(&user).unwrap()),
         Err(err) => response(500, serde_json::to_string(&FooError { message: err.to_string() }).unwrap())
     }

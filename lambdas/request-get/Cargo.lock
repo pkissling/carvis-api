@@ -921,6 +921,7 @@ dependencies = [
  "base64 0.13.0",
  "lambda_http",
  "lambda_runtime",
+ "lazy_static",
  "log",
  "maplit",
  "model",
