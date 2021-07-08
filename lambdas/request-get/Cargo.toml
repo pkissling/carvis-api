@@ -1,5 +1,5 @@
 [package]
-name = "requests-get"
+name = "request-get"
 version = "0.1.0"
 authors = ["Patrick Kissling <patrick.kissling@gmx.de>"]
 edition = "2018"
