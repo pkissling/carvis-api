@@ -17,13 +17,12 @@ impl AuthError {
         AuthError { status_code, message }
     }
 }
-pub fn authenticate(request: &Request, authority: String, audience: String) -> Result<User, AuthError> {
+pub fn authenticate(request: &Request, authority: String) -> Result<User, AuthError> {
     let jwks = fetch_jwks(&format!("{}{}", authority, ".well-known/jwks.json"))?;
 
     let validations = vec![
         Validation::Issuer(authority),
         Validation::SubjectPresent,
-        Validation::Audience(audience),
         Validation::NotExpired
     ];
 

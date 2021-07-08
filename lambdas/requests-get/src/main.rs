@@ -21,8 +21,7 @@ async fn func(req: Request, _: Context) -> Result<impl IntoResponse, Error> {
     let request_id = req.path_parameters().get("requestId").expect("requestId not present").to_string();
 
     let authority = std::env::var("AUTHORITY").expect("env var AUTHORITY not set");
-    let audience = std::env::var("AUDIENCE").expect("env var AUDIENCE not set");
-    let auth_result = auth::authenticate(&req, authority, audience);
+    let auth_result = auth::authenticate(&req, authority);
 
     if auth_result.is_err() {
         let err = auth_result.err().unwrap();
