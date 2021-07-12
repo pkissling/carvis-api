@@ -17,6 +17,7 @@ impl AuthError {
         AuthError { status_code, message }
     }
 }
+
 pub fn authenticate(request: &Request, authority: &String) -> Result<User, AuthError> {
     let jwks = fetch_jwks(&format!("{}{}", authority, ".well-known/jwks.json"))?;
 
@@ -63,8 +64,8 @@ fn extract_token(headers: &HeaderMap<HeaderValue>) -> Result<&str, AuthError> {
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
-    username: String,
-    roles: Vec<String>,
+    pub username: String,
+    pub roles: Vec<String>,
 }
 
 impl From<ValidJWT> for User {

@@ -1,17 +1,20 @@
-use rusoto_dynamodb::{PutItemInput, AttributeValue};
+use rusoto_dynamodb::{PutItemInput};
 use rusoto_core::Region;
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
-use lambda_http::{handler, lambda_runtime::{self, Context}, IntoResponse, Request, Response, Body};
-use std::collections::HashMap;
-use uuid::Uuid;
+use lambda_http::{handler, lambda_runtime::{self, Context}, Request, Response};
 use std::env;
-use std::time::SystemTime;
-use serde::Deserialize;
-use chrono::offset::Utc;
-use chrono::DateTime;
-
+use model::request::RequestEntity;
+use std::convert::TryInto;
+use model::error::CarvisError;
+use lazy_static::lazy_static;
 
 type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
+
+lazy_static! {
+    static ref TABLE_NAME: String = env::var("DYNAMODB_REQUESTS_TABLE_NAME").expect("env var 'DYNAMODB_REQUESTS_TABLE_NAME' not set");
+    static ref AUTHORITY: String = env::var("AUTHORITY").expect("env var AUTHORITY not set");
+    static ref DB_CLIENT: DynamoDbClient = DynamoDbClient::new(Region::EuWest1);
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -19,58 +22,13 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-#[derive(Deserialize)]
-struct RequestDto {
-    name: String
-}
+async fn func(req: Request, _: Context) -> Result<Response<String>, Error> {
+    let user = auth::authenticate(&req, &AUTHORITY)
+        .map_err(|err|CarvisError::new(err.status_code, err.message))?;
 
-struct RequestEntity {
-    id: String,
-    name: String,
-    created_at: DateTime<Utc>,
-    updated_at: Option<DateTime<Utc>>,
-    created_by: String
-}
-
-trait Add {
-    fn add(&mut self, key: &str, value: String);
-}
-
-impl Add for HashMap<String,AttributeValue> {
-    fn add(&mut self, key: &str, value: String) {
-        self.insert(key.to_string(), AttributeValue {
-            s: Some(value),
-            ..Default::default()
-        });
-    }
-}
-
-impl Into<HashMap<String,AttributeValue>> for RequestEntity {
-    fn into(self) -> HashMap<String,AttributeValue> {
-        let mut map: HashMap<String, AttributeValue> = HashMap::new();
-        map.add("id", self.id);
-        map.add("name", self.name);
-        map.add("created_at", self.created_at.to_string());
-        map
-    }
-}
-
-impl RequestEntity {
-    pub fn new(name: String, created_by: String) -> RequestEntity {
-        RequestEntity {
-            id: Uuid::new_v4().to_string(),
-            created_at: SystemTime::now().into(),
-            updated_at: None,
-            name,
-            created_by
-        }
-    }
-}
-
-pub(crate) async fn func(request: Request, _: Context) -> Result<impl IntoResponse, Error> {
-    let client = DynamoDbClient::new(Region::EuWest1);
-    let dto = to_dto(request.into_body());
-    let entity = create_entity(dto);
+    let dto = req.try_into()?;
+    let entity = RequestEntity::create(dto, user.username);
+    let id = entity.id.to_string();
 
     let input = PutItemInput {
         item: entity.into(),
@@ -78,10 +36,10 @@ pub(crate) async fn func(request: Request, _: Context) -> Result<impl IntoRespon
         ..Default::default()
     };
 
-    Ok(match client.put_item(input).await {
+    Ok(match DB_CLIENT.put_item(input).await {
         Ok(_) => Response::builder()
             .status(200)
-            .body("ok".to_string())
+            .body(id)
             .expect("failed to render response"),
         Err(err) => Response::builder()
             .status(500)
@@ -90,16 +48,3 @@ pub(crate) async fn func(request: Request, _: Context) -> Result<impl IntoRespon
     })
 }
 
-fn to_dto(body: Body) -> RequestDto {
-    let text = match body {
-        Body::Text(t) => Some(t),
-        _ => panic!("no payload")
-    };
-
-    let value = text.expect("no payload");
-    serde_json::from_str(value.as_str()).expect("unable to parse JSON")
-}
-
-fn create_entity(r: RequestDto) -> RequestEntity {
-    RequestEntity::new(r.name, "username".to_string())
-}
