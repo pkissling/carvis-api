@@ -1,10 +1,9 @@
-use lambda_http::{handler, lambda_runtime::{self, Context}, Request, Response, RequestExt};
+use lambda_http::{handler, lambda_runtime::{self, Context}, Request, Response, RequestExt, Body, IntoResponse};
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient, GetItemInput, AttributeValue};
 use rusoto_core::Region;
 use std::env;
 use std::collections::HashMap;
-use lambda_http::http::StatusCode;
-use model::error::CarvisError;
+use model::common::{LambdaError, LambdaResult};
 use model::request::RequestEntity;
 use lazy_static::lazy_static;
 
@@ -14,7 +13,7 @@ type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    lambda_runtime::run(handler(func)).await?;
+    lambda_runtime::run(handler(wrapper)).await?;
     Ok(())
 }
 
@@ -24,13 +23,19 @@ lazy_static! {
     static ref DB_CLIENT: DynamoDbClient = DynamoDbClient::new(Region::EuWest1);
 }
 
-async fn func(req: Request, _: Context) -> Result<Response<String>, Error> {
+async fn wrapper(req: Request, ctx: Context) -> Result<Response<Body>, Error> {
+    let response = func(req, ctx).await
+        .map(|r|r.into_response())
+        .unwrap_or_else(|r|r.into_response());
+    Ok(response)
+}
+async fn func(req: Request, _: Context) -> Result<LambdaResult, LambdaError> {
     let request_id = req.path_parameters().get("requestId")
         .map(|request_id|request_id.to_string())
-        .ok_or(CarvisError::new(400, "path parameter 'requestId' is not present".to_string()))?;
+        .ok_or(LambdaError::new(400, "path parameter 'requestId' is not present".to_string()))?;
 
     let _user = auth::authenticate(&req, &AUTHORITY)
-        .map_err(|err|CarvisError::new(err.status_code, err.message))?;
+        .map_err(|err| LambdaError::new(err.status_code, err.message))?;
     let mut key_map = HashMap::new();
     key_map.insert("id".to_string(), AttributeValue {
         s: Some(request_id.to_string()),
@@ -43,14 +48,7 @@ async fn func(req: Request, _: Context) -> Result<Response<String>, Error> {
     };
 
     DB_CLIENT.get_item(input).await
-        .map(|output|response(200, serde_json::to_string(&RequestEntity::from(output.item.unwrap())).unwrap()))
-        .map_err(|err|CarvisError::new(500, format!("{:?}", err)).into())
-}
-
-fn response(status_code: u16, payload: String) -> Response<String> {
-    Response::builder()
-        .status(StatusCode::from_u16(status_code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR))
-        .body(payload)
-        .expect("unable to create response object")
+        .map(|output|LambdaResult::new(200, serde_json::to_string(&RequestEntity::from(output.item.unwrap())).unwrap()))
+        .map_err(|err| LambdaError::new(500, format!("{:?}", err)).into())
 }
 

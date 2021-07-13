@@ -3,7 +3,7 @@ use chrono::offset::Utc;
 use chrono::DateTime;
 use std::collections::HashMap;
 use rusoto_dynamodb::AttributeValue;
-use crate::error::CarvisError;
+use crate::common::LambdaError;
 use std::convert::TryInto;
 use lambda_http::{Request, Body};
 use uuid::Uuid;
@@ -25,16 +25,16 @@ pub struct RequestDto {
 }
 
 impl TryInto<RequestDto> for Request {
-    type Error = CarvisError;
+    type Error = LambdaError;
 
-    fn try_into(self) -> Result<RequestDto, CarvisError> {
+    fn try_into(self) -> Result<RequestDto, LambdaError> {
         let body = match self.body() {
             Body::Text(t) => Ok(t),
-            _ => Err(CarvisError::new(400, "could not parse payload".to_string()))
+            _ => Err(LambdaError::new(400, "could not parse payload".to_string()))
         }?;
 
         serde_json::from_str(body)
-            .map_err(|err| CarvisError::new(400, format!("unable to parse json: {:?}", err)))
+            .map_err(|err| LambdaError::new(400, format!("unable to parse json: {:?}", err)))
     }
 }
 
