@@ -40,17 +40,13 @@ jobs:
         shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew test
+          ./gradlew test --info
 
       - name: Build
         shell: bash
         run: |
           chmod +x gradlew
           ./gradlew build
-
-      - name: Archive
-        shell: bash
-        run: zip ebs_deployment.zip build/libs/*.jar
 
       - name: Deploy
         uses: einaregilsson/beanstalk-deploy@v18
