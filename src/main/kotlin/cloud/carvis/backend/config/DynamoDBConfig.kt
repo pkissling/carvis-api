@@ -11,6 +11,6 @@ import org.springframework.context.annotation.Configuration
 class DynamoDBConfig {
 
     @Bean
-    fun amazonDynamoDB(): AmazonDynamoDB = AmazonDynamoDBClientBuilder.standard().build()
+    fun amazonDynamoDB(): AmazonDynamoDB = AmazonDynamoDBClientBuilder.standard().withRegion("eu-west-1").build()
 
 }
