@@ -22,7 +22,7 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("com.amazonaws:aws-java-sdk-dynamodb:1.11.64")
+	implementation("com.amazonaws:aws-java-sdk-dynamodb:1.12.80")
 	implementation("com.github.derjust:spring-data-dynamodb:5.1.0")
 
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")

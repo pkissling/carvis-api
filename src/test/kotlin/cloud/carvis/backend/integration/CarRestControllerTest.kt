@@ -13,7 +13,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @Test
     fun `cars GET - no cars`() {
         Given {
-            testDataGenerator.withEmptyDb()
             spec(requestSpecification)
         } When {
             get("/cars")
