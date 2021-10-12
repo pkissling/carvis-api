@@ -2,7 +2,6 @@ package cloud.carvis.backend.config
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
@@ -18,11 +17,11 @@ class DynamoDBConfig {
 
     @Bean
     fun amazonDynamoDB(
-        @Value("\${application.dynamodb.endpoint.ip}") ip: String?,
-        @Value("\${application.dynamodb.endpoint.port}") port: String?
+        @Value("\${application.dynamodb.endpoint.ip:undefined}") ip: String,
+        @Value("\${application.dynamodb.endpoint.port:undefined}") port: String
     ): AmazonDynamoDB {
 
-        if (!ip.isNullOrEmpty() && !port.isNullOrEmpty()) {
+        if (ip != "undefined" && port != "undefined") {
             return AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration("http://${ip}:${port}", "eu-west-1"))
                 .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials("fake", "fake")))
@@ -31,5 +30,4 @@ class DynamoDBConfig {
 
         return AmazonDynamoDBClientBuilder.standard().build()
     }
-
 }
