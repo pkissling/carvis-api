@@ -59,3 +59,4 @@ jobs:
           region: eu-west-1
           deployment_package: build/libs/backend-0.0.1-SNAPSHOT.jar  # TODO
           use_existing_version_if_available: true
+          wait_for_environment_recovery: 300
