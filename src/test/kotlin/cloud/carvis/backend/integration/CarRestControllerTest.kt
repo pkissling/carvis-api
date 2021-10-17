@@ -1,24 +1,21 @@
 package cloud.carvis.backend.integration
 
 import cloud.carvis.backend.util.AbstractApplicationTest
-import io.restassured.module.kotlin.extensions.Given
-import io.restassured.module.kotlin.extensions.Then
-import io.restassured.module.kotlin.extensions.When
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Test
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 
 class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
+    @WithMockUser
     fun `cars GET - no cars`() {
-        Given {
-            spec(requestSpecification)
-        } When {
-            get("/cars")
-        } Then {
-            statusCode(200)
-            body(equalTo("[]"))
-        }
+        this.mockMvc.perform(get("/cars"))
+            .andExpect(status().isOk)
+            .andExpect(content().string(equalTo("[]")))
     }
 }

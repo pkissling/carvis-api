@@ -3,26 +3,24 @@ package cloud.carvis.backend.util
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.*
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType.S
-import io.restassured.RestAssured
-import io.restassured.builder.RequestSpecBuilder
-import io.restassured.config.LogConfig
-import io.restassured.config.RestAssuredConfig
-import io.restassured.filter.log.LogDetail
-import io.restassured.http.ContentType
-import io.restassured.specification.RequestSpecification
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.web.context.WebApplicationContext
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class AbstractApplicationTest {
@@ -36,9 +34,13 @@ abstract class AbstractApplicationTest {
     @Autowired
     lateinit var amazonDynamoDB: AmazonDynamoDB
 
-    companion object {
+    @Autowired
+    lateinit var mockMvc: MockMvc
 
-        lateinit var requestSpecification: RequestSpecification
+    @Autowired
+    lateinit var webApplicationContext: WebApplicationContext
+
+    companion object {
 
         @Container
         val dynamoDb = GenericContainer<Nothing>("amazon/dynamodb-local").apply {
@@ -57,7 +59,6 @@ abstract class AbstractApplicationTest {
 
     @BeforeAll
     fun setup() {
-        setupRestAssured()
         setupDynamodb()
     }
 
@@ -79,23 +80,8 @@ abstract class AbstractApplicationTest {
         )
     }
 
-    private fun setupRestAssured() {
-        val logConfig = LogConfig.logConfig()
-            .enableLoggingOfRequestAndResponseIfValidationFails(LogDetail.ALL)
-        val config = RestAssuredConfig.config().logConfig(logConfig)
-
-        requestSpecification = RequestSpecBuilder()
-            .setBaseUri("http://localhost:${port}")
-            .setBasePath("/")
-            .setContentType(ContentType.JSON)
-            .setRelaxedHTTPSValidation()
-            .setConfig(config)
-            .build()
-    }
-
     @AfterAll
     fun tearDown() {
-        RestAssured.reset()
         dynamoDb.stop()
     }
 
