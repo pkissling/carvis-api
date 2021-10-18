@@ -19,29 +19,25 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = ["spring.data.dynamodb.entity2ddl.auto=create-only"]
+)
 @AutoConfigureMockMvc
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class AbstractApplicationTest {
 
-    @LocalServerPort
-    protected var port: Int = 0
-
     @Autowired
     lateinit var testDataGenerator: TestDataGenerator
 
     @Autowired
-    lateinit var amazonDynamoDB: AmazonDynamoDB
+    protected lateinit var mockMvc: MockMvc
 
-    @Autowired
-    lateinit var mockMvc: MockMvc
-
-    @Autowired
-    lateinit var webApplicationContext: WebApplicationContext
 
     companion object {
 
+        @JvmStatic
         @Container
         val dynamoDb = GenericContainer<Nothing>("amazon/dynamodb-local").apply {
             withExposedPorts(8000)
@@ -55,29 +51,6 @@ abstract class AbstractApplicationTest {
             registry.add("application.dynamodb.endpoint.ip", dynamoDb::getContainerIpAddress)
             registry.add("application.dynamodb.endpoint.port", dynamoDb::getFirstMappedPort)
         }
-    }
-
-    @BeforeAll
-    fun setup() {
-        setupDynamodb()
-    }
-
-    private fun setupDynamodb() {
-        amazonDynamoDB.createTable(
-            CreateTableRequest()
-                .withTableName("carvis-dev-cars")
-                .withProvisionedThroughput(ProvisionedThroughput(20, 20))
-                .withAttributeDefinitions(
-                    AttributeDefinition()
-                        .withAttributeName("id")
-                        .withAttributeType(S)
-                )
-                .withKeySchema(
-                    KeySchemaElement()
-                        .withAttributeName("id")
-                        .withKeyType(KeyType.HASH)
-                )
-        )
     }
 
     @AfterAll
