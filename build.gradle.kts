@@ -17,6 +17,8 @@ repositories {
 
 
 dependencies {
+	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -28,12 +30,12 @@ dependencies {
 	implementation("org.springframework.security:spring-security-oauth2-resource-server")
 	implementation("org.springframework.security:spring-security-oauth2-jose")
 
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.4.2")
 	testImplementation("org.junit.jupiter:junit-jupiter-params:5.4.2")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
 	testImplementation("org.testcontainers:testcontainers:1.16.0")
 	testImplementation("org.testcontainers:junit-jupiter:1.16.0")
 }

@@ -3,12 +3,12 @@
     {
       "name": "cors.allowed-origins",
       "type": "java.lang.String",
-      "description": "Allowed CORS origins"
+      "description": "Allowed CORS origins."
     },
     {
       "name": "auth.audience",
       "type": "java.lang.String",
-      "description": "Auth0 Audience"
+      "description": "Auth0 Audience."
     },
     {
       "name": "auth.custom-role-claim-key",
@@ -18,7 +18,7 @@
     {
       "name": "cors.allowed-methods",
       "type": "java.lang.String",
-      "description": "Allowed CORS methods"
+      "description": "Allowed CORS methods."
     }
   ]
 }
