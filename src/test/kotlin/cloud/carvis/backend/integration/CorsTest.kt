@@ -10,7 +10,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class CorsTest : AbstractApplicationTest() {
 
     @Test
-//    @WithMockUser
     fun `OPTIONS - CORS headers added`() {
         this.mockMvc.perform(
             options("/")
@@ -20,5 +19,7 @@ class CorsTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(header().string("Access-Control-Allow-Origin", "https://carvis.cloud"))
             .andExpect(header().string("Access-Control-Allow-Methods", "GET,OPTIONS"))
+            .andExpect(header().string("Access-Control-Max-Age", "3600"))
+            .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
     }
 }
