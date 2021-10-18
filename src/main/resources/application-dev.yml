@@ -1,0 +1,3 @@
+cors:
+  allowed-origins:
+    - https://dev.carvis.cloud

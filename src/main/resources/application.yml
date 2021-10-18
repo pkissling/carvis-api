@@ -1,6 +1,14 @@
 auth:
   audience: ukQnXHJoRrZwGf85Uh4Jpk8V932GsfKt
   custom-role-claim-key: https://carvis.cloud/roles
+
+cors:
+  allowed-origins:
+    - https://carvis.cloud
+  allowed-methods:
+    - GET
+    - OPTIONS
+
 spring:
   security:
     oauth2:
