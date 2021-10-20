@@ -1,7 +1,7 @@
 package cloud.carvis.backend.service
 
-import cloud.carvis.backend.repositories.CarEntity
-import cloud.carvis.backend.repositories.CarRepository
+import cloud.carvis.backend.dao.repositories.CarRepository
+import cloud.carvis.backend.model.entities.CarEntity
 import org.springframework.stereotype.Service
 
 @Service

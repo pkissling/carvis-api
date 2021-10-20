@@ -1,6 +1,6 @@
 package cloud.carvis.backend.rest
 
-import cloud.carvis.backend.repositories.CarEntity
+import cloud.carvis.backend.model.entities.CarEntity
 import cloud.carvis.backend.service.CarService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping

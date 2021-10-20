@@ -29,6 +29,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.security:spring-security-oauth2-resource-server")
 	implementation("org.springframework.security:spring-security-oauth2-jose")
+	implementation("io.github.microutils:kotlin-logging-jvm:2.0.10")
 
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
@@ -38,6 +39,7 @@ dependencies {
 	testImplementation("org.junit.jupiter:junit-jupiter-params:5.4.2")
 	testImplementation("org.testcontainers:testcontainers:1.16.0")
 	testImplementation("org.testcontainers:junit-jupiter:1.16.0")
+	testImplementation("com.tyro.oss:arbitrater:1.0.0")
 }
 
 tasks.withType<KotlinCompile> {

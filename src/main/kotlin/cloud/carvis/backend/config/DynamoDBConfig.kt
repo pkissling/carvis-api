@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration
 
 
 @Configuration
-@EnableDynamoDBRepositories("cloud.carvis.backend.repositories")
+@EnableDynamoDBRepositories("cloud.carvis.backend.dao.repositories")
 class DynamoDBConfig {
 
     @Bean
@@ -28,6 +28,8 @@ class DynamoDBConfig {
                 .build()
         }
 
-        return AmazonDynamoDBClientBuilder.standard().build()
+        return AmazonDynamoDBClientBuilder.standard()
+            .withRegion("eu-west-1")
+            .build()
     }
 }
