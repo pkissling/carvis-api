@@ -51,7 +51,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].createdAt", equalTo(car.createdAt.toString())))
             .andExpect(jsonPath("$.[0].description", equalTo(car.description)))
             .andExpect(jsonPath("$.[0].horsePower", equalTo(car.horsePower)))
-            .andExpect(jsonPath("$.[0].images", equalTo(car.images.map { it.toString() }.toList())))
+            .andExpect(jsonPath("$.[0].images.length()", equalTo(car.images.size)))
             .andExpect(jsonPath("$.[0].mileage", equalTo(car.mileage)))
             .andExpect(jsonPath("$.[0].modelDetails", equalTo(car.modelDetails)))
             .andExpect(jsonPath("$.[0].modelSeries", equalTo(car.modelSeries)))

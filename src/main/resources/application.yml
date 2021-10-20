@@ -9,6 +9,10 @@ cors:
     - GET
     - OPTIONS
 
+s3-buckets:
+  bucket-names:
+    images: carvis-dev-images
+
 spring:
   security:
     oauth2:

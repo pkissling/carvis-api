@@ -1,6 +1,6 @@
 package cloud.carvis.backend.rest
 
-import cloud.carvis.backend.model.entities.CarEntity
+import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.service.CarService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -13,5 +13,5 @@ class CarRestController(
 ) {
 
     @GetMapping
-    fun cars(): List<CarEntity> = carService.findAll()
+    fun cars(): List<CarDto> = carService.findAll()
 }
