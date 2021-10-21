@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+val cliVersion: String by project
 
 plugins {
 	id("org.springframework.boot") version "2.5.5"
@@ -8,7 +9,11 @@ plugins {
 }
 
 group = "cloud.carvis"
-version = "0.0.1-SNAPSHOT"
+version = if (project.hasProperty("cliVersion")) {
+	cliVersion
+} else {
+	"0.0.1-SNAPSHOT"
+}
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
