@@ -1,3 +1,4 @@
 cors:
   allowed-origins:
     - https://dev.carvis.cloud
+    - http://localhost:3000
