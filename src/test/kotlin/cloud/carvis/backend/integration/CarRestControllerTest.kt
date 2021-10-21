@@ -2,7 +2,6 @@ package cloud.carvis.backend.integration
 
 import cloud.carvis.backend.util.AbstractApplicationTest
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.number.IsCloseTo.closeTo
 import org.junit.jupiter.api.Test
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -31,37 +30,38 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
+            .withImages()
             .getCar()!!
 
         // when / then
         this.mockMvc.perform(get("/cars"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()", equalTo(1)))
-            .andExpect(jsonPath("$.[0].id", equalTo(car.id.toString())))
-            .andExpect(jsonPath("$.[0].brand", equalTo(car.brand)))
-            .andExpect(jsonPath("$.[0].bodyType", equalTo(car.bodyType)))
-            .andExpect(jsonPath("$.[0].ads", equalTo(car.ads)))
-            .andExpect(jsonPath("$.[0].additionalEquipment", equalTo(car.additionalEquipment)))
-            .andExpect(jsonPath("$.[0].capacity", equalTo(car.capacity)))
-            .andExpect(jsonPath("$.[0].colorAndMaterialInterior", equalTo(car.colorAndMaterialInterior)))
-            .andExpect(jsonPath("$.[0].colorExterior", equalTo(car.colorExterior)))
-            .andExpect(jsonPath("$.[0].colorExteriorManufacturer", equalTo(car.colorExteriorManufacturer)))
-            .andExpect(jsonPath("$.[0].condition", equalTo(car.condition)))
-            .andExpect(jsonPath("$.[0].countryOfOrigin", equalTo(car.countryOfOrigin)))
-            .andExpect(jsonPath("$.[0].createdAt", equalTo(car.createdAt.toString())))
-            .andExpect(jsonPath("$.[0].description", equalTo(car.description)))
-            .andExpect(jsonPath("$.[0].horsePower", equalTo(car.horsePower)))
-            .andExpect(jsonPath("$.[0].images.length()", equalTo(car.images.size)))
-            .andExpect(jsonPath("$.[0].mileage", equalTo(car.mileage)))
-            .andExpect(jsonPath("$.[0].modelDetails", equalTo(car.modelDetails)))
-            .andExpect(jsonPath("$.[0].modelSeries", equalTo(car.modelSeries)))
-            .andExpect(jsonPath("$.[0].modelYear", equalTo(car.modelYear)))
-            .andExpect(jsonPath("$.[0].ownerName", equalTo(car.ownerName)))
-            .andExpect(jsonPath("$.[0].ownerUsername", equalTo(car.ownerUsername)))
-            .andExpect(jsonPath("$.[0].price", closeTo(car.price!!, 0.1)))
-            .andExpect(jsonPath("$.[0].transmission", equalTo(car.transmission)))
-            .andExpect(jsonPath("$.[0].type", equalTo(car.type)))
-            .andExpect(jsonPath("$.[0].updatedAt", equalTo(car.updatedAt.toString())))
-            .andExpect(jsonPath("$.[0].vin", equalTo(car.vin)))
+            .andExpect(jsonPath("$.[0].id").value(car.id.toString()))
+            .andExpect(jsonPath("$.[0].brand").value(car.brand))
+            .andExpect(jsonPath("$.[0].bodyType").value(car.bodyType))
+            .andExpect(jsonPath("$.[0].ads").value(car.ads))
+            .andExpect(jsonPath("$.[0].additionalEquipment").value(car.additionalEquipment))
+            .andExpect(jsonPath("$.[0].capacity").value(car.capacity))
+            .andExpect(jsonPath("$.[0].colorAndMaterialInterior").value(car.colorAndMaterialInterior))
+            .andExpect(jsonPath("$.[0].colorExterior").value(car.colorExterior))
+            .andExpect(jsonPath("$.[0].colorExteriorManufacturer").value(car.colorExteriorManufacturer))
+            .andExpect(jsonPath("$.[0].condition").value(car.condition))
+            .andExpect(jsonPath("$.[0].countryOfOrigin").value(car.countryOfOrigin))
+            .andExpect(jsonPath("$.[0].createdAt").value(car.createdAt.toString()))
+            .andExpect(jsonPath("$.[0].description").value(car.description))
+            .andExpect(jsonPath("$.[0].horsePower").value(car.horsePower))
+            .andExpect(jsonPath("$.[0].images.length()").value(car.images.size))
+            .andExpect(jsonPath("$.[0].mileage").value(car.mileage))
+            .andExpect(jsonPath("$.[0].modelDetails").value(car.modelDetails))
+            .andExpect(jsonPath("$.[0].modelSeries").value(car.modelSeries))
+            .andExpect(jsonPath("$.[0].modelYear").value(car.modelYear))
+            .andExpect(jsonPath("$.[0].ownerName").value(car.ownerName))
+            .andExpect(jsonPath("$.[0].ownerUsername").value(car.ownerUsername))
+            .andExpect(jsonPath("$.[0].price").value(car.price))
+            .andExpect(jsonPath("$.[0].transmission").value(car.transmission))
+            .andExpect(jsonPath("$.[0].type").value(car.type))
+            .andExpect(jsonPath("$.[0].updatedAt").value(car.updatedAt.toString()))
+            .andExpect(jsonPath("$.[0].vin").value(car.vin))
     }
 }

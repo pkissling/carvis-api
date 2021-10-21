@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 
 
 @Configuration
-class S3Config {
+class AmazonS3Config {
 
     @Bean
     fun amazonS3(): AmazonS3 =

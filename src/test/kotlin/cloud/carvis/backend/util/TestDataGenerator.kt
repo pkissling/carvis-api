@@ -32,8 +32,6 @@ class TestDataGenerator(
         carRepository.save(car).let {
             this.last = it
         }
-
-        car.images.forEach { this.uploadImage("$it/200") }
         return this
     }
 
@@ -44,6 +42,17 @@ class TestDataGenerator(
 
     fun getCar(): CarEntity? {
         return last as CarEntity?
+    }
+
+    fun withImages(): TestDataGenerator {
+        if (last !is CarEntity) {
+            throw RuntimeException("last is no car")
+        }
+
+        (last as CarEntity).images
+            .map { "$it/200" }
+            .forEach { uploadImage(it) }
+        return this
     }
 
 }

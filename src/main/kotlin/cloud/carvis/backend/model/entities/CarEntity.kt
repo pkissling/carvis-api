@@ -3,6 +3,7 @@ package cloud.carvis.backend.model.entities
 import cloud.carvis.backend.dao.converters.DynamoDbInstantConverter
 import com.amazonaws.services.dynamodbv2.datamodeling.*
 import org.springframework.data.annotation.CreatedDate
+import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
 
@@ -54,7 +55,7 @@ data class CarEntity(
     @DynamoDBAttribute
     var ownerUsername: String? = null,
     @DynamoDBAttribute
-    var price: Double? = null,
+    var price: BigDecimal? = null,
     @DynamoDBAttribute
     var transmission: String? = null,
     @DynamoDBAttribute

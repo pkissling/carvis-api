@@ -1,5 +1,6 @@
 package cloud.carvis.backend.model.dtos
 
+import java.math.BigDecimal
 import java.net.URL
 import java.time.Instant
 import java.util.*
@@ -26,7 +27,7 @@ data class CarDto(
     var modelYear: String? = null,
     var ownerName: String? = null,
     var ownerUsername: String? = null,
-    var price: Double? = null,
+    var price: BigDecimal? = null,
     var transmission: String? = null,
     var type: String? = null,
     var updatedAt: Instant? = null,
