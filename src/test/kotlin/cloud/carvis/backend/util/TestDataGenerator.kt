@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.AmazonS3
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class TestDataGenerator(
@@ -23,6 +24,12 @@ class TestDataGenerator(
         return this
     }
 
+    fun withEmptyBucket(): TestDataGenerator {
+        val objects = amazonS3.listObjects(imagesBucket)
+        objects.objectSummaries.forEach { amazonS3.deleteObject(imagesBucket, it.key) }
+        return this
+    }
+
     fun withCar(): TestDataGenerator {
         val car = CarEntity::class.arbitrater()
             .generateNulls(false)
@@ -35,24 +42,32 @@ class TestDataGenerator(
         return this
     }
 
-    fun uploadImage(fileName: String): TestDataGenerator {
-        amazonS3.putObject(imagesBucket, fileName, arbitrary<String>())
+    fun getCar(): CarEntity {
+        return getLast()
+    }
+
+    fun withImage(): TestDataGenerator {
+        val id = UUID.randomUUID()
+        val size = Random().nextInt(1000).toString()
+        amazonS3.putObject(imagesBucket, "$id/$size", arbitrary<String>())
+        this.last = Image(id, size)
         return this
     }
 
-    fun getCar(): CarEntity? {
-        return last as CarEntity?
+    fun getImage(): Image {
+        return getLast()
     }
 
-    fun withImages(): TestDataGenerator {
-        if (last !is CarEntity) {
-            throw RuntimeException("last is no car")
+    private inline fun <reified T> getLast(): T {
+        if (this.last !is T) {
+            throw RuntimeException("last is not of correct type")
         }
-
-        (last as CarEntity).images
-            .map { "$it/200" }
-            .forEach { uploadImage(it) }
-        return this
+        return last as T
     }
+
+    data class Image(
+        val id: UUID,
+        val size: String
+    )
 
 }

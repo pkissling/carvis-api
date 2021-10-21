@@ -30,7 +30,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .getCar()!!
+            .getCar()
 
         // when / then
         this.mockMvc.perform(get("/cars"))

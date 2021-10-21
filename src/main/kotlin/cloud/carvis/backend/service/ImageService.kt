@@ -1,12 +1,12 @@
 package cloud.carvis.backend.service
 
+import cloud.carvis.backend.model.dtos.ImageDto
 import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.HttpMethod.GET
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import java.net.URL
 import java.time.Instant.now
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -25,48 +25,33 @@ class ImageService(
         assert(s3Properties.bucketNames["images"] != null)
     }
 
-    fun resolveImageUrls(ids: List<UUID>): List<URL> {
-        if (ids.isEmpty()) {
-            return emptyList()
+    fun fetchImage(id: UUID, size: String): ImageDto? {
+        val exists = imageExists(id, size)
+        if (!exists) {
+            return null
         }
 
-        return ids
-            .mapNotNull { this.resolveImageId(it) }
-            .toList()
+        return fetchObject(id, size)
     }
 
-    fun resolveImageId(uuid: UUID): URL? {
-        val smallImageExists = imageExists(uuid, "200")
-        if (smallImageExists) {
-            return fetchObject(uuid, "200")
-        }
-
-        val originalImageExists = imageExists(uuid, "original")
-        if (originalImageExists) {
-            return fetchObject(uuid, "original")
-        }
-
-        return null
-    }
-
-    private fun imageExists(uuid: UUID, fileName: String): Boolean =
-        s3Client.doesObjectExist(this.bucketName, "$uuid/$fileName").also {
-            logger.debug { "Image [$uuid/$fileName] exists: $it" }
+    private fun imageExists(id: UUID, size: String): Boolean =
+        s3Client.doesObjectExist(this.bucketName, "$id/$size").also {
+            logger.debug { "Image [$id/$size] exists: $it" }
         }
 
 
-    private fun fetchObject(uuid: UUID, fileName: String): URL? {
+    private fun fetchObject(id: UUID, size: String): ImageDto? {
         val expiration = now().plus(7, ChronoUnit.DAYS)
-            .let { Date.from(it) }
 
         return try {
-            s3Client.generatePresignedUrl(
-                GeneratePresignedUrlRequest(this.bucketName, "$uuid/$fileName")
+            val url = s3Client.generatePresignedUrl(
+                GeneratePresignedUrlRequest(this.bucketName, "$id/$size")
                     .withMethod(GET)
-                    .withExpiration(expiration)
+                    .withExpiration(Date.from(expiration))
             )
+            ImageDto(id, url, size, expiration)
         } catch (e: Exception) {
-            logger.error("Exception caught while generating presigned URL for file [$uuid/$fileName]", e)
+            logger.error("Exception caught while generating presigned URL for file [$id/$size]", e)
             null
         }
     }
