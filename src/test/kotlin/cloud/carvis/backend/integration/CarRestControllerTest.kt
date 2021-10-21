@@ -30,7 +30,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .withImages()
             .getCar()!!
 
         // when / then
@@ -51,7 +50,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].createdAt").value(car.createdAt.toString()))
             .andExpect(jsonPath("$.[0].description").value(car.description))
             .andExpect(jsonPath("$.[0].horsePower").value(car.horsePower))
-            .andExpect(jsonPath("$.[0].images.length()").value(car.images.size))
+            .andExpect(jsonPath("$.[0].images").value(car.images.map { it.toString() }))
             .andExpect(jsonPath("$.[0].mileage").value(car.mileage))
             .andExpect(jsonPath("$.[0].modelDetails").value(car.modelDetails))
             .andExpect(jsonPath("$.[0].modelSeries").value(car.modelSeries))

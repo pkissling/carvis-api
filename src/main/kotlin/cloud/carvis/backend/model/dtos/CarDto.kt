@@ -1,7 +1,6 @@
 package cloud.carvis.backend.model.dtos
 
 import java.math.BigDecimal
-import java.net.URL
 import java.time.Instant
 import java.util.*
 
@@ -20,7 +19,7 @@ data class CarDto(
     var createdAt: Instant? = null,
     var description: String? = null,
     var horsePower: Long? = null,
-    var images: List<URL> = emptyList(),
+    var images: List<UUID> = emptyList(),
     var mileage: Long? = null,
     var modelDetails: String? = null,
     var modelSeries: String? = null,

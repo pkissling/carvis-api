@@ -26,7 +26,7 @@ class CarMapper(
             createdAt = entity.createdAt,
             description = entity.description,
             horsePower = entity.horsePower,
-            images = imageService.resolveImageUrls(entity.images),
+            images = entity.images,
             mileage = entity.mileage,
             modelDetails = entity.modelDetails,
             modelSeries = entity.modelSeries,
