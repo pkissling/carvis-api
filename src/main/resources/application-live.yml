@@ -1,0 +1,6 @@
+cors:
+  allowed-origins:
+    - https://carvis.cloud
+
+sentry:
+  environment: live

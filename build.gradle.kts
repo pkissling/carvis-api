@@ -36,6 +36,8 @@ dependencies {
 	implementation("org.springframework.security:spring-security-oauth2-jose")
 	implementation("io.github.microutils:kotlin-logging-jvm:2.0.10")
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.90")
+	implementation("io.sentry:sentry-spring-boot-starter:5.2.4")
+	implementation("io.sentry:sentry-logback:5.2.4")
 
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")

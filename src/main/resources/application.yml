@@ -19,3 +19,8 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://carvis.eu.auth0.com/
+
+sentry:
+  dsn: https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448
+  send-default-pii: true
+  environment: local
