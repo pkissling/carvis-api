@@ -17,6 +17,5 @@ class ImageRestController(
     @GetMapping("/{id}")
     fun image(@PathVariable id: UUID, @RequestParam(defaultValue = "original") size: String): ImageDto =
         imageService.fetchImage(id, size)
-            ?: throw ResponseStatusException(NOT_FOUND, "entity not found")
-
+            ?: throw ResponseStatusException(NOT_FOUND, "image not found")
 }

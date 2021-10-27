@@ -7,5 +7,4 @@ import java.util.*
 
 @EnableScan
 interface CarRepository : CrudRepository<CarEntity, UUID> {
-    fun findById(id: UUID?): CarEntity?
 }

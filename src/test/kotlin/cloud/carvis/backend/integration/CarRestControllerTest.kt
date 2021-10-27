@@ -7,6 +7,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.util.*
 
 
 class CarRestControllerTest : AbstractApplicationTest() {
@@ -62,5 +63,31 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].type").value(car.type))
             .andExpect(jsonPath("$.[0].updatedAt").value(car.updatedAt.toString()))
             .andExpect(jsonPath("$.[0].vin").value(car.vin))
+    }
+
+    @Test
+    @WithMockUser
+    fun `car GET - not found`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(get("/cars/{id}", UUID.randomUUID()))
+            .andExpect(status().isNotFound)
+    }
+
+    @Test
+    @WithMockUser
+    fun `car GET - found`() {
+        // given
+        val car = testDataGenerator
+            .withEmptyDb()
+            .withCar()
+            .getCar()
+
+        // when / then
+        this.mockMvc.perform(get("/cars/{id}", car.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(car.id.toString()))
     }
 }
