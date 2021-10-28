@@ -3,12 +3,8 @@ package cloud.carvis.backend.integration
 import cloud.carvis.backend.model.dtos.ImageDto
 import cloud.carvis.backend.util.AbstractApplicationTest
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.hamcrest.CoreMatchers.allOf
+import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.notNullValue
-import org.hamcrest.Matcher
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.number.OrderingComparison.greaterThan
-import org.hamcrest.number.OrderingComparison.lessThan
 import org.junit.jupiter.api.Test
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MvcResult
@@ -51,14 +47,10 @@ class ImagesRestControllerTest : AbstractApplicationTest() {
             .andReturn()
 
         val img: ImageDto = toObject(result)
-        assertThat(img.expiration, isInRoughlyDays(7))
+        assertThat(img.expiration).isBetween(days(6), days(7))
     }
 
-    private fun isInRoughlyDays(i: Long): Matcher<Instant> {
-        val lowerBound = Instant.now().plus((i - 1), ChronoUnit.DAYS)
-        val upperBound = Instant.now().plus(i, ChronoUnit.DAYS)
-        return allOf(greaterThan(lowerBound), lessThan(upperBound))
-    }
+    private fun days(i: Long) = Instant.now().plus(i, ChronoUnit.DAYS)
 
     private inline fun <reified T> toObject(result: MvcResult): T =
         objectMapper.readValue(result.response.contentAsByteArray)
