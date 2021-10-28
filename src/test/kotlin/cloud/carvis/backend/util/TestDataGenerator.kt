@@ -69,5 +69,4 @@ class TestDataGenerator(
         val id: UUID,
         val size: String
     )
-
 }

@@ -2,15 +2,12 @@ package cloud.carvis.backend.mapper
 
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.model.entities.CarEntity
-import cloud.carvis.backend.service.ImageService
 import org.springframework.stereotype.Service
 
 @Service
-class CarMapper(
-    private val imageService: ImageService
-) {
+class CarMapper: Mapper<CarDto, CarEntity> {
 
-    fun fromEntity(entity: CarEntity): CarDto =
+    override fun toDto(entity: CarEntity): CarDto =
         CarDto(
             id = entity.id,
             brand = entity.brand,
@@ -38,5 +35,31 @@ class CarMapper(
             type = entity.type,
             updatedAt = entity.updatedAt,
             vin = entity.vin
+        )
+
+    override fun toEntity(dto: CarDto): CarEntity =
+        CarEntity(
+            brand = dto.brand,
+            bodyType = dto.bodyType,
+            ads = dto.ads,
+            additionalEquipment = dto.additionalEquipment,
+            capacity = dto.capacity,
+            colorAndMaterialInterior = dto.colorAndMaterialInterior,
+            colorExterior = dto.colorExterior,
+            colorExteriorManufacturer = dto.colorExteriorManufacturer,
+            condition = dto.condition,
+            countryOfOrigin = dto.countryOfOrigin,
+            description = dto.description,
+            horsePower = dto.horsePower,
+            images = dto.images,
+            mileage = dto.mileage,
+            modelDetails = dto.modelDetails,
+            modelSeries = dto.modelSeries,
+            modelYear = dto.modelYear,
+            ownerName = dto.ownerName,
+            price = dto.price,
+            transmission = dto.transmission,
+            type = dto.type,
+            vin = dto.vin
         )
 }

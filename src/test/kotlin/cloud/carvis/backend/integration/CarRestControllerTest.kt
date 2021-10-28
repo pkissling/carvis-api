@@ -1,16 +1,25 @@
 package cloud.carvis.backend.integration
 
+import cloud.carvis.backend.dao.repositories.CarRepository
+import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.util.AbstractApplicationTest
+import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.time.Instant.now
 import java.util.*
 
 
 class CarRestControllerTest : AbstractApplicationTest() {
+
+    @Autowired
+    private lateinit var carRepository: CarRepository
 
     @Test
     @WithMockUser
@@ -89,5 +98,33 @@ class CarRestControllerTest : AbstractApplicationTest() {
         this.mockMvc.perform(get("/cars/{id}", car.id))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(car.id.toString()))
+    }
+
+    @Test
+    @WithMockUser(username = "foo")
+    fun `cars POST - create car success`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        val car = random(CarDto::class)
+        val start = now()
+
+
+        // when
+        val response = this.mockMvc
+            .perform(
+                post("/cars")
+                    .content(car.toJson())
+                    .contentType(APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(header().string("Content-Type", APPLICATION_JSON.toString()))
+            .andReturn().response
+        val returnedCar = toObject<CarDto>(response)
+
+        // then
+        assertThat(carRepository.count()).isEqualTo(1)
+        assertThat(returnedCar.id).isNotNull
+        assertThat(returnedCar.ownerUsername).isEqualTo("foo")
+        assertThat(returnedCar.createdAt).isBetween(start, now())
+        assertThat(returnedCar.updatedAt).isEqualTo(returnedCar.createdAt)
     }
 }

@@ -28,6 +28,8 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
         http!!
             .cors()
             .and()
+            .csrf()
+            .disable()
             .authorizeRequests()
             .mvcMatchers("/actuator/health").permitAll()
             .anyRequest().hasAnyRole("USER", "ADMIN")
