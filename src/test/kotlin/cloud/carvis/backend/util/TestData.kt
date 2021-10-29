@@ -1,11 +1,13 @@
 package cloud.carvis.backend.util
 
+import com.fasterxml.jackson.databind.ObjectMapper
+
 class TestData<T>(
-    private val toJson: (T) -> ByteArray,
+    private val objectMapper: ObjectMapper,
     private val value: T
 ) {
 
-    fun toJson(): ByteArray = toJson.invoke(value)
+    fun toJson(): ByteArray = objectMapper.writeValueAsBytes(value)
 
     fun value(): T = value
 }

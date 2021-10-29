@@ -2,11 +2,9 @@ package cloud.carvis.backend.rest
 
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.service.CarService
-import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.server.ResponseStatusException
-import org.springframework.web.util.UriComponentsBuilder
 import java.util.*
+import javax.validation.Valid
 
 @RestController
 @RequestMapping("/cars")
@@ -20,9 +18,13 @@ class CarRestController(
     @GetMapping("/{id}")
     fun car(@PathVariable id: UUID): CarDto =
         carService.findCar(id)
-            ?: throw ResponseStatusException(NOT_FOUND, "car not found")
 
     @PostMapping
-    fun createCar(uriComponentsBuilder: UriComponentsBuilder, @RequestBody car: CarDto): CarDto =
+    fun createCar(@RequestBody car: CarDto): CarDto =
         carService.createCar(car)
+
+    @PutMapping("/{id}")
+    fun updateCar(@PathVariable id: UUID, @Valid @RequestBody car: CarDto): CarDto =
+        carService.updateCar(id, car)
+
 }

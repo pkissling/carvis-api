@@ -5,7 +5,10 @@ import cloud.carvis.backend.mapper.CarMapper
 import cloud.carvis.backend.model.dtos.CarDto
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
 @Service
@@ -21,13 +24,20 @@ class CarService(
         return carRepository.findAll()
             .map { carMapper.toDto(it) }
             .toList()
-            .also { logger.info { "end findAll() return=${it.size}"} }
+            .also { logger.info { "end findAll() return=${it.size}" } }
     }
 
-    fun findCar(id: UUID): CarDto? {
+    fun findCar(id: UUID): CarDto {
         logger.info { "start findCar(id=$id)" }
-        return carRepository.findByIdOrNull(id)
-            ?.let { carMapper.toDto(it) }
+
+        val car = carRepository.findByIdOrNull(id)
+        if (car == null) {
+            logger.info { "Car with id [$id] not found" }
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
+        }
+
+        return car
+            .let { carMapper.toDto(it) }
             .also { logger.info { "end findCar(id=$id) return=${it}" } }
     }
 
@@ -37,5 +47,22 @@ class CarService(
             .let { carRepository.save(it) }
             .let { carMapper.toDto(it) }
             .also { logger.info { "end createCar(car=$car), return=${it}" } }
+    }
+
+    @PreAuthorize("@authorization.canAccessCar(#id)")
+    fun updateCar(id: UUID, car: CarDto): CarDto {
+        logger.info { "start updateCar(id=$id,car=$car)" }
+        val carToUpdate = carRepository.findByIdOrNull(id)
+
+        if (carToUpdate == null) {
+            logger.info { "Car with id [$id] not found" }
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
+        }
+
+        // what happens if images ger deleted during update?
+        return carMapper.forUpdate(id, car, carToUpdate)
+            .let { carRepository.save(it) }
+            .let { carMapper.toDto(it) }
+            .also { logger.info { "end updateCar(id,$id,car=$car), return=${it}" } }
     }
 }

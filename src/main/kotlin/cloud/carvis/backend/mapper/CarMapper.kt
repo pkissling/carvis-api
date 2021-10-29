@@ -28,8 +28,8 @@ class CarMapper: Mapper<CarDto, CarEntity> {
             modelDetails = entity.modelDetails,
             modelSeries = entity.modelSeries,
             modelYear = entity.modelYear,
-            ownerName = entity.ownerName,
-            ownerUsername = entity.ownerUsername, // TODO get dynamically based on username?
+            ownerName = entity.ownerName, // TODO get dynamically based on username?
+            ownerUsername = entity.ownerUsername,
             price = entity.price,
             transmission = entity.transmission,
             type = entity.type,

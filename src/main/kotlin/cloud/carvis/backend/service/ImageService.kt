@@ -13,6 +13,7 @@ import java.util.*
 
 
 @Service
+// TODO retry?
 class ImageService(
     private val s3Client: AmazonS3,
     s3Properties: S3Properties

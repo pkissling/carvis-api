@@ -39,7 +39,7 @@ abstract class AbstractApplicationTest {
             .generateNulls(false)
             .useDefaultValues(false)
             .createInstance()
-        return TestData(objectMapper::writeValueAsBytes, value)
+        return TestData(objectMapper, value)
     }
 
     protected final inline fun <reified T : Any> toObject(r: MockHttpServletResponse): T {

@@ -31,5 +31,5 @@ data class CarDto(
     var type: String? = null,
     var updatedAt: Instant? = null,
     var vin: String? = null
-// TODO modified by/
+// TODO modified by?
 )

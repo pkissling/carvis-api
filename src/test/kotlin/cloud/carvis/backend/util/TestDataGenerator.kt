@@ -4,6 +4,7 @@ import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.entities.CarEntity
 import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.services.s3.AmazonS3
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import org.springframework.stereotype.Service
@@ -13,6 +14,7 @@ import java.util.*
 class TestDataGenerator(
     private val carRepository: CarRepository,
     private val amazonS3: AmazonS3,
+    private val objectMapper: ObjectMapper,
     s3Properties: S3Properties
 ) {
 
@@ -42,8 +44,15 @@ class TestDataGenerator(
         return this
     }
 
-    fun getCar(): CarEntity {
-        return getLast()
+    fun setOwnerUsername(ownerUsername: String): TestDataGenerator {
+        val car = this.getCar().value()
+        car.ownerUsername = ownerUsername
+        this.last = carRepository.save(car)
+        return this
+    }
+
+    fun getCar(): TestData<CarEntity> {
+        return TestData(objectMapper, getLast())
     }
 
     fun withImage(): TestDataGenerator {
