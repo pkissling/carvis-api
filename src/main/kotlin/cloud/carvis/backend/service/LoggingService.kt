@@ -5,11 +5,11 @@ import org.slf4j.MDC
 import org.springframework.stereotype.Service
 import java.util.*
 
-private val logger = KotlinLogging.logger {}
-
 @Service
 class LoggingService {
 
+    private val logger = KotlinLogging.logger {}
+    
     fun addTraceId(traceId: String) {
         MDC.put(MDC_TRACE_ID_KEY, traceId)
     }

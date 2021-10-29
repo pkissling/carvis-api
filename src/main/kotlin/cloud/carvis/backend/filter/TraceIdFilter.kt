@@ -9,9 +9,9 @@ import javax.servlet.ServletRequest
 import javax.servlet.ServletResponse
 import javax.servlet.http.HttpServletRequest
 
-private val logger = KotlinLogging.logger {}
-
 class TraceIdFilter(private val loggingService: LoggingService) : Filter {
+
+    private val logger = KotlinLogging.logger {}
 
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) = try {
 
