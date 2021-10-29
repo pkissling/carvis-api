@@ -5,7 +5,7 @@ import cloud.carvis.backend.model.entities.CarEntity
 import org.springframework.stereotype.Service
 
 @Service
-class CarMapper: Mapper<CarDto, CarEntity> {
+class CarMapper : Mapper<CarDto, CarEntity> {
 
     override fun toDto(entity: CarEntity): CarDto =
         CarDto(

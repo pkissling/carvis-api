@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component
 import java.util.*
 
 @Component
-class CustomAuth0RoleConverter(@Value("\${auth.custom-role-claim-key}") val claimKey: String): Converter<Jwt, JwtAuthenticationToken> {
+class CustomAuth0RoleConverter(@Value("\${auth.custom-role-claim-key}") val claimKey: String) :
+    Converter<Jwt, JwtAuthenticationToken> {
 
     override fun convert(source: Jwt): JwtAuthenticationToken {
         val customRoles = source.claims[claimKey]

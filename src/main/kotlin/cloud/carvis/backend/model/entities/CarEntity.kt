@@ -99,4 +99,4 @@ data class CarEntity(
     @DynamoDBAttribute
     @LastModifiedBy
     override var lastModifiedBy: String? = null
-): Entity()
+) : Entity()

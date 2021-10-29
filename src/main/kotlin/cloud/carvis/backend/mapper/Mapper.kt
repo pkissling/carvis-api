@@ -3,7 +3,7 @@ package cloud.carvis.backend.mapper
 import cloud.carvis.backend.model.entities.Entity
 import java.util.*
 
-interface Mapper<D, E: Entity> {
+interface Mapper<D, E : Entity> {
 
     fun toDto(entity: E): D
     fun toEntity(dto: D): E

@@ -68,6 +68,7 @@ class CarService(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
         }
 
+        // TODO delete images?
         carRepository.deleteById(id)
     }
 }

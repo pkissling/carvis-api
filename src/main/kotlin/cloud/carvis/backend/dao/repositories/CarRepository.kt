@@ -6,5 +6,4 @@ import org.springframework.data.repository.CrudRepository
 import java.util.*
 
 @EnableScan
-interface CarRepository : CrudRepository<CarEntity, UUID> {
-}
+interface CarRepository : CrudRepository<CarEntity, UUID>

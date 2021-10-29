@@ -21,7 +21,10 @@ class HttpConfig {
     @Bean
     fun errorAttributes(loggingService: LoggingService): ErrorAttributes {
         return object : DefaultErrorAttributes() {
-            override fun getErrorAttributes(webRequest: WebRequest?, options: ErrorAttributeOptions?): MutableMap<String, Any> =
+            override fun getErrorAttributes(
+                webRequest: WebRequest?,
+                options: ErrorAttributeOptions?
+            ): MutableMap<String, Any> =
                 super.getErrorAttributes(webRequest, options).apply {
                     put(MDC_TRACE_ID_KEY, loggingService.getTraceId())
                 }

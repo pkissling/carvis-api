@@ -9,7 +9,7 @@ import java.util.*
 class LoggingService {
 
     private val logger = KotlinLogging.logger {}
-    
+
     fun addTraceId(traceId: String) {
         MDC.put(MDC_TRACE_ID_KEY, traceId)
     }
