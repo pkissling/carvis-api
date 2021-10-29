@@ -40,19 +40,16 @@ class ImageService(
         }
 
 
-    private fun fetchObject(id: UUID, size: String): ImageDto? {
+    private fun fetchObject(id: UUID, size: String): ImageDto? = try {
         val expiration = now().plus(7, ChronoUnit.DAYS)
-
-        return try {
-            val url = s3Client.generatePresignedUrl(
-                GeneratePresignedUrlRequest(this.bucketName, "$id/$size")
-                    .withMethod(GET)
-                    .withExpiration(Date.from(expiration))
-            )
-            ImageDto(id, url, size, expiration)
-        } catch (e: Exception) {
-            logger.error("Exception caught while generating presigned URL for file [$id/$size]", e)
-            null
-        }
+        val url = s3Client.generatePresignedUrl(
+            GeneratePresignedUrlRequest(this.bucketName, "$id/$size")
+                .withMethod(GET)
+                .withExpiration(Date.from(expiration))
+        )
+        ImageDto(id, url, size, expiration)
+    } catch (e: Exception) {
+        logger.error(e) { "Exception caught while generating presigned URL for file [$id/$size]" }
+        null
     }
 }

@@ -49,6 +49,7 @@ dependencies {
 	testImplementation("org.testcontainers:localstack:1.16.0")
 	testImplementation("org.testcontainers:junit-jupiter:1.16.0")
 	testImplementation("com.tyro.oss:arbitrater:1.0.0")
+	testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
 }
 
 tasks.withType<KotlinCompile> {

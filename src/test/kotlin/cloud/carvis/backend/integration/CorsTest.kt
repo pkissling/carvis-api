@@ -13,11 +13,11 @@ class CorsTest : AbstractApplicationTest() {
     fun `OPTIONS - CORS headers added`() {
         this.mockMvc.perform(
             options("/")
-                .header("Origin", "https://carvis.cloud")
+                .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "GET")
         )
             .andExpect(status().isOk)
-            .andExpect(header().string("Access-Control-Allow-Origin", "https://carvis.cloud"))
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
             .andExpect(header().string("Access-Control-Allow-Methods", "GET,OPTIONS"))
             .andExpect(header().string("Access-Control-Max-Age", "3600"))
             .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
