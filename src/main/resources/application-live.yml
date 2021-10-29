@@ -4,3 +4,4 @@ cors:
 
 sentry:
   environment: live
+  traces-sample-rate: 0.2
