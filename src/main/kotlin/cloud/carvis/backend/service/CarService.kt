@@ -19,16 +19,13 @@ class CarService(
 
     private val logger = KotlinLogging.logger {}
 
-    fun findAll(): List<CarDto> {
-        logger.info { "start findAll()" }
+    fun fetchAllCars(): List<CarDto> {
         return carRepository.findAll()
             .map { carMapper.toDto(it) }
             .toList()
-            .also { logger.info { "end findAll() return=${it.size}" } }
     }
 
-    fun findCar(id: UUID): CarDto {
-        logger.info { "start findCar(id=$id)" }
+    fun fetchCar(id: UUID): CarDto {
 
         val car = carRepository.findByIdOrNull(id)
         if (car == null) {
@@ -38,20 +35,17 @@ class CarService(
 
         return car
             .let { carMapper.toDto(it) }
-            .also { logger.info { "end findCar(id=$id) return=${it}" } }
     }
 
     fun createCar(car: CarDto): CarDto {
-        logger.info { "start createCar(car=$car)" }
         return carMapper.toEntity(car)
             .let { carRepository.save(it) }
             .let { carMapper.toDto(it) }
-            .also { logger.info { "end createCar(car=$car), return=${it}" } }
     }
 
     @PreAuthorize("@authorization.canAccessCar(#id)")
     fun updateCar(id: UUID, car: CarDto): CarDto {
-        logger.info { "start updateCar(id=$id,car=$car)" }
+
         val carToUpdate = carRepository.findByIdOrNull(id)
 
         if (carToUpdate == null) {
@@ -63,12 +57,10 @@ class CarService(
         return carMapper.forUpdate(id, car, carToUpdate)
             .let { carRepository.save(it) }
             .let { carMapper.toDto(it) }
-            .also { logger.info { "end updateCar(id,$id,car=$car), return=${it}" } }
     }
 
     @PreAuthorize("@authorization.canAccessCar(#id)")
     fun deleteCar(id: UUID) {
-        logger.info { "start deleteCar(id=$id)" }
         val exists = carRepository.existsById(id)
 
         if (!exists) {
@@ -77,6 +69,5 @@ class CarService(
         }
 
         carRepository.deleteById(id)
-        logger.info { "end deleteCar(id=$id)" }
     }
 }

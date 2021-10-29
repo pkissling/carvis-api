@@ -2,6 +2,7 @@ package cloud.carvis.backend.rest
 
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.service.CarService
+import mu.KotlinLogging
 import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.validation.Valid
@@ -12,23 +13,42 @@ class CarRestController(
     val carService: CarService
 ) {
 
+    private val logger = KotlinLogging.logger {}
+
     @GetMapping
-    fun cars(): List<CarDto> = carService.findAll()
+    fun fetchAllCars(): List<CarDto> {
+        logger.info { "start fetchAllCars()" }
+        return carService.fetchAllCars()
+            .also { logger.info { "end fetchAllCars() return=${it.size}" } }
+
+    }
 
     @GetMapping("/{id}")
-    fun car(@PathVariable id: UUID): CarDto =
-        carService.findCar(id)
+    fun fetchCar(@PathVariable id: UUID): CarDto {
+        logger.info { "start fetchCar(id=$id)" }
+        return carService.fetchCar(id)
+            .also { logger.info { "end fetchCar(id=$id) return=${it}" } }
+    }
 
     @PostMapping
-    fun createCar(@RequestBody car: CarDto): CarDto =
-        carService.createCar(car)
+    fun createCar(@RequestBody car: CarDto): CarDto {
+        logger.info { "start createCar(car=$car)" }
+        return carService.createCar(car)
+            .also { logger.info { "end createCar(car=$car), return=${it}" } }
+    }
 
     @PutMapping("/{id}")
-    fun updateCar(@PathVariable id: UUID, @Valid @RequestBody car: CarDto): CarDto =
-        carService.updateCar(id, car)
+    fun updateCar(@PathVariable id: UUID, @Valid @RequestBody car: CarDto): CarDto {
+        logger.info { "start updateCar(id=$id,car=$car)" }
+        return carService.updateCar(id, car)
+            .also { logger.info { "end updateCar(id,$id,car=$car), return=${it}" } }
+    }
+
 
     @DeleteMapping("/{id}")
-    fun deleteCar(@PathVariable id: UUID) =
+    fun deleteCar(@PathVariable id: UUID) {
+        logger.info { "start deleteCar(id=$id)" }
         carService.deleteCar(id)
-
+        logger.info { "end deleteCar(id=$id)" }
+    }
 }

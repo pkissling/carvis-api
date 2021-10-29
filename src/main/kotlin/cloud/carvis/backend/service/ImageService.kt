@@ -2,11 +2,17 @@ package cloud.carvis.backend.service
 
 import cloud.carvis.backend.model.dtos.ImageDto
 import cloud.carvis.backend.properties.S3Properties
-import com.amazonaws.HttpMethod.GET
+import com.amazonaws.HttpMethod
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.NOT_FOUND
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
+import java.net.URL
+import java.time.Instant
 import java.time.Instant.now
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -26,13 +32,24 @@ class ImageService(
         assert(s3Properties.bucketNames["images"] != null)
     }
 
-    fun fetchImage(id: UUID, size: String): ImageDto? {
+    fun fetchImage(id: UUID, size: String): ImageDto {
         val exists = imageExists(id, size)
         if (!exists) {
-            return null
+            logger.info { "Image with id [$id] not found" }
+            throw ResponseStatusException(NOT_FOUND, "image not found")
         }
 
-        return fetchObject(id, size)
+        val expiration = now().plus(7, ChronoUnit.DAYS)
+        val url = generatePresignedUrl(id, size, HttpMethod.GET, expiration)
+        return ImageDto(id, url, size, expiration)
+    }
+
+    fun createPresignedUrl(contentType: MediaType): ImageDto {
+        val id = UUID.randomUUID()
+        val size = "original"
+        val expiration = now().plus(1, ChronoUnit.DAYS)
+        val url = generatePresignedUrl(id, size, HttpMethod.PUT, expiration, contentType)
+        return ImageDto(id, url, size, expiration)
     }
 
     private fun imageExists(id: UUID, size: String): Boolean =
@@ -41,16 +58,24 @@ class ImageService(
         }
 
 
-    private fun fetchObject(id: UUID, size: String): ImageDto? = try {
-        val expiration = now().plus(7, ChronoUnit.DAYS)
-        val url = s3Client.generatePresignedUrl(
+    private fun generatePresignedUrl(
+        id: UUID,
+        size: String,
+        method: HttpMethod,
+        expiration: Instant,
+        contentType: MediaType? = null
+    ): URL = try {
+        s3Client.generatePresignedUrl(
             GeneratePresignedUrlRequest(this.bucketName, "$id/$size")
-                .withMethod(GET)
+                .withMethod(method)
+                .withContentType(contentType?.toString())
                 .withExpiration(Date.from(expiration))
         )
-        ImageDto(id, url, size, expiration)
     } catch (e: Exception) {
-        logger.error(e) { "Exception caught while generating presigned URL for file [$id/$size]" }
-        null
+        logger.error(e) {
+            "Exception caught while generating presigned URL for path " +
+                    "[$id/$size], expiration [$expiration] and contentType [$contentType]"
+        }
+        throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error", e)
     }
 }
