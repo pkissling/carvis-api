@@ -5,7 +5,6 @@ import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.util.AbstractApplicationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
-import org.junit.Assume.assumeTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
@@ -116,7 +115,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .perform(
                 post("/cars")
                     .content(car.toJson())
-                    .contentType(APPLICATION_JSON))
+                    .contentType(APPLICATION_JSON)
+            )
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", APPLICATION_JSON.toString()))
             .andReturn().response
@@ -149,7 +149,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .perform(
                 put("/cars/{id}", carId)
                     .content(updatedCar.toJson())
-                    .contentType(APPLICATION_JSON))
+                    .contentType(APPLICATION_JSON)
+            )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(carId))
             .andExpect(jsonPath("$.brand").value(updatedCar.value().brand))
@@ -198,7 +199,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .perform(
                 put("/cars/{id}", car.value().id.toString())
                     .content(car.toJson())
-                    .contentType(APPLICATION_JSON))
+                    .contentType(APPLICATION_JSON)
+            )
             .andExpect(status().isForbidden)
     }
 
@@ -212,14 +214,15 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withCar()
             .setOwnerUsername("bar")
             .getCar()
-        assumeTrue(car.value().ownerUsername == "bar")
+        assertThat(car.value().ownerUsername).isEqualTo("bar")
 
         // when / then
         this.mockMvc
             .perform(
                 put("/cars/{id}", car.value().id.toString())
                     .content(car.toJson())
-                    .contentType(APPLICATION_JSON))
+                    .contentType(APPLICATION_JSON)
+            )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.ownerUsername").value("bar"))
 
@@ -229,6 +232,76 @@ class CarRestControllerTest : AbstractApplicationTest() {
         assertThat(updatedCar.createdAt).isEqualTo(car.value().createdAt)
         assertThat(updatedCar.lastModifiedBy).isEqualTo("foo")
         assertThat(updatedCar.updatedAt).isBetween(start, now())
+    }
+
+    @Test
+    @WithMockUser
+    fun `cars PUT - car does not exist`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc
+            .perform(
+                put("/cars/{id}", UUID.randomUUID().toString())
+                    .content(random(CarDto::class).toJson())
+                    .contentType(APPLICATION_JSON)
+            )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(username = "foo")
+    fun `cars DELETE - delete car success`() {
+        // given
+        val car = testDataGenerator
+            .withEmptyDb()
+            .withCar()
+            .setOwnerUsername("foo")
+            .getCar()
+            .value()
+        assertThat(carRepository.count()).isEqualTo(1)
+
+        // when
+        this.mockMvc
+            .perform(delete("/cars/{id}", car.id))
+            .andExpect(status().isOk)
+
+        // then
+        assertThat(carRepository.count()).isEqualTo(0)
+    }
+
+    @Test
+    @WithMockUser
+    fun `cars DELETE - car does not exist`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc
+            .perform(delete("/cars/{id}", UUID.randomUUID().toString()))
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(username = "bar", roles = ["ADMIN"])
+    fun `cars DELETE - admin can delete other users car`() {
+        // given
+        val car = testDataGenerator
+            .withEmptyDb()
+            .withCar()
+            .setOwnerUsername("foo")
+            .getCar()
+            .value()
+        assertThat(carRepository.count()).isEqualTo(1)
+
+        // when
+        this.mockMvc
+            .perform(delete("/cars/{id}", car.id))
+            .andExpect(status().isOk)
+
+        // then
+        assertThat(carRepository.count()).isEqualTo(0)
     }
 
 }

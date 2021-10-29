@@ -27,4 +27,8 @@ class CarRestController(
     fun updateCar(@PathVariable id: UUID, @Valid @RequestBody car: CarDto): CarDto =
         carService.updateCar(id, car)
 
+    @DeleteMapping("/{id}")
+    fun deleteCar(@PathVariable id: UUID) =
+        carService.deleteCar(id)
+
 }

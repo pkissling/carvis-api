@@ -65,4 +65,18 @@ class CarService(
             .let { carMapper.toDto(it) }
             .also { logger.info { "end updateCar(id,$id,car=$car), return=${it}" } }
     }
+
+    @PreAuthorize("@authorization.canAccessCar(#id)")
+    fun deleteCar(id: UUID) {
+        logger.info { "start deleteCar(id=$id)" }
+        val exists = carRepository.existsById(id)
+
+        if (!exists) {
+            logger.info { "Car with id [$id] not found" }
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
+        }
+
+        carRepository.deleteById(id)
+        logger.info { "end deleteCar(id=$id)" }
+    }
 }
