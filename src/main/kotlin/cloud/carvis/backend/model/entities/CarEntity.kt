@@ -74,6 +74,9 @@ data class CarEntity(
     var price: BigDecimal? = null,
 
     @DynamoDBAttribute
+    var shortDescription: String? = null,
+
+    @DynamoDBAttribute
     var transmission: String? = null,
 
     @DynamoDBAttribute

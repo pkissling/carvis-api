@@ -27,6 +27,7 @@ data class CarDto(
     var ownerName: String? = null,
     var ownerUsername: String? = null,
     var price: BigDecimal? = null,
+    var shortDescription: String? = null,
     var transmission: String? = null,
     var type: String? = null,
     var updatedAt: Instant? = null,

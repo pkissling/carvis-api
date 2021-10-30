@@ -68,6 +68,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].ownerName").value(car.ownerName))
             .andExpect(jsonPath("$.[0].ownerUsername").value(car.ownerUsername))
             .andExpect(jsonPath("$.[0].price").value(car.price))
+            .andExpect(jsonPath("$.[0].shortDescription").value(car.shortDescription))
             .andExpect(jsonPath("$.[0].transmission").value(car.transmission))
             .andExpect(jsonPath("$.[0].type").value(car.type))
             .andExpect(jsonPath("$.[0].updatedAt").value(car.updatedAt.toString()))
