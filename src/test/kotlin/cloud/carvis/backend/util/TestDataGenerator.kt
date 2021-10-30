@@ -1,6 +1,7 @@
 package cloud.carvis.backend.util
 
 import cloud.carvis.backend.dao.repositories.CarRepository
+import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.model.entities.CarEntity
 import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.services.s3.AmazonS3
@@ -9,12 +10,13 @@ import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import org.springframework.stereotype.Service
 import java.util.*
+import kotlin.math.absoluteValue
 
 @Service
 class TestDataGenerator(
     private val carRepository: CarRepository,
     private val amazonS3: AmazonS3,
-    private val objectMapper: ObjectMapper,
+    val objectMapper: ObjectMapper,
     s3Properties: S3Properties
 ) {
 
@@ -33,12 +35,9 @@ class TestDataGenerator(
     }
 
     fun withCar(): TestDataGenerator {
-        val car = CarEntity::class.arbitrater()
-            .generateNulls(false)
-            .useDefaultValues(false)
-            .createInstance()
+        val car = random<CarEntity>()
 
-        carRepository.save(car).let {
+        carRepository.save(car.value()).let {
             this.last = it
         }
         return this
@@ -66,6 +65,26 @@ class TestDataGenerator(
     fun getImage(): Image {
         return getLast()
     }
+
+    final inline fun <reified T : Any> random(): TestData<T> {
+        val value = T::class.arbitrater()
+            .generateNulls(false)
+            .useDefaultValues(false)
+            .createInstance()
+
+        return when (value) {
+            is CarDto -> {
+                value.apply {
+                    horsePower = horsePower!!.absoluteValue
+                    capacity = capacity!!.absoluteValue
+                    mileage = mileage!!.absoluteValue
+                    price = price!!.abs()
+                }
+            }
+            else -> value
+        }.let { TestData(objectMapper, it) }
+    }
+
 
     private inline fun <reified T> getLast(): T {
         if (this.last !is T) {

@@ -4,6 +4,7 @@ import cloud.carvis.backend.auth.AudienceValidator
 import cloud.carvis.backend.auth.CustomAuth0RoleConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -39,9 +40,9 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
             .oauth2ResourceServer()
             .jwt()
             .jwtAuthenticationConverter(customAuth0RoleConverter)
-            .decoder(jwtDecoder())
     }
 
+    @Bean
     fun jwtDecoder(): JwtDecoder {
         val withAudience: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)
         val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(issuer)

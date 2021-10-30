@@ -3,6 +3,7 @@ package cloud.carvis.backend.integration
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.util.AbstractApplicationTest
+import cloud.carvis.backend.util.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Test
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.servlet.ResultMatcher
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.time.Instant.now
@@ -40,7 +42,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .getCar().value()
+            .getCar()
+            .value()
 
         // when / then
         this.mockMvc.perform(get("/cars"))
@@ -107,7 +110,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `cars POST - create car success`() {
         // given
         testDataGenerator.withEmptyDb()
-        val car = random(CarDto::class)
+        val car: TestData<CarDto> = testDataGenerator.random()
         val start = now()
 
 
@@ -132,6 +135,30 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
+    @WithMockUser
+    fun `cars POST - body validation`() {
+        // 200
+        assert(status().isOk, "mileage", 0L)
+
+        // 400
+        assert(status().isBadRequest, "brand")
+        assert(status().isBadRequest, "bodyType")
+        assert(status().isBadRequest, "capacity", -100L)
+        assert(status().isBadRequest, "colorAndMaterialInterior")
+        assert(status().isBadRequest, "colorExterior")
+        assert(status().isBadRequest, "colorExteriorManufacturer")
+        assert(status().isBadRequest, "countryOfOrigin")
+        assert(status().isBadRequest, "horsePower", -100L)
+        assert(status().isBadRequest, "mileage", -100L)
+        assert(status().isBadRequest, "modelDetails")
+        assert(status().isBadRequest, "modelSeries")
+        assert(status().isBadRequest, "modelYear")
+        assert(status().isBadRequest, "shortDescription")
+        assert(status().isBadRequest, "transmission")
+        assert(status().isBadRequest, "type")
+    }
+
+    @Test
     @WithMockUser(username = "foo")
     fun `cars PUT - update existing car`() {
         // given
@@ -143,7 +170,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .getCar()
             .value()
         val carId = existingCar.id.toString()
-        val updatedCar = random(CarDto::class)
+        val updatedCar: TestData<CarDto> = testDataGenerator.random()
 
         // when
         val response = this.mockMvc
@@ -194,12 +221,13 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withCar()
             .setOwnerUsername("bar")
             .getCar()
+            .value()
 
         // when / then
         this.mockMvc
             .perform(
-                put("/cars/{id}", car.value().id.toString())
-                    .content(car.toJson())
+                put("/cars/{id}", car.id)
+                    .content(testDataGenerator.random<CarDto>().toJson())
                     .contentType(APPLICATION_JSON)
             )
             .andExpect(status().isForbidden)
@@ -215,22 +243,23 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withCar()
             .setOwnerUsername("bar")
             .getCar()
-        assertThat(car.value().ownerUsername).isEqualTo("bar")
+            .value()
+        assertThat(car.ownerUsername).isEqualTo("bar")
 
         // when / then
         this.mockMvc
             .perform(
-                put("/cars/{id}", car.value().id.toString())
-                    .content(car.toJson())
+                put("/cars/{id}", car.id)
+                    .content(testDataGenerator.random<CarDto>().toJson())
                     .contentType(APPLICATION_JSON)
             )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.ownerUsername").value("bar"))
 
         // then
-        val updatedCar = carRepository.findByIdOrNull(car.value().id!!)!!
+        val updatedCar = carRepository.findByIdOrNull(car.id!!)!!
         assertThat(updatedCar.ownerUsername).isEqualTo("bar")
-        assertThat(updatedCar.createdAt).isEqualTo(car.value().createdAt)
+        assertThat(updatedCar.createdAt).isEqualTo(car.createdAt)
         assertThat(updatedCar.lastModifiedBy).isEqualTo("foo")
         assertThat(updatedCar.updatedAt).isBetween(start, now())
     }
@@ -240,12 +269,13 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `cars PUT - car does not exist`() {
         // given
         testDataGenerator.withEmptyDb()
+        val car = testDataGenerator.random<CarDto>()
 
         // when / then
         this.mockMvc
             .perform(
-                put("/cars/{id}", UUID.randomUUID().toString())
-                    .content(random(CarDto::class).toJson())
+                put("/cars/{id}", UUID.randomUUID())
+                    .content(car.toJson())
                     .contentType(APPLICATION_JSON)
             )
             .andExpect(status().isForbidden)
@@ -305,4 +335,16 @@ class CarRestControllerTest : AbstractApplicationTest() {
         assertThat(carRepository.count()).isEqualTo(0)
     }
 
+    fun assert(httpStatus: ResultMatcher, attribute: String, value: Any? = null) {
+        val car: TestData<CarDto> = testDataGenerator.random()
+        car.setValue(attribute, value)
+
+        this.mockMvc
+            .perform(
+                post("/cars")
+                    .content(car.toJson())
+                    .contentType(APPLICATION_JSON)
+            )
+            .andExpect(httpStatus)
+    }
 }

@@ -31,7 +31,7 @@ class CarRestController(
     }
 
     @PostMapping
-    fun createCar(@RequestBody car: CarDto): CarDto {
+    fun createCar(@Valid @RequestBody car: CarDto): CarDto {
         logger.info { "start createCar(car=$car)" }
         return carService.createCar(car)
             .also { logger.info { "end createCar(car=$car), return=${it}" } }
