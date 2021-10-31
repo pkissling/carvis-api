@@ -17,7 +17,8 @@ import org.springframework.test.web.servlet.MockMvc
     ],
     classes = [
         AmazonS3TestConfig::class,
-        AmazonDynamoDbTestConfig::class
+        AmazonDynamoDbTestConfig::class,
+        JwtDecoderTestConfig::class
     ]
 )
 @AutoConfigureMockMvc

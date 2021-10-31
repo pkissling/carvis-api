@@ -2,27 +2,14 @@ package cloud.carvis.backend.integration
 
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.entities.CarEntity
-import cloud.carvis.backend.util.AmazonDynamoDbTestConfig
-import cloud.carvis.backend.util.AmazonS3TestConfig
+import cloud.carvis.backend.util.AbstractApplicationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import java.time.Instant
 
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = [
-        "spring.data.dynamodb.entity2ddl.auto=create-only",
-        "spring.main.allow-bean-definition-overriding=true"
-    ],
-    classes = [
-        AmazonS3TestConfig::class,
-        AmazonDynamoDbTestConfig::class
-    ]
-)
-class AuditTest {
+class AuditTest : AbstractApplicationTest() {
 
     @Autowired
     private lateinit var carRepository: CarRepository

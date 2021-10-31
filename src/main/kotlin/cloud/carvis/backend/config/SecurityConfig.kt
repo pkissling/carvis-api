@@ -18,12 +18,6 @@ import org.springframework.security.oauth2.jwt.*
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 class SecurityConfig : WebSecurityConfigurerAdapter() {
 
-    @Value("\${auth.audience}")
-    private lateinit var audience: String
-
-    @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private lateinit var issuer: String
-
     @Autowired
     private lateinit var customAuth0RoleConverter: CustomAuth0RoleConverter
 
@@ -43,7 +37,10 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
     }
 
     @Bean
-    fun jwtDecoder(): JwtDecoder {
+    fun jwtDecoder(
+        @Value("\${auth.audience}") audience: String,
+        @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}") issuer: String
+    ): JwtDecoder {
         val withAudience: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)
         val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(issuer)
         val validator: OAuth2TokenValidator<Jwt> = DelegatingOAuth2TokenValidator(withAudience, withIssuer)
