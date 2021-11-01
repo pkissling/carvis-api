@@ -35,7 +35,6 @@ data class CarDto(
     @field:NotEmpty
     var condition: String? = null,
 
-    @field:NotEmpty
     var countryOfOrigin: String? = null,
 
     var createdAt: Instant? = null,

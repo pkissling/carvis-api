@@ -147,7 +147,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
         assert(status().isBadRequest, "colorAndMaterialInterior")
         assert(status().isBadRequest, "colorExterior")
         assert(status().isBadRequest, "colorExteriorManufacturer")
-        assert(status().isBadRequest, "countryOfOrigin")
         assert(status().isBadRequest, "horsePower", -100L)
         assert(status().isBadRequest, "mileage", -100L)
         assert(status().isBadRequest, "modelDetails")
