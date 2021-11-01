@@ -17,16 +17,19 @@ class ImageRestController(
     private val logger = KotlinLogging.logger {}
 
     @GetMapping("/{id}")
-    fun fetchImage(@PathVariable id: UUID, @RequestParam(defaultValue = "original") size: String): ImageDto {
+    fun fetchImage(
+        @PathVariable id: UUID,
+        @RequestParam(defaultValue = "original") size: String
+    ): ImageDto { // TODO introduce imagesize data type
         logger.info { "start fetchImage(id=$id,size=$size)" }
         return imageService.fetchImage(id, size)
             .also { logger.info { "end fetchImage(id=$id,size=$size), return=${it}" } }
     }
 
     @PostMapping
-    fun createPresignedUrl(@RequestHeader("Content-Type") contentType: MediaType): ImageDto {
-        logger.info { "start createPresignedUrl(contentType=$contentType)" }
-        return imageService.createPresignedUrl(contentType)
-            .also { logger.info { "end createPresignedUrl(contentType=$contentType), return=$it" } }
+    fun generateImageUploadUrl(@RequestHeader("Content-Type") contentType: MediaType): ImageDto {
+        logger.info { "start generateImageUploadUrl(contentType=$contentType)" }
+        return imageService.generateImageUploadUrl(contentType)
+            .also { logger.info { "end generateImageUploadUrl(contentType=$contentType), return=$it" } }
     }
 }

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import org.springframework.stereotype.Service
+import java.io.File
 import java.util.*
 import kotlin.math.absoluteValue
 
@@ -21,7 +22,7 @@ class TestDataGenerator(
 ) {
 
     private var last: Any? = null
-    private val imagesBucket = s3Properties.bucketNames["images"]
+    val imagesBucket = s3Properties.bucketNames["images"]
 
     fun withEmptyDb(): TestDataGenerator {
         carRepository.deleteAll()
@@ -58,6 +59,15 @@ class TestDataGenerator(
         val id = UUID.randomUUID()
         val size = Random().nextInt(1000).toString()
         amazonS3.putObject(imagesBucket, "$id/$size", arbitrary<String>())
+        this.last = Image(id, size)
+        return this
+    }
+
+    fun withImage(path: String): TestDataGenerator {
+        val file = File(TestDataGenerator::class.java.getResource("/images/$path")!!.file)
+        val id = UUID.randomUUID()
+        val size = "original"
+        amazonS3.putObject(imagesBucket, "$id/$size", file)
         this.last = Image(id, size)
         return this
     }
