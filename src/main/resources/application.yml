@@ -26,3 +26,7 @@ spring:
 logging:
   pattern:
     level: '[%X{traceId}]'
+
+
+dynamodb:
+  table-name-prefix: dev

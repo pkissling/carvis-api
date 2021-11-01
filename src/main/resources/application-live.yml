@@ -7,3 +7,6 @@ sentry:
   send-default-pii: true
   environment: live
   traces-sample-rate: 0.2
+
+dynamodb:
+  table-name-prefix: live
