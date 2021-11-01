@@ -18,7 +18,7 @@ class CorsTest : AbstractApplicationTest() {
         )
             .andExpect(status().isOk)
             .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
-            .andExpect(header().string("Access-Control-Allow-Methods", "GET,OPTIONS"))
+            .andExpect(header().string("Access-Control-Allow-Methods", "OPTIONS,GET,POST,PUT,DELETE"))
             .andExpect(header().string("Access-Control-Max-Age", "3600"))
             .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
     }

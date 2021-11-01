@@ -6,8 +6,11 @@ cors:
   allowed-origins:
     - http://localhost:3000
   allowed-methods:
-    - GET
     - OPTIONS
+    - GET
+    - POST
+    - PUT
+    - DELETE
 
 s3-buckets:
   bucket-names:
