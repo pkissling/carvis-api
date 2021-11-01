@@ -3,6 +3,7 @@ package cloud.carvis.backend.rest
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.service.CarService
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus.NO_CONTENT
 import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.validation.Valid
@@ -45,6 +46,7 @@ class CarRestController(
     }
 
 
+    @ResponseStatus(NO_CONTENT)
     @DeleteMapping("/{id}")
     fun deleteCar(@PathVariable id: UUID) {
         logger.info { "start deleteCar(id=$id)" }

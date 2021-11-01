@@ -296,7 +296,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // when
         this.mockMvc
             .perform(delete("/cars/{id}", car.id))
-            .andExpect(status().isOk)
+            .andExpect(status().isNoContent)
 
         // then
         assertThat(carRepository.count()).isEqualTo(0)
@@ -329,7 +329,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // when
         this.mockMvc
             .perform(delete("/cars/{id}", car.id))
-            .andExpect(status().isOk)
+            .andExpect(status().isNoContent)
 
         // then
         assertThat(carRepository.count()).isEqualTo(0)
