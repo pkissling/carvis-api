@@ -1,6 +1,7 @@
 package cloud.carvis.backend.rest
 
 import cloud.carvis.backend.model.dtos.ImageDto
+import cloud.carvis.backend.model.dtos.ImageSize
 import cloud.carvis.backend.service.ImageService
 import mu.KotlinLogging
 import org.springframework.http.MediaType
@@ -19,8 +20,8 @@ class ImageRestController(
     @GetMapping("/{id}")
     fun fetchImage(
         @PathVariable id: UUID,
-        @RequestParam(defaultValue = "original") size: String
-    ): ImageDto { // TODO introduce imagesize data type
+        @RequestParam(defaultValue = "ORIGINAL") size: ImageSize
+    ): ImageDto {
         logger.info { "start fetchImage(id=$id,size=$size)" }
         return imageService.fetchImage(id, size)
             .also { logger.info { "end fetchImage(id=$id,size=$size), return=${it}" } }

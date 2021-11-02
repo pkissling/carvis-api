@@ -7,6 +7,6 @@ import java.util.*
 data class ImageDto(
     val id: UUID,
     val url: URL,
-    val size: String,
+    val size: ImageSize,
     val expiration: Instant
 )
