@@ -116,6 +116,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
         assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/original")).isTrue
         assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/200")).isTrue
+        assertThat(amazonS3.getObject(imagesBucket, "${image.id}/200").objectMetadata.contentType).isEqualTo("image/jpeg")
     }
 
     private fun `in`(i: Long, unit: ChronoUnit) = now().plus(i, unit)

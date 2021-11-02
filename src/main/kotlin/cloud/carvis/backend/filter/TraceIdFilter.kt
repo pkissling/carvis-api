@@ -1,6 +1,7 @@
 package cloud.carvis.backend.filter
 
 import cloud.carvis.backend.service.LoggingService
+import io.sentry.SentryTraceHeader.SENTRY_TRACE_HEADER
 import mu.KotlinLogging
 import java.util.*
 import javax.servlet.Filter
@@ -16,8 +17,9 @@ class TraceIdFilter(private val loggingService: LoggingService) : Filter {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) = try {
 
         val httpRequest = request as HttpServletRequest
-        val sentryTrace = httpRequest.getHeader(SENTRY_TRACE_KEY)
+        val sentryTrace = httpRequest.getHeader(SENTRY_TRACE_HEADER)
 
+        // TODO exclude actuator endpoint
         if (sentryTrace.isNullOrBlank()) {
             val uuid = UUID.randomUUID().toString()
             loggingService.addTraceId(uuid)
@@ -31,10 +33,6 @@ class TraceIdFilter(private val loggingService: LoggingService) : Filter {
         logger.error(e) { "Unable to extract sentry-trace header from request" }
     } finally {
         chain.doFilter(request, response)
-    }
-
-    companion object {
-        const val SENTRY_TRACE_KEY: String = "sentry-trace"
     }
 }
 

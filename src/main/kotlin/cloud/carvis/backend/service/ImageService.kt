@@ -5,14 +5,17 @@ import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.HttpMethod
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
+import com.amazonaws.services.s3.model.ObjectMetadata
 import mu.KotlinLogging
 import org.imgscalr.Scalr
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.util.StopWatch
 import org.springframework.web.server.ResponseStatusException
-import java.io.File
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.URL
 import java.time.Instant
@@ -47,10 +50,13 @@ class ImageService(
         val originalExists = imageExists(id, "original")
         if (originalExists) {
             logger.info { "Resizing image [$id] from original to $size" }
-            val image = getObject(id, "original")
-            val resizedImage = resizeImage(id, image.first, image.second, size)
-            putObject(id, resizedImage, size)
-            logger.info { "Finished resizing image [$id] from original to $size" }
+            val stopWatch = StopWatch()
+                .also { it.start() }
+            val (contentType, image) = getObject(id, "original")
+            val (resizedImage, length) = resizeImage(id, contentType, image, size)
+            putObject(id, resizedImage, size, contentType, length)
+            stopWatch.stop()
+            logger.info { "Finished resizing image [$id] from original to [$size]. Took: ${stopWatch.totalTimeMillis}ms" }
             return this.fetchImage(id, size)
         }
 
@@ -66,8 +72,12 @@ class ImageService(
         return ImageDto(id, url, size, expiration)
     }
 
-    private fun putObject(id: UUID, file: File, size: String) = try {
-        s3Client.putObject(this.bucketName, "$id/$size", file)
+    private fun putObject(id: UUID, inputStream: InputStream, size: String, contentType: MediaType, length: Long) = try {
+        val metaData = ObjectMetadata().apply {
+            this.contentType = contentType.toString()
+            this.contentLength = length
+        }
+        s3Client.putObject(this.bucketName, "$id/$size", inputStream, metaData)
             .also { logger.debug { "Saved s3 object [$id/$size]" } }
     } catch (e: Exception) {
         logger.error(e) { "Unable to save file: $id/$size" }
@@ -108,11 +118,12 @@ class ImageService(
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "cannot fetch image from s3")
     }
 
-    private fun resizeImage(id: UUID, contentType: MediaType, inputStream: InputStream, size: String): File = try {
+    private fun resizeImage(id: UUID, contentType: MediaType, inputStream: InputStream, size: String): Pair<InputStream, Long> = try {
         val image = ImageIO.read(inputStream)
         val resizedImage = Scalr.resize(image, size.toInt())
-        File.createTempFile(id.toString(), null)
+        ByteArrayOutputStream()
             .also { ImageIO.write(resizedImage, contentType.subtype, it) }
+            .let { ByteArrayInputStream(it.toByteArray()) to it.size().toLong() }
     } catch (e: Exception) {
         logger.error(e) { "Failed to resize image with id: $id" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "failed to resize image")
