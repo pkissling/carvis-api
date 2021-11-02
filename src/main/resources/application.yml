@@ -16,6 +16,9 @@ s3-buckets:
   bucket-names:
     images: carvis-dev-images
 
+dynamodb:
+  table-name-prefix: dev
+
 spring:
   security:
     oauth2:
@@ -27,6 +30,8 @@ logging:
   pattern:
     level: '[%X{traceId}]'
 
-
-dynamodb:
-  table-name-prefix: dev
+sentry:
+  dsn: https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448
+  send-default-pii: true
+  traces-sample-rate: 0.0
+  sample-rate: null

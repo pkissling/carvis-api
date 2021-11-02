@@ -1,9 +1,8 @@
 package cloud.carvis.backend.filter
 
 import cloud.carvis.backend.service.LoggingService
-import io.sentry.SentryTraceHeader.SENTRY_TRACE_HEADER
+import io.sentry.IHub
 import mu.KotlinLogging
-import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties
 import java.util.*
 import javax.servlet.Filter
 import javax.servlet.FilterChain
@@ -13,7 +12,7 @@ import javax.servlet.http.HttpServletRequest
 
 class TraceIdFilter(
     private val loggingService: LoggingService,
-    private val webEndpointProperties: WebEndpointProperties
+    private val sentryHub: IHub
 ) : Filter {
 
     private val logger = KotlinLogging.logger {}
@@ -21,28 +20,22 @@ class TraceIdFilter(
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) = try {
 
         val httpRequest = request as HttpServletRequest
-        val sentryTrace = httpRequest.getHeader(SENTRY_TRACE_HEADER)
+        val sentryTraceId = sentryHub.span?.spanContext?.traceId.toString()
 
-        if (sentryTrace.isNullOrBlank()) {
+        if (sentryTraceId.isBlank()) {
             val uuid = UUID.randomUUID().toString()
-            if (this.isActuatorCall(request)) {
-                logger.trace { "Incoming request to [${httpRequest.method} ${httpRequest.requestURI}] did not have a sentry-trace. Generated new trace: $uuid" }
-            } else {
-                logger.info { "Incoming request to [${httpRequest.method} ${httpRequest.requestURI}] did not have a sentry-trace. Generated new trace: $uuid" }
-            }
             loggingService.addTraceId(uuid)
+            logger.warn { "Incoming request to [${httpRequest.method} ${httpRequest.requestURI}] did not have a Sentry traceId. Generated new traceId: $uuid" }
         } else {
-            logger.info { "Mapping existing sentry-trace from request: $sentryTrace" }
-            loggingService.addTraceId(sentryTrace)
+            logger.info { "Mapping existing sentry-trace from request: $sentryTraceId" }
+            loggingService.addTraceId(sentryTraceId)
         }
 
     } catch (e: Exception) {
-        logger.error(e) { "Unable to extract sentry-trace header from request" }
+        logger.error(e) { "Unable to extract Sentry traceId from Sentry context" }
     } finally {
         chain.doFilter(request, response)
     }
-
-    private fun isActuatorCall(request: HttpServletRequest) = request.requestURI.startsWith(webEndpointProperties.basePath)
 }
 
 

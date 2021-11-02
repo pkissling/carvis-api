@@ -13,7 +13,8 @@ import org.springframework.test.web.servlet.MockMvc
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "spring.data.dynamodb.entity2ddl.auto=create-only",
-        "spring.main.allow-bean-definition-overriding=true"
+        "spring.main.allow-bean-definition-overriding=true",
+        "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448"
     ],
     classes = [
         AmazonS3TestConfig::class,
