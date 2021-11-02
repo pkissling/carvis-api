@@ -1,6 +1,8 @@
 package cloud.carvis.backend.service
 
 import cloud.carvis.backend.model.dtos.ImageDto
+import cloud.carvis.backend.model.dtos.ImageSize
+import cloud.carvis.backend.model.dtos.ImageSize.ORIGINAL
 import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.HttpMethod
 import com.amazonaws.services.s3.AmazonS3
@@ -26,7 +28,6 @@ import javax.imageio.ImageIO
 
 
 @Service
-// TODO retry?
 class ImageService(
     private val s3Client: AmazonS3,
     s3Properties: S3Properties
@@ -39,7 +40,7 @@ class ImageService(
         assert(s3Properties.bucketNames["images"] != null)
     }
 
-    fun fetchImage(id: UUID, size: String): ImageDto {
+    fun fetchImage(id: UUID, size: ImageSize): ImageDto {
         val exists = imageExists(id, size)
         if (exists) {
             val expiration = now().plus(7, ChronoUnit.DAYS)
@@ -47,16 +48,15 @@ class ImageService(
             return ImageDto(id, url, size, expiration)
         }
 
-        val originalExists = imageExists(id, "original")
+        val originalExists = imageExists(id, ORIGINAL)
         if (originalExists) {
-            logger.info { "Resizing image [$id] from original to $size" }
-            val stopWatch = StopWatch()
-                .also { it.start() }
-            val (contentType, image) = getObject(id, "original")
+            logger.info { "Resizing image [$id] from ORIGINAL to [$size]" }
+            val stopWatch = startTimer()
+            val (contentType, image) = getObject(id, ORIGINAL)
             val (resizedImage, length) = resizeImage(id, contentType, image, size)
             putObject(id, resizedImage, size, contentType, length)
-            stopWatch.stop()
-            logger.info { "Finished resizing image [$id] from original to [$size]. Took: ${stopWatch.totalTimeMillis}ms" }
+            val took = finishTimer(stopWatch)
+            logger.info { "Finished resizing image [$id] from ORIGINAL to [$size]. Took: ${took}ms" }
             return this.fetchImage(id, size)
         }
 
@@ -64,15 +64,24 @@ class ImageService(
         throw ResponseStatusException(NOT_FOUND, "image not found")
     }
 
+    private fun finishTimer(stopWatch: StopWatch): Long {
+        stopWatch.stop()
+        return stopWatch.totalTimeMillis
+    }
+
+    private fun startTimer(): StopWatch =
+        StopWatch()
+            .apply { start() }
+
     fun generateImageUploadUrl(contentType: MediaType): ImageDto {
         val id = UUID.randomUUID()
-        val size = "original"
+        val size = ORIGINAL
         val expiration = now().plus(1, ChronoUnit.DAYS)
         val url = generatePresignedUrl(id, size, HttpMethod.PUT, expiration, contentType)
         return ImageDto(id, url, size, expiration)
     }
 
-    private fun putObject(id: UUID, inputStream: InputStream, size: String, contentType: MediaType, length: Long) = try {
+    private fun putObject(id: UUID, inputStream: InputStream, size: ImageSize, contentType: MediaType, length: Long) = try {
         val metaData = ObjectMetadata().apply {
             this.contentType = contentType.toString()
             this.contentLength = length
@@ -84,13 +93,17 @@ class ImageService(
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "unable to save file in s3")
     }
 
-    private fun imageExists(id: UUID, size: String): Boolean =
+    private fun imageExists(id: UUID, size: ImageSize): Boolean = try {
         s3Client.doesObjectExist(this.bucketName, "$id/$size")
             .also { logger.debug { "Image [$id/$size] exists: $it" } }
+    } catch (e: Exception) {
+        logger.error(e) { "Unable to check if image exists in s3: $id/$size" }
+        throw ResponseStatusException(INTERNAL_SERVER_ERROR, "unable to check image in s3")
+    }
 
     private fun generatePresignedUrl(
         id: UUID,
-        size: String,
+        size: ImageSize,
         method: HttpMethod,
         expiration: Instant,
         contentType: MediaType? = null
@@ -106,10 +119,10 @@ class ImageService(
             "Exception caught while generating presigned URL for path " +
                     "[$id/$size], expiration [$expiration] and contentType [$contentType]"
         }
-        throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error", e)
+        throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error while generating presigned url", e)
     }
 
-    private fun getObject(id: UUID, size: String): Pair<MediaType, InputStream> = try {
+    private fun getObject(id: UUID, size: ImageSize): Pair<MediaType, InputStream> = try {
         val obj = s3Client.getObject(this.bucketName, "$id/$size")
         val mediaType = MediaType.valueOf(obj.objectMetadata.contentType)
         mediaType to obj.objectContent
@@ -118,7 +131,7 @@ class ImageService(
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "cannot fetch image from s3")
     }
 
-    private fun resizeImage(id: UUID, contentType: MediaType, inputStream: InputStream, size: String): Pair<InputStream, Long> = try {
+    private fun resizeImage(id: UUID, contentType: MediaType, inputStream: InputStream, size: ImageSize): Pair<InputStream, Long> = try {
         val image = ImageIO.read(inputStream)
         val resizedImage = Scalr.resize(image, size.toInt())
         ByteArrayOutputStream()
@@ -128,5 +141,4 @@ class ImageService(
         logger.error(e) { "Failed to resize image with id: $id" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "failed to resize image")
     }
-
 }

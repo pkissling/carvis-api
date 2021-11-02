@@ -2,6 +2,7 @@ package cloud.carvis.backend.util
 
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.dtos.CarDto
+import cloud.carvis.backend.model.dtos.ImageSize
 import cloud.carvis.backend.model.entities.CarEntity
 import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.services.s3.AmazonS3
@@ -57,7 +58,7 @@ class TestDataGenerator(
 
     fun withImage(): TestDataGenerator {
         val id = UUID.randomUUID()
-        val size = Random().nextInt(1000).toString()
+        val size = ImageSize.ORIGINAL
         amazonS3.putObject(imagesBucket, "$id/$size", arbitrary<String>())
         this.last = Image(id, size)
         return this
@@ -66,7 +67,7 @@ class TestDataGenerator(
     fun withImage(path: String): TestDataGenerator {
         val file = File(TestDataGenerator::class.java.getResource("/images/$path")!!.file)
         val id = UUID.randomUUID()
-        val size = "original"
+        val size = ImageSize.ORIGINAL
         amazonS3.putObject(imagesBucket, "$id/$size", file)
         this.last = Image(id, size)
         return this
@@ -105,6 +106,6 @@ class TestDataGenerator(
 
     data class Image(
         val id: UUID,
-        val size: String
+        val size: ImageSize
     )
 }

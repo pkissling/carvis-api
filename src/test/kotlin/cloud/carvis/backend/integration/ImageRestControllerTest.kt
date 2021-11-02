@@ -23,7 +23,6 @@ import java.time.temporal.ChronoUnit.DAYS
 
 class ImageRestControllerTest : AbstractApplicationTest() {
 
-
     @Autowired
     lateinit var s3Properties: S3Properties
 
@@ -38,7 +37,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .withEmptyBucket()
 
         // when / then
-        this.mockMvc.perform(get("/images/{id}?size={size}", "c2371741-2d29-4830-8ef1-c0d75ea9499f", "888"))
+        this.mockMvc.perform(get("/images/{id}?size={size}", "c2371741-2d29-4830-8ef1-c0d75ea9499f", "1080"))
             .andExpect(status().isNotFound)
     }
 
@@ -55,7 +54,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         val result = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.size))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
-            .andExpect(jsonPath("$.size").value(image.size))
+            .andExpect(jsonPath("$.size").value(image.size.toString()))
             .andExpect(jsonPath("$.expiration", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
@@ -76,7 +75,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.size").value("original"))
+            .andExpect(jsonPath("$.size").value("ORIGINAL"))
             .andExpect(jsonPath("$.expiration").exists())
             .andExpect(jsonPath("$.url").exists())
             .andReturn()
@@ -114,10 +113,43 @@ class ImageRestControllerTest : AbstractApplicationTest() {
 
         // then
         assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
-        assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/original")).isTrue
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/ORIGINAL")).isTrue
         assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/200")).isTrue
         assertThat(amazonS3.getObject(imagesBucket, "${image.id}/200").objectMetadata.contentType).isEqualTo("image/jpeg")
     }
+
+    @Test
+    @WithMockUser
+    fun `images GET - with default image size`() {
+        // given
+        val image = testDataGenerator
+            .withEmptyBucket()
+            .withImage()
+            .getImage()
+
+        // when / then
+        this.mockMvc.perform(get("/images/{id}", image.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(image.id.toString()))
+            .andExpect(jsonPath("$.size").value("ORIGINAL"))
+            .andExpect(jsonPath("$.expiration", notNullValue()))
+            .andExpect(jsonPath("$.url", notNullValue()))
+    }
+
+    @Test
+    @WithMockUser
+    fun `images GET - with invalid image size`() {
+        // given
+        val image = testDataGenerator
+            .withEmptyBucket()
+            .withImage()
+            .getImage()
+
+        // when / then
+        this.mockMvc.perform(get("/images/{id}?size={size}", image.id, "199"))
+            .andExpect(status().isBadRequest)
+    }
+
 
     private fun `in`(i: Long, unit: ChronoUnit) = now().plus(i, unit)
 
