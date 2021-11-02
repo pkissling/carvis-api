@@ -37,7 +37,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .withEmptyBucket()
 
         // when / then
-        this.mockMvc.perform(get("/images/{id}?size={size}", "c2371741-2d29-4830-8ef1-c0d75ea9499f", "1080"))
+        this.mockMvc.perform(get("/images/{id}?size={size}", "c2371741-2d29-4830-8ef1-c0d75ea9499f", "500"))
             .andExpect(status().isNotFound)
     }
 

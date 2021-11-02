@@ -15,8 +15,7 @@ cors:
 s3-buckets:
   bucket-names:
     images: carvis-dev-images
-dynamodb:
-  table-name-prefix: dev
+
 
 dynamodb:
   table-name-prefix: dev
