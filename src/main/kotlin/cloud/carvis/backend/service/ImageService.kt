@@ -41,6 +41,7 @@ class ImageService(
     }
 
     fun fetchImage(id: UUID, size: ImageSize): ImageDto {
+        renameOriginalImages()
         val exists = imageExists(id, size)
         if (exists) {
             val expiration = now().plus(7, ChronoUnit.DAYS)
@@ -140,5 +141,19 @@ class ImageService(
     } catch (e: Exception) {
         logger.error(e) { "Failed to resize image with id: $id" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "failed to resize image")
+    }
+
+    // TODO delete after migration
+    private fun renameOriginalImages() {
+        s3Client.listObjects(this.bucketName)
+            .objectSummaries
+            .filter { it.key.contains("original") }
+            .map { it.key.substringBefore("/") }
+            .onEach { logger.info { "Migrating original image of id: $it" } }
+            .forEach {
+                s3Client.copyObject(this.bucketName, "$it/original", this.bucketName, "$it/ORIGINAL")
+                s3Client.deleteObject(this.bucketName, "$it/original")
+                logger.info { "Finished migrating original image of id: $it" }
+            }
     }
 }
