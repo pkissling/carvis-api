@@ -2,9 +2,11 @@ package cloud.carvis.backend.model.dtos
 
 enum class ImageSize {
     ORIGINAL,
+    `48`,
     `100`,
     `200`,
-    `500`;
+    `500`,
+    `1080`;
 
     fun toInt(): Int =
         try {

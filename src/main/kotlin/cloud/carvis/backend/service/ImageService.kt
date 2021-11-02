@@ -53,11 +53,11 @@ class ImageService(
         if (originalExists) {
             logger.info { "Resizing image [$id] from ORIGINAL to [$size]" }
             val stopWatch = startTimer()
-            val (contentType, image) = getObject(id, ORIGINAL)
-            val (resizedImage, length) = resizeImage(id, contentType, image, size)
-            putObject(id, resizedImage, size, contentType, length)
+            val (contentType, image, originalLength) = getObject(id, ORIGINAL)
+            val (resizedImage, resizedLength) = resizeImage(id, contentType, image, size)
+            putObject(id, resizedImage, size, contentType, resizedLength)
             val took = finishTimer(stopWatch)
-            logger.info { "Finished resizing image [$id] from ORIGINAL to [$size]. Took: ${took}ms" }
+            logger.info { "Finished resizing image [$id] from ORIGINAL to [$size]. Took ${took}ms to resize with ${originalLength / 1024}KB to ${resizedLength / 1024}KB" }
             return this.fetchImage(id, size)
         }
 
@@ -123,10 +123,10 @@ class ImageService(
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error while generating presigned url", e)
     }
 
-    private fun getObject(id: UUID, size: ImageSize): Pair<MediaType, InputStream> = try {
+    private fun getObject(id: UUID, size: ImageSize): Triple<MediaType, InputStream, Long> = try {
         val obj = s3Client.getObject(this.bucketName, "$id/$size")
         val mediaType = MediaType.valueOf(obj.objectMetadata.contentType)
-        mediaType to obj.objectContent
+        Triple(mediaType, obj.objectContent, obj.objectMetadata.contentLength)
     } catch (e: Exception) {
         logger.error(e) { "Unable to fetch image: $id/$size" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "cannot fetch image from s3")
