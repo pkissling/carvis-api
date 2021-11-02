@@ -16,7 +16,6 @@ s3-buckets:
   bucket-names:
     images: carvis-dev-images
 
-
 dynamodb:
   table-name-prefix: dev
 

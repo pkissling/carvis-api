@@ -9,3 +9,7 @@ sentry:
 
 dynamodb:
   table-name-prefix: live
+
+s3-buckets:
+  bucket-names:
+    images: carvis-live-images
