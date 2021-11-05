@@ -28,6 +28,7 @@ import javax.imageio.ImageIO
 
 
 @Service
+// TODO cache?
 class ImageService(
     private val s3Client: AmazonS3,
     s3Properties: S3Properties
