@@ -34,7 +34,7 @@ class UserServiceTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername(VALID_USER_ID)
+            .setCreatedBy(VALID_USER_ID)
             .getCar()
             .value()
 
@@ -42,7 +42,7 @@ class UserServiceTest : AbstractApplicationTest() {
         this.mockMvc
             .perform(get("/cars/{id}", car.id))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.ownerUsername").value(VALID_USER_ID))
+            .andExpect(jsonPath("$.createdBy").value(VALID_USER_ID))
             .andExpect(jsonPath("$.ownerName").value(VALID_USER_NAME))
     }
 
@@ -53,7 +53,7 @@ class UserServiceTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername(VALID_USER_ID)
+            .setCreatedBy(VALID_USER_ID)
             .getCar()
             .value()
 

@@ -44,7 +44,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername(VALID_USER_ID)
+            .setCreatedBy(VALID_USER_ID)
             .getCar()
             .value()
 
@@ -64,6 +64,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].condition").value(car.condition))
             .andExpect(jsonPath("$.[0].countryOfOrigin").value(car.countryOfOrigin))
             .andExpect(jsonPath("$.[0].createdAt").value(car.createdAt.toString()))
+            .andExpect(jsonPath("$.[0].createdBy").value(VALID_USER_ID))
             .andExpect(jsonPath("$.[0].description").value(car.description))
             .andExpect(jsonPath("$.[0].horsePower").value(car.horsePower))
             .andExpect(jsonPath("$.[0].images").value(car.images.map { it.toString() }))
@@ -72,7 +73,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].modelSeries").value(car.modelSeries))
             .andExpect(jsonPath("$.[0].modelYear").value(car.modelYear))
             .andExpect(jsonPath("$.[0].ownerName").value(VALID_USER_NAME))
-            .andExpect(jsonPath("$.[0].ownerUsername").value(VALID_USER_ID))
             .andExpect(jsonPath("$.[0].price").value(car.price))
             .andExpect(jsonPath("$.[0].shortDescription").value(car.shortDescription))
             .andExpect(jsonPath("$.[0].transmission").value(car.transmission))
@@ -133,7 +133,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         assertThat(carRepository.count()).isEqualTo(1)
         assertThat(returnedCar.id).isNotNull
         assertThat(returnedCar.ownerName).isEqualTo(VALID_USER_NAME)
-        assertThat(returnedCar.ownerUsername).isEqualTo(VALID_USER_ID)
+        assertThat(returnedCar.createdBy).isEqualTo(VALID_USER_ID)
         assertThat(returnedCar.createdAt).isBetween(start, now())
         assertThat(returnedCar.updatedAt).isEqualTo(returnedCar.createdAt)
     }
@@ -169,7 +169,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val existingCar = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername(VALID_USER_ID)
+            .setCreatedBy(VALID_USER_ID)
             .getCar()
             .value()
         val carId = existingCar.id.toString()
@@ -195,6 +195,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.condition").value(updatedCar.value().condition))
             .andExpect(jsonPath("$.countryOfOrigin").value(updatedCar.value().countryOfOrigin))
             .andExpect(jsonPath("$.createdAt").value(existingCar.createdAt.toString()))
+            .andExpect(jsonPath("$.createdBy").value(VALID_USER_ID))
             .andExpect(jsonPath("$.description").value(updatedCar.value().description))
             .andExpect(jsonPath("$.horsePower").value(updatedCar.value().horsePower))
             .andExpect(jsonPath("$.images").value(updatedCar.value().images.map { it.toString() }))
@@ -203,7 +204,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.modelSeries").value(updatedCar.value().modelSeries))
             .andExpect(jsonPath("$.modelYear").value(updatedCar.value().modelYear))
             .andExpect(jsonPath("$.ownerName").value(VALID_USER_NAME))
-            .andExpect(jsonPath("$.ownerUsername").value(VALID_USER_ID))
             .andExpect(jsonPath("$.price").value(updatedCar.value().price))
             .andExpect(jsonPath("$.transmission").value(updatedCar.value().transmission))
             .andExpect(jsonPath("$.type").value(updatedCar.value().type))
@@ -222,7 +222,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername("bar")
+            .setCreatedBy("bar")
             .getCar()
             .value()
 
@@ -244,10 +244,10 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername("bar")
+            .setCreatedBy("bar")
             .getCar()
             .value()
-        assertThat(car.ownerUsername).isEqualTo("bar")
+        assertThat(car.createdBy).isEqualTo("bar")
 
         // when / then
         this.mockMvc
@@ -257,13 +257,13 @@ class CarRestControllerTest : AbstractApplicationTest() {
                     .contentType(APPLICATION_JSON)
             )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.ownerUsername").value("bar"))
+            .andExpect(jsonPath("$.createdBy").value("bar"))
 
         // then
         val updatedCar = carRepository.findByIdOrNull(car.id!!)!!
-        assertThat(updatedCar.ownerUsername).isEqualTo("bar")
+        assertThat(updatedCar.createdBy).isEqualTo("bar")
         assertThat(updatedCar.createdAt).isEqualTo(car.createdAt)
-        assertThat(updatedCar.lastModifiedBy).isEqualTo("foo")
+        assertThat(updatedCar.updatedBy).isEqualTo("foo")
         assertThat(updatedCar.updatedAt).isBetween(start, now())
     }
 
@@ -291,7 +291,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername(VALID_USER_ID)
+            .setCreatedBy(VALID_USER_ID)
             .getCar()
             .value()
         assertThat(carRepository.count()).isEqualTo(1)
@@ -324,7 +324,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername("foo")
+            .setCreatedBy("foo")
             .getCar()
             .value()
         assertThat(carRepository.count()).isEqualTo(1)

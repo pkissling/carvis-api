@@ -45,9 +45,9 @@ class TestDataGenerator(
         return this
     }
 
-    fun setOwnerUsername(ownerUsername: String): TestDataGenerator {
+    fun setCreatedBy(createdBy: String): TestDataGenerator {
         val car = this.getCar().value()
-        car.ownerUsername = ownerUsername
+        car.createdBy = createdBy
         this.last = carRepository.save(car)
         return this
     }

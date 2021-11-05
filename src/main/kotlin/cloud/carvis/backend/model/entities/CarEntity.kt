@@ -17,6 +17,24 @@ data class CarEntity(
     override var id: UUID? = null,
 
     @DynamoDBAttribute
+    @DynamoDBTypeConverted(converter = DynamoDbInstantConverter::class)
+    @CreatedDate
+    override var createdAt: Instant? = null,
+
+    @DynamoDBAttribute
+    @CreatedBy
+    override var createdBy: String? = null,
+
+    @DynamoDBAttribute
+    @DynamoDBTypeConverted(converter = DynamoDbInstantConverter::class)
+    @LastModifiedDate
+    override var updatedAt: Instant? = null,
+
+    @DynamoDBAttribute
+    @LastModifiedBy
+    override var updatedBy: String? = null,
+
+    @DynamoDBAttribute
     var brand: String? = null,
 
     @DynamoDBAttribute
@@ -80,23 +98,6 @@ data class CarEntity(
     var type: String? = null,
 
     @DynamoDBAttribute
-    var vin: String? = null,
+    var vin: String? = null
 
-    @DynamoDBAttribute
-    @DynamoDBTypeConverted(converter = DynamoDbInstantConverter::class)
-    @CreatedDate
-    override var createdAt: Instant? = null,
-
-    @DynamoDBAttribute
-    @CreatedBy
-    override var ownerUsername: String? = null,
-
-    @DynamoDBAttribute
-    @DynamoDBTypeConverted(converter = DynamoDbInstantConverter::class)
-    @LastModifiedDate
-    override var updatedAt: Instant? = null,
-
-    @DynamoDBAttribute
-    @LastModifiedBy
-    override var lastModifiedBy: String? = null
 ) : Entity()

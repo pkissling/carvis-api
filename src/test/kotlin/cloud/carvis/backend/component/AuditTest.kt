@@ -20,16 +20,16 @@ class AuditTest : AbstractApplicationTest() {
         val start = Instant.now()
         val carEntity = CarEntity()
         assertThat(carEntity.createdAt).isNull()
-        assertThat(carEntity.ownerUsername).isNull()
+        assertThat(carEntity.createdBy).isNull()
 
         // when
         val savedCar = carRepository.save(carEntity)
 
         // then
         assertThat(savedCar.createdAt).isBetween(start, Instant.now())
-        assertThat(savedCar.ownerUsername).isNull()
+        assertThat(savedCar.createdBy).isNull()
         assertThat(savedCar.updatedAt).isEqualTo(savedCar.createdAt)
-        assertThat(savedCar.lastModifiedBy).isNull()
+        assertThat(savedCar.updatedBy).isNull()
     }
 
     @Test
@@ -47,7 +47,7 @@ class AuditTest : AbstractApplicationTest() {
         // then
         assertThat(updatedCar.createdAt).isEqualTo(car.createdAt)
         assertThat(updatedCar.updatedAt).isAfter(car.createdAt)
-        assertThat(updatedCar.lastModifiedBy).isNull()
+        assertThat(updatedCar.updatedBy).isNull()
         assertThat(updatedCar.createdAt).isNotEqualTo(car.updatedAt)
     }
 

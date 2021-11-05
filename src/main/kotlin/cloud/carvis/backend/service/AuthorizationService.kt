@@ -15,7 +15,7 @@ class AuthorizationService(private val carRepository: CarRepository) {
 
     fun isCarOwner(id: UUID): Boolean {
         val car = carRepository.findByIdOrNull(id) ?: return false
-        return car.ownerUsername == username()
+        return car.createdBy == username()
     }
 
     fun isAdmin() =

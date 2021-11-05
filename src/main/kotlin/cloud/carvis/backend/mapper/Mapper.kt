@@ -12,8 +12,8 @@ interface Mapper<D, E : Entity> {
         return this.toEntity(dto)
             .apply {
                 this.id = entity.id
-                this.ownerUsername = entity.ownerUsername
                 this.createdAt = entity.createdAt
+                this.createdBy = entity.createdBy
             }
     }
 }

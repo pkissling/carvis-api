@@ -39,6 +39,8 @@ data class CarDto(
 
     var createdAt: Instant? = null,
 
+    var createdBy: String? = null,
+
     var description: String? = null,
 
     @field:Positive
@@ -60,8 +62,6 @@ data class CarDto(
 
     var ownerName: String? = null,
 
-    var ownerUsername: String? = null,
-
     var price: BigDecimal? = null,
 
     @field:NotEmpty
@@ -75,6 +75,7 @@ data class CarDto(
 
     var updatedAt: Instant? = null,
 
+    var updatedBy: Instant? = null,
+
     var vin: String? = null
-// TODO modified by?
 )
