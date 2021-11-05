@@ -1,4 +1,4 @@
-package cloud.carvis.backend.integration
+package cloud.carvis.backend.component
 
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.entities.CarEntity

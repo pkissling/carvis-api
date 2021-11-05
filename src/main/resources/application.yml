@@ -1,6 +1,9 @@
 auth:
   audience: ukQnXHJoRrZwGf85Uh4Jpk8V932GsfKt
   custom-role-claim-key: https://carvis.cloud/roles
+  domain: https://carvis.eu.auth0.com/
+  client-id: ${AUTH_CLIENT_ID}
+  client-secret: ${AUTH_CLIENT_SECRET}
 
 cors:
   allowed-origins:
@@ -24,7 +27,12 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://carvis.eu.auth0.com/
+          issuer-uri: ${auth.domain}
+  cache:
+    cache-names: userDetails
+  caffeine:
+    spec: maximumSize=500,expireAfterAccess=600s
+
 
 logging:
   pattern:

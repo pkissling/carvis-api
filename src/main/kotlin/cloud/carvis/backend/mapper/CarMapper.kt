@@ -2,10 +2,11 @@ package cloud.carvis.backend.mapper
 
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.model.entities.CarEntity
+import cloud.carvis.backend.service.UserService
 import org.springframework.stereotype.Service
 
 @Service
-class CarMapper : Mapper<CarDto, CarEntity> {
+class CarMapper(private val auth0RestClient: UserService) : Mapper<CarDto, CarEntity> {
 
     override fun toDto(entity: CarEntity): CarDto =
         CarDto(
@@ -28,8 +29,8 @@ class CarMapper : Mapper<CarDto, CarEntity> {
             modelDetails = entity.modelDetails,
             modelSeries = entity.modelSeries,
             modelYear = entity.modelYear,
-            ownerName = entity.ownerName,
-            ownerUsername = entity.ownerUsername, // TODO get dynamically based on username?
+            ownerName = entity.ownerUsername?.let { auth0RestClient.fetchUsername(it) },
+            ownerUsername = entity.ownerUsername,
             price = entity.price,
             shortDescription = entity.shortDescription,
             transmission = entity.transmission,
@@ -57,7 +58,6 @@ class CarMapper : Mapper<CarDto, CarEntity> {
             modelDetails = dto.modelDetails,
             modelSeries = dto.modelSeries,
             modelYear = dto.modelYear,
-            ownerName = dto.ownerName,
             price = dto.price,
             shortDescription = dto.shortDescription,
             transmission = dto.transmission,

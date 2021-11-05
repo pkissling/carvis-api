@@ -68,9 +68,6 @@ data class CarEntity(
     var modelYear: String? = null,
 
     @DynamoDBAttribute
-    var ownerName: String? = null, // TODO delete & fetch dynamically
-
-    @DynamoDBAttribute
     var price: BigDecimal? = null,
 
     @DynamoDBAttribute

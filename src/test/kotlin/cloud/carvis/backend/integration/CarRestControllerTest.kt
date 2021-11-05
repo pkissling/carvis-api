@@ -3,6 +3,8 @@ package cloud.carvis.backend.integration
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.dtos.CarDto
 import cloud.carvis.backend.util.AbstractApplicationTest
+import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_ID
+import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.backend.util.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
@@ -36,12 +38,13 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - one cars`() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
+            .setOwnerUsername(VALID_USER_ID)
             .getCar()
             .value()
 
@@ -68,8 +71,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.[0].modelDetails").value(car.modelDetails))
             .andExpect(jsonPath("$.[0].modelSeries").value(car.modelSeries))
             .andExpect(jsonPath("$.[0].modelYear").value(car.modelYear))
-            .andExpect(jsonPath("$.[0].ownerName").value(car.ownerName))
-            .andExpect(jsonPath("$.[0].ownerUsername").value(car.ownerUsername))
+            .andExpect(jsonPath("$.[0].ownerName").value(VALID_USER_NAME))
+            .andExpect(jsonPath("$.[0].ownerUsername").value(VALID_USER_ID))
             .andExpect(jsonPath("$.[0].price").value(car.price))
             .andExpect(jsonPath("$.[0].shortDescription").value(car.shortDescription))
             .andExpect(jsonPath("$.[0].transmission").value(car.transmission))
@@ -106,7 +109,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser(username = "foo")
+    @WithMockUser(username = VALID_USER_ID)
     fun `cars POST - create car success`() {
         // given
         testDataGenerator.withEmptyDb()
@@ -129,7 +132,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // then
         assertThat(carRepository.count()).isEqualTo(1)
         assertThat(returnedCar.id).isNotNull
-        assertThat(returnedCar.ownerUsername).isEqualTo("foo")
+        assertThat(returnedCar.ownerName).isEqualTo(VALID_USER_NAME)
+        assertThat(returnedCar.ownerUsername).isEqualTo(VALID_USER_ID)
         assertThat(returnedCar.createdAt).isBetween(start, now())
         assertThat(returnedCar.updatedAt).isEqualTo(returnedCar.createdAt)
     }
@@ -158,14 +162,14 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser(username = "foo")
+    @WithMockUser(username = VALID_USER_ID)
     fun `cars PUT - update existing car`() {
         // given
         val start = now()
         val existingCar = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername("foo")
+            .setOwnerUsername(VALID_USER_ID)
             .getCar()
             .value()
         val carId = existingCar.id.toString()
@@ -198,8 +202,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.modelDetails").value(updatedCar.value().modelDetails))
             .andExpect(jsonPath("$.modelSeries").value(updatedCar.value().modelSeries))
             .andExpect(jsonPath("$.modelYear").value(updatedCar.value().modelYear))
-            .andExpect(jsonPath("$.ownerName").value(updatedCar.value().ownerName))
-            .andExpect(jsonPath("$.ownerUsername").value(existingCar.ownerUsername))
+            .andExpect(jsonPath("$.ownerName").value(VALID_USER_NAME))
+            .andExpect(jsonPath("$.ownerUsername").value(VALID_USER_ID))
             .andExpect(jsonPath("$.price").value(updatedCar.value().price))
             .andExpect(jsonPath("$.transmission").value(updatedCar.value().transmission))
             .andExpect(jsonPath("$.type").value(updatedCar.value().type))
@@ -212,7 +216,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser(username = "foo")
+    @WithMockUser(username = VALID_USER_ID)
     fun `cars PUT - update other users car forbidden`() {
         // given
         val car = testDataGenerator
@@ -234,7 +238,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = "foo", roles = ["ADMIN"])
-    fun `cars PUT - admin updates others users car`() {
+    fun `cars PUT - admin updates other users car`() {
         // given
         val start = now()
         val car = testDataGenerator
@@ -281,13 +285,13 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser(username = "foo")
+    @WithMockUser(username = VALID_USER_ID)
     fun `cars DELETE - delete car success`() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
             .withCar()
-            .setOwnerUsername("foo")
+            .setOwnerUsername(VALID_USER_ID)
             .getCar()
             .value()
         assertThat(carRepository.count()).isEqualTo(1)
