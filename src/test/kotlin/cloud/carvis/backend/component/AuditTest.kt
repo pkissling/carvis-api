@@ -1,8 +1,8 @@
 package cloud.carvis.backend.component
 
+import cloud.carvis.backend.AbstractApplicationTest
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.entities.CarEntity
-import cloud.carvis.backend.util.AbstractApplicationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

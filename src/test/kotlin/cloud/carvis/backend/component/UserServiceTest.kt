@@ -1,8 +1,8 @@
 package cloud.carvis.backend.component
 
-import cloud.carvis.backend.util.AbstractApplicationTest
-import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_ID
-import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_NAME
+import cloud.carvis.backend.AbstractApplicationTest
+import cloud.carvis.backend.AbstractApplicationTest.Users.VALID_USER_ID
+import cloud.carvis.backend.AbstractApplicationTest.Users.VALID_USER_NAME
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.times

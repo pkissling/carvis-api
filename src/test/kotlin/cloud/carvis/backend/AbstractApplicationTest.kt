@@ -1,8 +1,13 @@
-package cloud.carvis.backend.util
+package cloud.carvis.backend
 
+import cloud.carvis.backend.AbstractApplicationTest.Users.VALID_USER_ID
+import cloud.carvis.backend.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.backend.restclients.Auth0RestClient
-import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_ID
-import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_NAME
+import cloud.carvis.backend.testconfig.AmazonDynamoDbTestConfig
+import cloud.carvis.backend.testconfig.AmazonS3TestConfig
+import cloud.carvis.backend.testconfig.Auth0TestConfig
+import cloud.carvis.backend.testconfig.JwtDecoderTestConfig
+import cloud.carvis.backend.testdata.TestDataGenerator
 import com.auth0.json.mgmt.users.User
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -25,13 +30,13 @@ import org.springframework.test.web.servlet.MockMvc
     properties = [
         "spring.data.dynamodb.entity2ddl.auto=create-only",
         "spring.main.allow-bean-definition-overriding=true",
-        "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448"
+        "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/invalidprojectid"
     ],
     classes = [
-        AmazonS3TestConfig::class,
+        Auth0TestConfig::class,
         AmazonDynamoDbTestConfig::class,
-        JwtDecoderTestConfig::class,
-        Auth0TestConfig::class
+        AmazonS3TestConfig::class,
+        JwtDecoderTestConfig::class
     ]
 )
 @AutoConfigureMockMvc

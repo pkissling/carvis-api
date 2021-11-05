@@ -1,11 +1,11 @@
 package cloud.carvis.backend.integration
 
+import cloud.carvis.backend.AbstractApplicationTest
+import cloud.carvis.backend.AbstractApplicationTest.Users.VALID_USER_ID
+import cloud.carvis.backend.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.dtos.CarDto
-import cloud.carvis.backend.util.AbstractApplicationTest
-import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_ID
-import cloud.carvis.backend.util.AbstractApplicationTest.Users.VALID_USER_NAME
-import cloud.carvis.backend.util.TestData
+import cloud.carvis.backend.testdata.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.jupiter.api.Test

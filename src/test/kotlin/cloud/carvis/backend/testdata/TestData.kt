@@ -1,4 +1,4 @@
-package cloud.carvis.backend.util
+package cloud.carvis.backend.testdata
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlin.reflect.KMutableProperty

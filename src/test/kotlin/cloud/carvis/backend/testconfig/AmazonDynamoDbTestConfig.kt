@@ -1,4 +1,4 @@
-package cloud.carvis.backend.util
+package cloud.carvis.backend.testconfig
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials

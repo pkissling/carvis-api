@@ -1,8 +1,8 @@
 package cloud.carvis.backend.integration
 
+import cloud.carvis.backend.AbstractApplicationTest
 import cloud.carvis.backend.model.dtos.ImageDto
 import cloud.carvis.backend.properties.S3Properties
-import cloud.carvis.backend.util.AbstractApplicationTest
 import com.amazonaws.services.s3.AmazonS3
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.assertj.core.api.Assertions.assertThat

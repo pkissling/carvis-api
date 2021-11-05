@@ -1,4 +1,4 @@
-package cloud.carvis.backend.util
+package cloud.carvis.backend.testconfig
 
 import com.auth0.client.HttpOptions
 import com.auth0.client.mgmt.ManagementAPI

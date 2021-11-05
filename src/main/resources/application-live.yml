@@ -4,7 +4,6 @@ cors:
 
 sentry:
   environment: live
-  traces-sample-rate: 0.2
   sample-rate: 1.0
 
 dynamodb:

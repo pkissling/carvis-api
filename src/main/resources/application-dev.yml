@@ -5,6 +5,4 @@ cors:
 
 sentry:
   environment: dev
-  traces-sample-rate: 1.0
   sample-rate: 1.0
-

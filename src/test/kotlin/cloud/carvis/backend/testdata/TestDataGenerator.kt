@@ -1,4 +1,4 @@
-package cloud.carvis.backend.util
+package cloud.carvis.backend.testdata
 
 import cloud.carvis.backend.dao.repositories.CarRepository
 import cloud.carvis.backend.model.dtos.CarDto

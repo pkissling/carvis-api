@@ -1,4 +1,4 @@
-package cloud.carvis.backend.util
+package cloud.carvis.backend.testconfig
 
 import cloud.carvis.backend.properties.S3Properties
 import com.amazonaws.services.s3.AmazonS3

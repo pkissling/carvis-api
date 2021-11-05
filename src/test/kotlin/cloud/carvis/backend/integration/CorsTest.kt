@@ -1,6 +1,6 @@
 package cloud.carvis.backend.integration
 
-import cloud.carvis.backend.util.AbstractApplicationTest
+import cloud.carvis.backend.AbstractApplicationTest
 import org.junit.jupiter.api.Test
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
