@@ -62,7 +62,7 @@ abstract class AbstractApplicationTest {
 
     private fun mockAuth0() {
         val user = User().apply {
-            username = VALID_USER_NAME
+            name = VALID_USER_NAME
         }
         doReturn(user).whenever(auth0RestClient).fetchUserDetails(VALID_USER_ID)
     }

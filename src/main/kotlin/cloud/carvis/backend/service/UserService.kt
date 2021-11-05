@@ -10,12 +10,13 @@ class UserService(private val auth0RestClient: Auth0RestClient) {
 
     private val logger = KotlinLogging.logger {}
 
-    @Cacheable("userDetails", sync = true)
-    fun fetchUsername(userId: String): String? = try {
+    @Cacheable("userNames", sync = true)
+    fun fetchName(userId: String): String? = try {
         auth0RestClient.fetchUserDetails(userId)
-            ?.username
+            ?.name
+            .also { logger.debug { "Resolved name [$it] for userId: $userId" } }
     } catch (e: Error) {
-        logger.warn(e) { "Unable to fetch username for userId: $userId" }
+        logger.warn(e) { "Unable to fetch name for userId: $userId" }
         null
     }
 }

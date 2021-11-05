@@ -29,7 +29,7 @@ class CarMapper(private val auth0RestClient: UserService) : Mapper<CarDto, CarEn
             modelDetails = entity.modelDetails,
             modelSeries = entity.modelSeries,
             modelYear = entity.modelYear,
-            ownerName = entity.ownerUsername?.let { auth0RestClient.fetchUsername(it) },
+            ownerName = entity.ownerUsername?.let { auth0RestClient.fetchName(it) },
             ownerUsername = entity.ownerUsername,
             price = entity.price,
             shortDescription = entity.shortDescription,
