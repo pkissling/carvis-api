@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
 import mu.KotlinLogging
 import org.imgscalr.Scalr
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.MediaType
@@ -28,7 +29,6 @@ import javax.imageio.ImageIO
 
 
 @Service
-// TODO cache?
 class ImageService(
     private val s3Client: AmazonS3,
     s3Properties: S3Properties
@@ -41,6 +41,7 @@ class ImageService(
         assert(s3Properties.bucketNames["images"] != null)
     }
 
+    @Cacheable("imageUrls", sync = true)
     fun fetchImage(id: UUID, size: ImageSize): ImageDto {
         val exists = imageExists(id, size)
         if (exists) {

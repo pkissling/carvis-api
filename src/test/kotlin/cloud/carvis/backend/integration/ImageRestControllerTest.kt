@@ -150,6 +150,33 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isBadRequest)
     }
 
+    @Test
+    @WithMockUser
+    fun `images GET - cache image url`() {
+        // given
+        val image = testDataGenerator
+            .withEmptyBucket()
+            .withImage()
+            .getImage()
+
+        // when
+        val result0 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.size))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(image.id.toString()))
+            .andExpect(jsonPath("$.url", notNullValue()))
+            .andReturn()
+        val result1 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.size))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(image.id.toString()))
+            .andExpect(jsonPath("$.url", notNullValue()))
+            .andReturn()
+
+        // then
+        val imageDto0: ImageDto = toObject(result0)
+        val imageDto1: ImageDto = toObject(result1)
+        assertThat(imageDto0.url).isEqualTo(imageDto1.url)
+        assertThat(imageDto0.expiration).isEqualTo(imageDto1.expiration)
+    }
 
     private fun `in`(i: Long, unit: ChronoUnit) = now().plus(i, unit)
 
