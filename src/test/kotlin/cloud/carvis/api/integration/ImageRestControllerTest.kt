@@ -4,14 +4,12 @@ import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.model.dtos.ImageDto
 import cloud.carvis.api.properties.S3Properties
 import com.amazonaws.services.s3.AmazonS3
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -179,8 +177,5 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     }
 
     private fun `in`(i: Long, unit: ChronoUnit) = now().plus(i, unit)
-
-    private inline fun <reified T> toObject(result: MvcResult): T =
-        objectMapper.readValue(result.response.contentAsByteArray)
 
 }

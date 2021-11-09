@@ -1,14 +1,16 @@
 package cloud.carvis.api.config
 
-import cloud.carvis.api.dao.repositories.CarRepository
+import cloud.carvis.api.dao.repositories.DynamodbBasePackageMarker
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
+import com.amazonaws.services.dynamodbv2.datamodeling.ConversionSchemas.V2_COMPATIBLE
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride
 import org.socialsignin.spring.data.dynamodb.config.EnableDynamoDBAuditing
 import org.socialsignin.spring.data.dynamodb.repository.config.EnableDynamoDBRepositories
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -19,13 +21,13 @@ import java.util.*
 
 @Configuration
 @EnableDynamoDBAuditing
-@EnableDynamoDBRepositories(basePackageClasses = [CarRepository::class])
+@EnableDynamoDBRepositories(basePackageClasses = [DynamodbBasePackageMarker::class])
 class AmazonDynamoDBConfig {
 
     @Bean
-    fun amazonDynamoDB(): AmazonDynamoDB =
+    fun amazonDynamoDB(@Value("\${aws.region}") region: String): AmazonDynamoDB =
         AmazonDynamoDBClientBuilder.standard()
-            .withRegion("eu-west-1")
+            .withRegion(region)
             .build()
 
     @Bean
@@ -44,8 +46,19 @@ class AmazonDynamoDBConfig {
     @Bean
     @ConditionalOnBean(TableNameOverride::class)
     fun dynamoDBMapperConfig(tableNameOverride: TableNameOverride): DynamoDBMapperConfig =
-        DynamoDBMapperConfig.builder()
+        defaultDynamoDbConfig()
             .withTableNameOverride(tableNameOverride)
             .build()
+
+    @Bean
+    @ConditionalOnMissingBean(TableNameOverride::class)
+    fun defaultDynamoDBMapperConfig(): DynamoDBMapperConfig =
+        defaultDynamoDbConfig()
+            .build()
+
+    private fun defaultDynamoDbConfig() =
+        DynamoDBMapperConfig
+            .builder()
+            .withConversionSchema(V2_COMPATIBLE)
 
 }

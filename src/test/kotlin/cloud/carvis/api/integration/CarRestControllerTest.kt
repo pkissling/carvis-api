@@ -126,7 +126,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             )
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", APPLICATION_JSON.toString()))
-            .andReturn().response
+            .andReturn()
         val returnedCar = toObject<CarDto>(response)
 
         // then
@@ -208,7 +208,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.transmission").value(updatedCar.value().transmission))
             .andExpect(jsonPath("$.type").value(updatedCar.value().type))
             .andExpect(jsonPath("$.vin").value(updatedCar.value().vin))
-            .andReturn().response
+            .andReturn()
         val returnedCar = toObject<CarDto>(response)
 
         // then

@@ -5,6 +5,8 @@ import cloud.carvis.api.model.dtos.CarDto
 import cloud.carvis.api.model.dtos.ImageSize
 import cloud.carvis.api.model.entities.CarEntity
 import cloud.carvis.api.properties.S3Properties
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest
 import com.amazonaws.services.s3.AmazonS3
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
@@ -18,6 +20,7 @@ import kotlin.math.absoluteValue
 class TestDataGenerator(
     private val carRepository: CarRepository,
     private val amazonS3: AmazonS3,
+    private val amazonDynamoDB: AmazonDynamoDB,
     val objectMapper: ObjectMapper,
     s3Properties: S3Properties
 ) {
@@ -26,7 +29,19 @@ class TestDataGenerator(
     val imagesBucket = s3Properties.bucketNames["images"]
 
     fun withEmptyDb(): TestDataGenerator {
-        carRepository.deleteAll()
+        amazonDynamoDB.listTables()
+            .tableNames
+            .flatMap {
+                amazonDynamoDB.scan(it, emptyMap())
+                    .items
+                    .map { item -> it to item["id"]!! }
+            }
+            .map {
+                DeleteItemRequest()
+                    .withTableName(it.first)
+                    .withKey(mapOf("id" to it.second))
+            }
+            .forEach { amazonDynamoDB.deleteItem(it) }
         return this
     }
 

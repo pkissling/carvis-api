@@ -21,8 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.MvcResult
 
 
 @SpringBootTest(
@@ -72,8 +72,8 @@ abstract class AbstractApplicationTest {
         doReturn(user).whenever(auth0RestClient).fetchUserDetails(VALID_USER_ID)
     }
 
-    protected final inline fun <reified T : Any> toObject(r: MockHttpServletResponse): T {
-        return objectMapper.readValue<T>(r.contentAsByteArray)
+    protected final inline fun <reified T : Any> toObject(result: MvcResult): T {
+        return objectMapper.readValue<T>(result.response.contentAsByteArray)
     }
 
     object Users {
