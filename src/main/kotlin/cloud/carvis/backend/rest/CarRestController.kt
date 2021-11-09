@@ -45,7 +45,6 @@ class CarRestController(
             .also { logger.info { "end updateCar(id,$id,car=$car), return=${it}" } }
     }
 
-
     @ResponseStatus(NO_CONTENT)
     @DeleteMapping("/{id}")
     fun deleteCar(@PathVariable id: UUID) {
