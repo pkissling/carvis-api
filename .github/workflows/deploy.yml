@@ -52,7 +52,7 @@ jobs:
           environment_name: carvis-${{ github.event.inputs.environment }}
           version_label: ${{ needs.prepare.outputs.branch_w_sha }}
           region: eu-west-1
-          deployment_package: deploy/backend-${{ needs.prepare.outputs.branch_w_sha }}.jar
+          deployment_package: deploy/carvis-api-${{ needs.prepare.outputs.branch_w_sha }}.jar
           use_existing_version_if_available: true
           wait_for_environment_recovery: 300
 
