@@ -43,8 +43,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy(VALID_USER_ID)
+            .withCar(VALID_USER_ID)
             .getCar()
             .value()
 
@@ -168,8 +167,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val start = now()
         val existingCar = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy(VALID_USER_ID)
+            .withCar(VALID_USER_ID)
             .getCar()
             .value()
         val carId = existingCar.id.toString()
@@ -221,8 +219,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy("bar")
+            .withCar("bar")
             .getCar()
             .value()
 
@@ -243,8 +240,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val start = now()
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy("bar")
+            .withCar("bar")
             .getCar()
             .value()
         assertThat(car.createdBy).isEqualTo("bar")
@@ -290,8 +286,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy(VALID_USER_ID)
+            .withCar(VALID_USER_ID)
             .getCar()
             .value()
         assertThat(carRepository.count()).isEqualTo(1)
@@ -323,8 +318,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy("foo")
+            .withCar("foo")
             .getCar()
             .value()
         assertThat(carRepository.count()).isEqualTo(1)

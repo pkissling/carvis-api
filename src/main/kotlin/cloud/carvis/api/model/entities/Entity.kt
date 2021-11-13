@@ -3,7 +3,7 @@ package cloud.carvis.api.model.entities
 import java.time.Instant
 import java.util.*
 
-abstract class Entity {
+sealed class Entity {
     abstract var id: UUID?
     abstract var createdAt: Instant?
     abstract var createdBy: String?

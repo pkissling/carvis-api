@@ -21,4 +21,40 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
     }
+
+    @Test
+    @WithMockUser
+    fun `requests GET - with requests`() {
+        // given
+        testDataGenerator
+            .withEmptyDb()
+            .withRequest()
+            .withRequest()
+
+        // when / then
+        this.mockMvc.perform(get("/requests"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(2))
+    }
+
+    @Test
+    @WithMockUser
+    fun `request GET - success`() {
+        // given
+        val request = testDataGenerator
+            .withEmptyDb()
+            .withRequest()
+            .getRequest().value()
+
+        // when / then
+        this.mockMvc.perform(get("/requests/{id}", request.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("id").value(request.id.toString()))
+            .andExpect(jsonPath("createdAt").value(request.createdAt.toString()))
+            .andExpect(jsonPath("createdBy").value(request.createdBy))
+            .andExpect(jsonPath("updatedAt").value(request.updatedAt.toString()))
+            .andExpect(jsonPath("updatedBy").value(request.updatedBy))
+    }
+
+
 }

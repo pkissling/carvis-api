@@ -33,8 +33,7 @@ class UserServiceTest : AbstractApplicationTest() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy(VALID_USER_ID)
+            .withCar(VALID_USER_ID)
             .getCar()
             .value()
 
@@ -52,8 +51,7 @@ class UserServiceTest : AbstractApplicationTest() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
-            .withCar()
-            .setCreatedBy(VALID_USER_ID)
+            .withCar(VALID_USER_ID)
             .getCar()
             .value()
 

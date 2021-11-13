@@ -1,9 +1,12 @@
 package cloud.carvis.api.testdata
 
 import cloud.carvis.api.dao.repositories.CarRepository
+import cloud.carvis.api.dao.repositories.RequestRepository
 import cloud.carvis.api.model.dtos.CarDto
 import cloud.carvis.api.model.dtos.ImageSize
 import cloud.carvis.api.model.entities.CarEntity
+import cloud.carvis.api.model.entities.Entity
+import cloud.carvis.api.model.entities.RequestEntity
 import cloud.carvis.api.properties.S3Properties
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest
@@ -21,6 +24,7 @@ class TestDataGenerator(
     private val carRepository: CarRepository,
     private val amazonS3: AmazonS3,
     private val amazonDynamoDB: AmazonDynamoDB,
+    private val requestRepository: RequestRepository,
     val objectMapper: ObjectMapper,
     s3Properties: S3Properties
 ) {
@@ -51,20 +55,21 @@ class TestDataGenerator(
         return this
     }
 
-    fun withCar(): TestDataGenerator {
+    fun withCar(createdBy: String? = null): TestDataGenerator {
         val car = random<CarEntity>()
-
-        carRepository.save(car.value()).let {
-            this.last = it
+        if (createdBy != null) {
+            car.value().createdBy = createdBy
         }
+        save(car.value())
         return this
     }
 
-    fun setCreatedBy(createdBy: String): TestDataGenerator {
-        val car = this.getCar().value()
-        car.createdBy = createdBy
-        this.last = carRepository.save(car)
-        return this
+    private fun <T : Entity> save(entity: T) {
+        when (entity) {
+            is CarEntity -> carRepository.save(entity)
+            is RequestEntity -> requestRepository.save(entity)
+            else -> throw RuntimeException("unable to save entity")
+        }.also { this.last = it }
     }
 
     fun getCar(): TestData<CarEntity> {
@@ -117,6 +122,19 @@ class TestDataGenerator(
             throw RuntimeException("last is not of correct type")
         }
         return last as T
+    }
+
+    fun withRequest(createdBy: String? = null): TestDataGenerator {
+        val request = random<RequestEntity>()
+        if (createdBy != null) {
+            request.value().createdBy = createdBy
+        }
+        save(request.value())
+        return this
+    }
+
+    fun getRequest(): TestData<RequestEntity> {
+        return TestData(objectMapper, this.getLast())
     }
 
     data class Image(
