@@ -10,9 +10,9 @@ import java.util.*
 @Service("authorization")
 class AuthorizationService(private val carRepository: CarRepository) {
 
-    @Cacheable("authorization", key = "#id + '_' + @authorization.username")
-    fun canAccessCar(id: UUID): Boolean =
-        isAdmin() || isCarOwner(id)
+    @Cacheable("authorization", key = "#carId + '_' + @authorization.username")
+    fun canAccessCar(carId: UUID): Boolean =
+        isAdmin() || isCarOwner(carId)
 
     fun isCarOwner(id: UUID): Boolean {
         val car = carRepository.findByIdOrNull(id) ?: return false

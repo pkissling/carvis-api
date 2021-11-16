@@ -39,12 +39,12 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "foo")
     fun `request GET - success`() {
         // given
         val request = testDataGenerator
             .withEmptyDb()
-            .withRequest()
+            .withRequest("foo")
             .getRequest().value()
 
         // when / then
@@ -53,6 +53,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("id").value(request.id.toString()))
             .andExpect(jsonPath("createdAt").value(request.createdAt.toString()))
             .andExpect(jsonPath("createdBy").value(request.createdBy))
+            .andExpect(jsonPath("hasHiddenFields").value(false))
             .andExpect(jsonPath("updatedAt").value(request.updatedAt.toString()))
             .andExpect(jsonPath("updatedBy").value(request.updatedBy))
     }
@@ -68,5 +69,57 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNotFound)
     }
 
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `requests GET - admin can read all fields`() {
+        // given
+        testDataGenerator
+            .withEmptyDb()
+            .withRequest()
+            .getRequest().value()
+
+        // when / then
+        this.mockMvc.perform(get("/requests"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].hasHiddenFields").value(false))
+    }
+
+    @Test
+    @WithMockUser(username = "bar")
+    fun `request GET - with hidden fields`() {
+        // given
+        val request = testDataGenerator
+            .withEmptyDb()
+            .withRequest("foo")
+            .getRequest().value()
+
+        // when / then
+        this.mockMvc.perform(get("/requests/{id}", request.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("id").value(request.id.toString()))
+            .andExpect(jsonPath("createdAt").value(request.createdAt.toString()))
+            .andExpect(jsonPath("createdBy").value(request.createdBy))
+            .andExpect(jsonPath("hasHiddenFields").value(true))
+            .andExpect(jsonPath("updatedAt").value(request.updatedAt.toString()))
+            .andExpect(jsonPath("updatedBy").value(request.updatedBy))
+    }
+
+    @Test
+    @WithMockUser(username = "bar")
+    fun `requests GET - with some hidden fields`() {
+        // given
+        testDataGenerator
+            .withEmptyDb()
+            .withRequest("foo")
+            .withRequest("bar")
+
+        // when / then
+        this.mockMvc.perform(get("/requests"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[?(@.createdBy=='foo')].hasHiddenFields").value(true))
+            .andExpect(jsonPath("$[?(@.createdBy=='bar')].hasHiddenFields").value(false))
+    }
 
 }

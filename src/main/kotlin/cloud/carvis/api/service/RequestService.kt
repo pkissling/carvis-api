@@ -20,12 +20,6 @@ class RequestService(
     private val logger = KotlinLogging.logger {}
 
     fun fetchAllRequests(): List<RequestDto> {
-        // TODO return all, if neither admin nor owner remove some fields
-//        val isAdmin = authorizationService.isAdmin()
-//        val username = authorizationService.getUsername() ?: throw ResponseStatusException(
-//            INTERNAL_SERVER_ERROR,
-//            "Unable to get username from current context"
-//        )
         return requestRepository.findAll()
             .map { requestMapper.toDto(it) }
             .toList()
@@ -41,5 +35,4 @@ class RequestService(
         return request
             .let { requestMapper.toDto(it) }
     }
-
 }
