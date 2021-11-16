@@ -56,5 +56,16 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("updatedBy").value(request.updatedBy))
     }
 
+    @Test
+    @WithMockUser
+    fun `request GET - not found`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(get("/requests/{id}", "randomId"))
+            .andExpect(status().isNotFound)
+    }
+
 
 }
