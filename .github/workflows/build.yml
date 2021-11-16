@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           chmod +x gradlew
-          ./gradlew -PcliVersion=${{ needs.prepare.outputs.branch_w_sha }} build
+          ./gradlew -PcliVersion=${{ needs.prepare.outputs.branch_w_sha }} build -x test
 
       - name: Upload Artifact
         uses: actions/upload-artifact@master
