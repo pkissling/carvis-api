@@ -30,8 +30,8 @@ spring:
           issuer-uri: ${auth.domain}
   cache:
     cache-names: userNames,imageUrls,carsAuthorization,requestsAuthorization
-  caffeine:
-    spec: maximumSize=500,expireAfterAccess=600s
+    caffeine:
+      spec: maximumSize=500,expireAfterAccess=600s
 
 logging:
   pattern:
