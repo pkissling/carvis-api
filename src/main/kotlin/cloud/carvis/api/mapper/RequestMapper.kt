@@ -4,9 +4,7 @@ import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.RequestEntity
 import cloud.carvis.api.service.AuthorizationService
 import mu.KotlinLogging
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import org.springframework.web.server.ResponseStatusException
 
 @Service
 class RequestMapper(
@@ -31,10 +29,7 @@ class RequestMapper(
 
     private fun hideFieldsIfRequired(dto: RequestDto): RequestDto {
         val isAdmin = authorizationService.isAdmin()
-        val username = authorizationService.getUsername() ?: throw ResponseStatusException(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "Unable to get username from current context"
-        )
+        val username = authorizationService.getUsername()
 
         if (isAdmin || username == dto.createdBy) {
             return dto

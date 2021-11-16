@@ -40,8 +40,8 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
             .andExpect(status().isForbidden)
 
         // then
-        assertThat(cache()).hasSize(1)
-        assertThat(cache()["${notExistingCarId}_foo"]).isEqualTo(false)
+        assertThat(cache("carsAuthorization")).hasSize(1)
+        assertThat(cache("carsAuthorization")["${notExistingCarId}_foo"]).isEqualTo(false)
     }
 
     @Test
@@ -59,13 +59,51 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
             .andExpect(status().isForbidden)
 
         // then
-        assertThat(cache()).hasSize(2)
-        assertThat(cache()["${aCarId}_foo"]).isEqualTo(false)
-        assertThat(cache()["${otherCarId}_foo"]).isEqualTo(false)
+        assertThat(cache("carsAuthorization")).hasSize(2)
+        assertThat(cache("carsAuthorization")["${aCarId}_foo"]).isEqualTo(false)
+        assertThat(cache("carsAuthorization")["${otherCarId}_foo"]).isEqualTo(false)
     }
 
-    private fun cache(): Map<String, Boolean> {
-        val cache: Cache<String, Boolean> = cacheManager.getCache("authorization")!!.nativeCache as Cache<String, Boolean>
+    @Test
+    @WithMockUser(username = "foo")
+    fun `request DELETE - Cache authorization information`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        val notRequestId = UUID.randomUUID()
+
+        // when
+        this.mockMvc.perform(delete("/requests/{id}", notRequestId))
+            .andExpect(status().isForbidden)
+        this.mockMvc.perform(delete("/requests/{id}", notRequestId))
+            .andExpect(status().isForbidden)
+
+        // then
+        assertThat(cache("requestsAuthorization")).hasSize(1)
+        assertThat(cache("requestsAuthorization")["${notRequestId}_foo"]).isEqualTo(false)
+    }
+
+    @Test
+    @WithMockUser(username = "foo")
+    fun `request DELETE - Cache authorization information - unique by requestId`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        val aRequestId = UUID.randomUUID()
+        val otherRequestId = UUID.randomUUID()
+
+        // when
+        this.mockMvc.perform(delete("/requests/{id}", aRequestId))
+            .andExpect(status().isForbidden)
+        this.mockMvc.perform(delete("/requests/{id}", otherRequestId))
+            .andExpect(status().isForbidden)
+
+        // then
+        assertThat(cache("requestsAuthorization")).hasSize(2)
+        assertThat(cache("requestsAuthorization")["${aRequestId}_foo"]).isEqualTo(false)
+        assertThat(cache("requestsAuthorization")["${otherRequestId}_foo"]).isEqualTo(false)
+    }
+
+    private fun cache(key: String): Map<String, Boolean> {
+        val cache: Cache<String, Boolean> = cacheManager.getCache(key)!!.nativeCache as Cache<String, Boolean>
         return cache.asMap()
     }
 

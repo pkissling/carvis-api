@@ -6,13 +6,13 @@ import cloud.carvis.api.model.dtos.RequestDto
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
 @Service
 class RequestService(
-    private val authorizationService: AuthorizationService,
     private val requestRepository: RequestRepository,
     private val requestMapper: RequestMapper
 ) {
@@ -34,5 +34,10 @@ class RequestService(
 
         return request
             .let { requestMapper.toDto(it) }
+    }
+
+    @PreAuthorize("@authorization.canModifyRequest(#id)")
+    fun deleteRequest(id: UUID) {
+        requestRepository.deleteById(id)
     }
 }

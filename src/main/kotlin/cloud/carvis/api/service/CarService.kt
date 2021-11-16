@@ -61,13 +61,6 @@ class CarService(
 
     @PreAuthorize("@authorization.canAccessCar(#id)")
     fun deleteCar(id: UUID) {
-        val exists = carRepository.existsById(id)
-
-        if (!exists) {
-            logger.info { "Car with id [$id] not found" }
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
-        }
-
         // TODO delete images?
         carRepository.deleteById(id)
     }

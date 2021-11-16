@@ -3,10 +3,8 @@ package cloud.carvis.api.rest
 import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.service.RequestService
 import mu.KotlinLogging
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.http.HttpStatus.NO_CONTENT
+import org.springframework.web.bind.annotation.*
 import java.util.*
 
 
@@ -30,5 +28,13 @@ class RequestRestController(
         logger.info { "start fetchRequest(id=$id)" }
         return requestService.fetchRequest(id)
             .also { logger.info { "end fetchRequest(id=$id) return=${it}" } }
+    }
+
+    @ResponseStatus(NO_CONTENT)
+    @DeleteMapping("/{id}")
+    fun deleteRequest(@PathVariable id: UUID) {
+        logger.info { "start deleteRequest(id=$id)" }
+        requestService.deleteRequest(id)
+        logger.info { "end deleteRequest(id=$id)" }
     }
 }

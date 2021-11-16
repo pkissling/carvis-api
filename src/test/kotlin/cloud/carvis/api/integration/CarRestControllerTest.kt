@@ -162,7 +162,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = VALID_USER_ID)
-    fun `cars PUT - update existing car`() {
+    fun `car PUT - update existing car`() {
         // given
         val start = now()
         val existingCar = testDataGenerator
@@ -215,7 +215,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = VALID_USER_ID)
-    fun `cars PUT - update other users car forbidden`() {
+    fun `car PUT - update other users car forbidden`() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
@@ -235,7 +235,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = "foo", roles = ["ADMIN"])
-    fun `cars PUT - admin updates other users car`() {
+    fun `car PUT - admin updates other users car`() {
         // given
         val start = now()
         val car = testDataGenerator
@@ -265,7 +265,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser
-    fun `cars PUT - car does not exist`() {
+    fun `car PUT - car does not exist`() {
         // given
         testDataGenerator.withEmptyDb()
         val car = testDataGenerator.random<CarDto>()
@@ -289,7 +289,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withCar(VALID_USER_ID)
             .getCar()
             .value()
-        assertThat(carRepository.count()).isEqualTo(1)
 
         // when
         this.mockMvc
@@ -297,12 +296,15 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        assertThat(carRepository.count()).isEqualTo(0)
+        this.mockMvc
+            .perform(get("/cars", car.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(0))
     }
 
     @Test
     @WithMockUser
-    fun `cars DELETE - car does not exist`() {
+    fun `car DELETE - car does not exist`() {
         // given
         testDataGenerator.withEmptyDb()
 
@@ -314,14 +316,12 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = "bar", roles = ["ADMIN"])
-    fun `cars DELETE - admin can delete other users car`() {
+    fun `car DELETE - admin can delete other users car`() {
         // given
         val car = testDataGenerator
             .withEmptyDb()
             .withCar("foo")
-            .getCar()
-            .value()
-        assertThat(carRepository.count()).isEqualTo(1)
+            .getCar().value()
 
         // when
         this.mockMvc
@@ -329,7 +329,10 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        assertThat(carRepository.count()).isEqualTo(0)
+        this.mockMvc
+            .perform(get("/cars", car.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(0))
     }
 
     fun assert(httpStatus: ResultMatcher, attribute: String, value: Any? = null) {

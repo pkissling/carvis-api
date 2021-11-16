@@ -3,6 +3,7 @@ package cloud.carvis.api.integration
 import cloud.carvis.api.AbstractApplicationTest
 import org.junit.jupiter.api.Test
 import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -120,6 +121,25 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[?(@.createdBy=='foo')].hasHiddenFields").value(true))
             .andExpect(jsonPath("$[?(@.createdBy=='bar')].hasHiddenFields").value(false))
+    }
+
+    @Test
+    @WithMockUser(username = "foo")
+    fun `request DELETE - success`() {
+        // given
+        val request = testDataGenerator
+            .withEmptyDb()
+            .withRequest("foo")
+            .getRequest().value()
+
+        // when
+        this.mockMvc.perform(delete("/requests/{id}", request.id))
+            .andExpect(status().isNoContent)
+
+        // then
+        this.mockMvc.perform(get("/requests"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(0))
     }
 
 }
