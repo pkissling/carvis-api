@@ -12,7 +12,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/requests")
-class RequestController(
+class RequestRestController(
     val requestService: RequestService
 ) {
 

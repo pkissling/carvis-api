@@ -6,6 +6,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.util.*
 
 
 class RequestRestControllerTest : AbstractApplicationTest() {
@@ -63,7 +64,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         testDataGenerator.withEmptyDb()
 
         // when / then
-        this.mockMvc.perform(get("/requests/{id}", "randomId"))
+        this.mockMvc.perform(get("/requests/{id}", UUID.randomUUID()))
             .andExpect(status().isNotFound)
     }
 
