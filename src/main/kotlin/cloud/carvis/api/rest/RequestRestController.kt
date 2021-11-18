@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus.NO_CONTENT
 import org.springframework.web.bind.annotation.*
 import java.util.*
+import javax.validation.Valid
 
 
 @RestController
@@ -29,6 +30,14 @@ class RequestRestController(
         return requestService.fetchRequest(id)
             .also { logger.info { "end fetchRequest(id=$id) return=${it}" } }
     }
+
+    @PostMapping
+    fun createRequest(@Valid @RequestBody request: RequestDto): RequestDto {
+        logger.info { "start createRequest(request=$request)" }
+        return requestService.createRequest(request)
+            .also { logger.info { "end createRequest(request=$request), return=${it}" } }
+    }
+
 
     @ResponseStatus(NO_CONTENT)
     @DeleteMapping("/{id}")

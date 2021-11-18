@@ -11,18 +11,20 @@ class CarMapper(private val auth0RestClient: UserService) : Mapper<CarDto, CarEn
     override fun toDto(entity: CarEntity): CarDto =
         CarDto(
             id = entity.id,
+            createdAt = entity.createdAt,
+            createdBy = entity.createdBy,
+            updatedAt = entity.updatedAt,
+            updatedBy = entity.updatedBy,
             brand = entity.brand,
             bodyType = entity.bodyType,
             ads = entity.ads,
             additionalEquipment = entity.additionalEquipment,
             capacity = entity.capacity,
-            createdBy = entity.createdBy,
             colorAndMaterialInterior = entity.colorAndMaterialInterior,
             colorExterior = entity.colorExterior,
             colorExteriorManufacturer = entity.colorExteriorManufacturer,
             condition = entity.condition,
             countryOfOrigin = entity.countryOfOrigin,
-            createdAt = entity.createdAt,
             description = entity.description,
             horsePower = entity.horsePower,
             images = entity.images,
@@ -35,7 +37,6 @@ class CarMapper(private val auth0RestClient: UserService) : Mapper<CarDto, CarEn
             shortDescription = entity.shortDescription,
             transmission = entity.transmission,
             type = entity.type,
-            updatedAt = entity.updatedAt,
             vin = entity.vin
         )
 

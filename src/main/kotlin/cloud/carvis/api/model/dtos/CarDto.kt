@@ -10,15 +10,15 @@ import javax.validation.constraints.Positive
 data class CarDto(
     var id: UUID? = null,
 
+    var ads: List<String> = emptyList(),
+
+    var additionalEquipment: String? = null,
+
     @field:NotEmpty
     var brand: String? = null,
 
     @field:NotEmpty
     var bodyType: String? = null,
-
-    var ads: List<String> = emptyList(),
-
-    var additionalEquipment: String? = null,
 
     @field:Positive
     var capacity: Long? = null,
@@ -75,7 +75,7 @@ data class CarDto(
 
     var updatedAt: Instant? = null,
 
-    var updatedBy: Instant? = null,
+    var updatedBy: String? = null,
 
     var vin: String? = null
 )

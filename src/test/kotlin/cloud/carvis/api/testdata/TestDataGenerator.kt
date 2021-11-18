@@ -4,6 +4,7 @@ import cloud.carvis.api.dao.repositories.CarRepository
 import cloud.carvis.api.dao.repositories.RequestRepository
 import cloud.carvis.api.model.dtos.CarDto
 import cloud.carvis.api.model.dtos.ImageSize
+import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.CarEntity
 import cloud.carvis.api.model.entities.Entity
 import cloud.carvis.api.model.entities.RequestEntity
@@ -104,13 +105,16 @@ class TestDataGenerator(
             .createInstance()
 
         return when (value) {
-            is CarDto -> {
-                value.apply {
-                    horsePower = horsePower!!.absoluteValue
-                    capacity = capacity!!.absoluteValue
-                    mileage = mileage!!.absoluteValue
-                    price = price!!.abs()
-                }
+            is CarDto -> value.apply {
+                horsePower = horsePower!!.absoluteValue
+                capacity = capacity!!.absoluteValue
+                mileage = mileage!!.absoluteValue
+                price = price!!.abs()
+            }
+            is RequestDto -> value.apply {
+                horsePower = horsePower!!.absoluteValue
+                capacity = capacity!!.absoluteValue
+                mileage = mileage!!.absoluteValue
             }
             else -> value
         }.let { TestData(objectMapper, it) }

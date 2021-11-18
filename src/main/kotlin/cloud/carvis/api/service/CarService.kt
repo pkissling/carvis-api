@@ -43,7 +43,7 @@ class CarService(
             .let { carMapper.toDto(it) }
     }
 
-    @PreAuthorize("@authorization.canAccessCar(#id)")
+    @PreAuthorize("@authorization.canModifyCar(#id)")
     fun updateCar(id: UUID, car: CarDto): CarDto {
 
         val carToUpdate = carRepository.findByIdOrNull(id)
@@ -59,7 +59,7 @@ class CarService(
             .let { carMapper.toDto(it) }
     }
 
-    @PreAuthorize("@authorization.canAccessCar(#id)")
+    @PreAuthorize("@authorization.canModifyCar(#id)")
     fun deleteCar(id: UUID) {
         // TODO delete images?
         carRepository.deleteById(id)

@@ -135,6 +135,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         assertThat(returnedCar.createdBy).isEqualTo(VALID_USER_ID)
         assertThat(returnedCar.createdAt).isBetween(start, now())
         assertThat(returnedCar.updatedAt).isEqualTo(returnedCar.createdAt)
+        assertThat(returnedCar.updatedBy).isEqualTo(returnedCar.createdBy)
     }
 
     @Test

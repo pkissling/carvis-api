@@ -15,7 +15,7 @@ class AuthorizationService(
 ) {
 
     @Cacheable("carsAuthorization", key = "#carId + '_' + @authorization.username")
-    fun canAccessCar(carId: UUID): Boolean =
+    fun canModifyCar(carId: UUID): Boolean =
         isAdmin() || isCarOwner(carId)
 
     @Cacheable("requestsAuthorization", key = "#requestId + '_' + @authorization.username")

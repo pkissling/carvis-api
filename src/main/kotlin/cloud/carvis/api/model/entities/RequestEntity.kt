@@ -33,4 +33,73 @@ data class RequestEntity(
     @LastModifiedBy
     override var updatedBy: String? = null,
 
+    @DynamoDBAttribute
+    var additionalEquipment: String? = null,
+
+    @DynamoDBAttribute
+    var bodyType: String? = null,
+
+    @DynamoDBAttribute
+    var brand: String? = null,
+
+    @DynamoDBAttribute
+    var budget: String? = null,
+
+    @DynamoDBAttribute
+    var capacity: Long? = null,
+
+    @DynamoDBAttribute
+    var countryOfOrigin: String? = null,
+
+    @DynamoDBAttribute
+    var colorExterior: String? = null,
+
+    @DynamoDBAttribute
+    var colorExteriorManufacturer: String? = null,
+
+    @DynamoDBAttribute
+    var colorAndMaterialInterior: String? = null,
+
+    @DynamoDBAttribute
+    var condition: String? = null,
+
+    @DynamoDBAttribute
+    var description: String? = null,
+
+    @DynamoDBAttribute
+    var highlights: String? = null,
+
+    @DynamoDBAttribute
+    var horsePower: Long? = null,
+
+    @DynamoDBAttribute
+    var mileage: Long? = null,
+
+    @DynamoDBAttribute
+    var mustHaves: String? = null,
+
+    @DynamoDBAttribute
+    var noGos: String? = null,
+
+    @DynamoDBAttribute
+    var ownerName: String? = null,
+
+    @DynamoDBAttribute
+    var modelSeries: String? = null,
+
+    @DynamoDBAttribute
+    var modelYear: String? = null,
+
+    @DynamoDBAttribute
+    var modelSpecification: String? = null,
+
+    @DynamoDBAttribute
+    var transmission: String? = null,
+
+    @DynamoDBAttribute
+    var type: String? = null,
+
+    @DynamoDBAttribute
+    var vision: String? = null,
+
     ) : Entity()

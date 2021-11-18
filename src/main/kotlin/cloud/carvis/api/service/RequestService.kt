@@ -36,6 +36,12 @@ class RequestService(
             .let { requestMapper.toDto(it) }
     }
 
+    fun createRequest(request: RequestDto): RequestDto {
+        return requestMapper.toEntity(request)
+            .let { requestRepository.save(it) }
+            .let { requestMapper.toDto(it) }
+    }
+
     @PreAuthorize("@authorization.canModifyRequest(#id)")
     fun deleteRequest(id: UUID) {
         requestRepository.deleteById(id)

@@ -28,6 +28,3 @@ class SentryTracesSamplerCallback(
     private fun isActuatorCall(request: HttpServletRequest?) =
         request?.requestURI?.startsWith(webEndpointProperties.basePath)
 }
-
-
-
