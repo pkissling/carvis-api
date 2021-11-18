@@ -43,6 +43,20 @@ class RequestService(
     }
 
     @PreAuthorize("@authorization.canModifyRequest(#id)")
+    fun updateRequest(id: UUID, request: RequestDto): RequestDto {
+        val requestToUpdate = requestRepository.findByIdOrNull(id)
+
+        if (requestToUpdate == null) {
+            logger.info { "Request with id [$id] not found" }
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "request not found")
+        }
+
+        return requestMapper.forUpdate(id, request, requestToUpdate)
+            .let { requestRepository.save(it) }
+            .let { requestMapper.toDto(it) }
+    }
+
+    @PreAuthorize("@authorization.canModifyRequest(#id)")
     fun deleteRequest(id: UUID) {
         requestRepository.deleteById(id)
     }

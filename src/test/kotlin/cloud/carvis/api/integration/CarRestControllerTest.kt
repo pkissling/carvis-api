@@ -206,6 +206,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.price").value(updatedCar.value().price))
             .andExpect(jsonPath("$.transmission").value(updatedCar.value().transmission))
             .andExpect(jsonPath("$.type").value(updatedCar.value().type))
+            .andExpect(jsonPath("$.updatedBy").value(VALID_USER_ID))
             .andExpect(jsonPath("$.vin").value(updatedCar.value().vin))
             .andReturn()
         val returnedCar = toObject<CarDto>(response)
@@ -236,7 +237,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = "foo", roles = ["ADMIN"])
-    fun `car PUT - admin updates other users car`() {
+    fun `car PUT - admin can update other users car`() {
         // given
         val start = now()
         val car = testDataGenerator
@@ -244,7 +245,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withCar("bar")
             .getCar()
             .value()
-        assertThat(car.createdBy).isEqualTo("bar")
 
         // when / then
         this.mockMvc
