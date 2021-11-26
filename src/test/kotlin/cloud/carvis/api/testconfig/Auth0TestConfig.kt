@@ -11,5 +11,4 @@ class Auth0TestConfig {
     @Bean
     fun managementApi(): ManagementAPI =
         ManagementAPI("dummy", "dummy", HttpOptions())
-
 }
