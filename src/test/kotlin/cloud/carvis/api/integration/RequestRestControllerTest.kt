@@ -218,7 +218,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         assert(status().isBadRequest, "capacity", -100L)
         assert(status().isBadRequest, "horsePower", -100L)
         assert(status().isBadRequest, "mileage", -100L)
-        assert(status().isBadRequest, "modelSeries")
+        assert(status().isBadRequest, "type")
     }
 
     @Test
@@ -266,7 +266,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = VALID_USER_ID)
-    fun `car PUT - update existing car`() {
+    fun `request PUT - update existing request`() {
         // given
         val start = now()
         val existingRequest = testDataGenerator

@@ -75,7 +75,6 @@ data class RequestDto(
     var ownerName: String? = null,
 
     // Modellreihe
-    @field:NotEmpty
     var modelSeries: String? = null,
 
     // Modelljahr
@@ -88,6 +87,7 @@ data class RequestDto(
     var transmission: String? = null,
 
     // Typ
+    @field:NotEmpty
     var type: String? = null,
 
     // technical field
