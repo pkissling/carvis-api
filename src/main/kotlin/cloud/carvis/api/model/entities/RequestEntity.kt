@@ -85,13 +85,13 @@ data class RequestEntity(
     var ownerName: String? = null,
 
     @DynamoDBAttribute
+    var modelDetails: String? = null,
+
+    @DynamoDBAttribute
     var modelSeries: String? = null,
 
     @DynamoDBAttribute
     var modelYear: String? = null,
-
-    @DynamoDBAttribute
-    var modelSpecification: String? = null,
 
     @DynamoDBAttribute
     var transmission: String? = null,

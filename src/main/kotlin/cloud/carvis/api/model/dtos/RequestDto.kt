@@ -54,7 +54,7 @@ data class RequestDto(
     // technical field
     var hasHiddenFields: Boolean? = null,
 
-    // Besonderheit/ Highlights
+    // Besonderheiten / Highlights
     var highlights: String? = null,
 
     // Leistung in PS
@@ -65,7 +65,7 @@ data class RequestDto(
     @field:Min(0)
     var mileage: Long? = null,
 
-    // Must-Have
+    // Must-Haves
     var mustHaves: String? = null,
 
     // No-Go
@@ -81,7 +81,7 @@ data class RequestDto(
     var modelYear: String? = null,
 
     // Modellspezifikation
-    var modelSpecification: String? = null,
+    var modelDetails: String? = null,
 
     // Getriebe
     var transmission: String? = null,
