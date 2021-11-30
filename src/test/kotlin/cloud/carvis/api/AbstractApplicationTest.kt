@@ -44,7 +44,7 @@ import org.springframework.test.web.servlet.MvcResult
 abstract class AbstractApplicationTest {
 
     @Autowired
-    lateinit var testDataGenerator: TestDataGenerator
+    protected lateinit var testDataGenerator: TestDataGenerator
 
     @Autowired
     protected lateinit var mockMvc: MockMvc
@@ -56,7 +56,7 @@ abstract class AbstractApplicationTest {
     protected lateinit var auth0RestClient: Auth0RestClient
 
     @BeforeEach
-    fun beforeAll() {
+    fun superBeforeEach() {
         resetMocks()
         mockAuth0()
     }
