@@ -5,7 +5,7 @@ on:
     inputs:
       environment:
         description: Environment
-        default: dev
+        default: live
         required: true
 
 env:
