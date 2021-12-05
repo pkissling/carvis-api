@@ -108,6 +108,8 @@ data class ContactDetailsDto(
 
     var email: String? = null,
 
+    var freeText: String? = null,
+
     var name: String? = null,
 
     var phone: String? = null

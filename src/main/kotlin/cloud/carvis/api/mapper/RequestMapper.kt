@@ -35,6 +35,7 @@ class RequestMapper(
             contactDetails = ContactDetailsDto(
                 company = entity.contactCompany,
                 email = entity.contactEmail,
+                freeText = entity.contactFreeText,
                 name = entity.contactName,
                 phone = entity.contactPhone,
             ),
@@ -70,6 +71,7 @@ class RequestMapper(
             condition = dto.condition,
             contactCompany = dto.contactDetails?.company,
             contactEmail = dto.contactDetails?.email,
+            contactFreeText = dto.contactDetails?.freeText,
             contactName = dto.contactDetails?.name,
             contactPhone = dto.contactDetails?.phone,
             description = dto.description,

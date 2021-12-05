@@ -70,6 +70,9 @@ data class RequestEntity(
     var contactCompany: String? = null,
 
     @DynamoDBAttribute
+    var contactFreeText: String? = null,
+
+    @DynamoDBAttribute
     var contactPhone: String? = null,
 
     @DynamoDBAttribute
