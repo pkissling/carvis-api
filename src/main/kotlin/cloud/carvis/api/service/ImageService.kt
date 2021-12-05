@@ -5,6 +5,7 @@ import cloud.carvis.api.model.dtos.ImageSize
 import cloud.carvis.api.model.dtos.ImageSize.ORIGINAL
 import cloud.carvis.api.properties.S3Properties
 import com.amazonaws.HttpMethod
+import com.amazonaws.HttpMethod.GET
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
@@ -23,7 +24,7 @@ import java.io.InputStream
 import java.net.URL
 import java.time.Instant
 import java.time.Instant.now
-import java.time.temporal.ChronoUnit
+import java.time.temporal.ChronoUnit.HOURS
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -45,9 +46,9 @@ class ImageService(
     fun fetchImage(id: UUID, size: ImageSize): ImageDto {
         val exists = imageExists(id, size)
         if (exists) {
-            val expiration = now().plus(7, ChronoUnit.DAYS)
-            val url = generatePresignedUrl(id, size, HttpMethod.GET, expiration)
-            return ImageDto(id, url, size, expiration)
+            val expiresAt = now().plus(12, HOURS)
+            val url = generatePresignedUrl(id, size, GET, expiresAt)
+            return ImageDto(id, url, size, expiresAt)
         }
 
         val originalExists = imageExists(id, ORIGINAL)
@@ -78,9 +79,9 @@ class ImageService(
     fun generateImageUploadUrl(contentType: MediaType): ImageDto {
         val id = UUID.randomUUID()
         val size = ORIGINAL
-        val expiration = now().plus(1, ChronoUnit.DAYS)
-        val url = generatePresignedUrl(id, size, HttpMethod.PUT, expiration, contentType)
-        return ImageDto(id, url, size, expiration)
+        val expiresAt = now().plus(12, HOURS)
+        val url = generatePresignedUrl(id, size, HttpMethod.PUT, expiresAt, contentType)
+        return ImageDto(id, url, size, expiresAt)
     }
 
     private fun putObject(id: UUID, inputStream: InputStream, size: ImageSize, contentType: MediaType, length: Long) = try {
@@ -107,19 +108,19 @@ class ImageService(
         id: UUID,
         size: ImageSize,
         method: HttpMethod,
-        expiration: Instant,
+        expiresAt: Instant,
         contentType: MediaType? = null
     ): URL = try {
         s3Client.generatePresignedUrl(
             GeneratePresignedUrlRequest(this.bucketName, "$id/$size")
                 .withMethod(method)
                 .withContentType(contentType?.toString())
-                .withExpiration(Date.from(expiration))
+                .withExpiration(Date.from(expiresAt))
         )
     } catch (e: Exception) {
         logger.error(e) {
             "Exception caught while generating presigned URL for path " +
-                    "[$id/$size], expiration [$expiration] and contentType [$contentType]"
+                    "[$id/$size], expiration [$expiresAt] and contentType [$contentType]"
         }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error while generating presigned url", e)
     }

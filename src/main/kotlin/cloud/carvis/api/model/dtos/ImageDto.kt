@@ -8,5 +8,5 @@ data class ImageDto(
     val id: UUID,
     val url: URL,
     val size: ImageSize,
-    val expiration: Instant
+    val expiresAt: Instant
 )

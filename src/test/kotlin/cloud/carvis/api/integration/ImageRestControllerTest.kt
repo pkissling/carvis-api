@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant.now
 import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.DAYS
+import java.time.temporal.ChronoUnit.HOURS
 
 
 class ImageRestControllerTest : AbstractApplicationTest() {
@@ -53,13 +54,13 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.size").value(image.size.toString()))
-            .andExpect(jsonPath("$.expiration", notNullValue()))
+            .andExpect(jsonPath("$.expiresAt", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
 
         // then
         val img: ImageDto = toObject(result)
-        assertThat(img.expiration).isBetween(`in`(6, DAYS), `in`(7, DAYS))
+        assertThat(img.expiresAt).isBetween(`in`(11, HOURS), `in`(13, HOURS))
     }
 
     @Test
@@ -74,13 +75,13 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.size").value("ORIGINAL"))
-            .andExpect(jsonPath("$.expiration").exists())
+            .andExpect(jsonPath("$.expiresAt").exists())
             .andExpect(jsonPath("$.url").exists())
             .andReturn()
 
         // then
         val img: ImageDto = toObject(result)
-        assertThat(img.expiration).isBetween(start, `in`(1, DAYS))
+        assertThat(img.expiresAt).isBetween(start, `in`(1, DAYS))
     }
 
     @Test
@@ -106,7 +107,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.size").value("200"))
-            .andExpect(jsonPath("$.expiration").exists())
+            .andExpect(jsonPath("$.expiresAt").exists())
             .andExpect(jsonPath("$.url").exists())
 
         // then
@@ -130,7 +131,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.size").value("ORIGINAL"))
-            .andExpect(jsonPath("$.expiration", notNullValue()))
+            .andExpect(jsonPath("$.expiresAt", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
     }
 
@@ -173,7 +174,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         val imageDto0: ImageDto = toObject(result0)
         val imageDto1: ImageDto = toObject(result1)
         assertThat(imageDto0.url).isEqualTo(imageDto1.url)
-        assertThat(imageDto0.expiration).isEqualTo(imageDto1.expiration)
+        assertThat(imageDto0.expiresAt).isEqualTo(imageDto1.expiresAt)
     }
 
     private fun `in`(i: Long, unit: ChronoUnit) = now().plus(i, unit)
