@@ -1,5 +1,6 @@
 package cloud.carvis.api.mapper
 
+import cloud.carvis.api.model.dtos.ContactDetailsDto
 import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.RequestEntity
 import cloud.carvis.api.service.AuthorizationService
@@ -31,6 +32,12 @@ class RequestMapper(
             colorExterior = entity.colorExterior,
             colorExteriorManufacturer = entity.colorExteriorManufacturer,
             colorAndMaterialInterior = entity.colorAndMaterialInterior,
+            contactDetails = ContactDetailsDto(
+                company = entity.contactCompany,
+                email = entity.contactEmail,
+                name = entity.contactName,
+                phone = entity.contactPhone,
+            ),
             condition = entity.condition,
             description = entity.description,
             hasHiddenFields = false,
@@ -61,6 +68,10 @@ class RequestMapper(
             colorExteriorManufacturer = dto.colorExteriorManufacturer,
             colorAndMaterialInterior = dto.colorAndMaterialInterior,
             condition = dto.condition,
+            contactCompany = dto.contactDetails?.company,
+            contactEmail = dto.contactDetails?.email,
+            contactName = dto.contactDetails?.name,
+            contactPhone = dto.contactDetails?.phone,
             description = dto.description,
             highlights = dto.highlights,
             horsePower = dto.horsePower,
@@ -75,7 +86,6 @@ class RequestMapper(
             type = dto.type,
             vision = dto.vision,
         )
-
 
     private fun hideFieldsIfRequired(dto: RequestDto): RequestDto {
         val isAdmin = authorizationService.isAdmin()
@@ -92,6 +102,7 @@ class RequestMapper(
 
         return dto.apply {
             hasHiddenFields = true
+            contactDetails = null
         }
     }
 }

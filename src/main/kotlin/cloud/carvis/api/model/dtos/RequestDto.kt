@@ -42,6 +42,9 @@ data class RequestDto(
     // Zustand
     var condition: String? = null,
 
+    // Kontaktdaten
+    var contactDetails: ContactDetailsDto? = null,
+
     // technical field
     var createdAt: Instant? = null,
 
@@ -98,4 +101,14 @@ data class RequestDto(
 
     // Ziel/Vision
     var vision: String? = null
+)
+
+data class ContactDetailsDto(
+    var company: String? = null,
+
+    var email: String? = null,
+
+    var name: String? = null,
+
+    var phone: String? = null
 )

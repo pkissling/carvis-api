@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.servlet.ResultMatcher
+import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.time.Instant.now
@@ -77,6 +77,10 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("colorExterior").value(request.colorExterior))
             .andExpect(jsonPath("colorExteriorManufacturer").value(request.colorExteriorManufacturer))
             .andExpect(jsonPath("colorAndMaterialInterior").value(request.colorAndMaterialInterior))
+            .andExpect(jsonPath("contactDetails.company").value(request.contactCompany))
+            .andExpect(jsonPath("contactDetails.email").value(request.contactEmail))
+            .andExpect(jsonPath("contactDetails.name").value(request.contactName))
+            .andExpect(jsonPath("contactDetails.phone").value(request.contactPhone))
             .andExpect(jsonPath("condition").value(request.condition))
             .andExpect(jsonPath("description").value(request.description))
             .andExpect(jsonPath("hasHiddenFields").value(false))
@@ -119,6 +123,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].hasHiddenFields").value(false))
+            .andExpect(jsonPath("$[0].contactDetails.name").exists())
     }
 
     @Test
@@ -136,6 +141,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("id").value(request.id.toString()))
             .andExpect(jsonPath("createdAt").value(request.createdAt.toString()))
             .andExpect(jsonPath("createdBy").value(request.createdBy))
+            .andExpect(jsonPath("contactDetails").doesNotExist())
             .andExpect(jsonPath("hasHiddenFields").value(true))
             .andExpect(jsonPath("updatedAt").value(request.updatedAt.toString()))
             .andExpect(jsonPath("updatedBy").value(request.updatedBy))
@@ -155,7 +161,9 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[?(@.createdBy=='foo')].hasHiddenFields").value(true))
+            .andExpect(jsonPath("$[?(@.createdBy=='foo')].contactDetails.name").doesNotExist())
             .andExpect(jsonPath("$[?(@.createdBy=='bar')].hasHiddenFields").value(false))
+            .andExpect(jsonPath("$[?(@.createdBy=='bar')].contactDetails.name").exists())
     }
 
     @Test
@@ -211,14 +219,14 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @WithMockUser
     fun `requests POST - body validation`() {
         // 200
-        assert(status().isOk, "mileage", 0L)
+        assert("mileage", 0L).andExpect(status().isOk)
 
         // 400
-        assert(status().isBadRequest, "brand")
-        assert(status().isBadRequest, "capacity", -100L)
-        assert(status().isBadRequest, "horsePower", -100L)
-        assert(status().isBadRequest, "mileage", -100L)
-        assert(status().isBadRequest, "type")
+        assert("brand").andExpect(status().isBadRequest)
+        assert("capacity", -100L).andExpect(status().isBadRequest)
+        assert("horsePower", -100L).andExpect(status().isBadRequest)
+        assert("mileage", -100L).andExpect(status().isBadRequest)
+        assert("type").andExpect(status().isBadRequest)
     }
 
     @Test
@@ -299,6 +307,10 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("colorExteriorManufacturer").value(request.value().colorExteriorManufacturer))
             .andExpect(jsonPath("colorAndMaterialInterior").value(request.value().colorAndMaterialInterior))
             .andExpect(jsonPath("condition").value(request.value().condition))
+            .andExpect(jsonPath("contactDetails.company").value(request.value().contactDetails!!.company))
+            .andExpect(jsonPath("contactDetails.email").value(request.value().contactDetails!!.email))
+            .andExpect(jsonPath("contactDetails.name").value(request.value().contactDetails!!.name))
+            .andExpect(jsonPath("contactDetails.phone").value(request.value().contactDetails!!.phone))
             .andExpect(jsonPath("description").value(request.value().description))
             .andExpect(jsonPath("hasHiddenFields").value(false))
             .andExpect(jsonPath("highlights").value(request.value().highlights))
@@ -320,17 +332,15 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         assertThat(returnedRequest.updatedAt).isBetween(start, now())
     }
 
-    fun assert(httpStatus: ResultMatcher, attribute: String, value: Any? = null) {
+    fun assert(attribute: String, value: Any? = null): ResultActions {
         val request: TestData<RequestDto> = testDataGenerator.random()
         request.setValue(attribute, value)
 
-        this.mockMvc
+        return this.mockMvc
             .perform(
                 post("/requests")
                     .content(request.toJson())
                     .contentType(MediaType.APPLICATION_JSON)
             )
-            .andExpect(httpStatus)
     }
-
 }

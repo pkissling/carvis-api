@@ -64,6 +64,18 @@ data class RequestEntity(
     var condition: String? = null,
 
     @DynamoDBAttribute
+    var contactName: String? = null,
+
+    @DynamoDBAttribute
+    var contactCompany: String? = null,
+
+    @DynamoDBAttribute
+    var contactPhone: String? = null,
+
+    @DynamoDBAttribute
+    var contactEmail: String? = null,
+
+    @DynamoDBAttribute
     var description: String? = null,
 
     @DynamoDBAttribute
@@ -100,6 +112,6 @@ data class RequestEntity(
     var type: String? = null,
 
     @DynamoDBAttribute
-    var vision: String? = null,
+    var vision: String? = null
 
     ) : Entity()
