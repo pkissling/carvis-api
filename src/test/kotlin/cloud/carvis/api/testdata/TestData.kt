@@ -9,7 +9,7 @@ class TestData<T>(
     private val o: T
 ) {
 
-    fun toJson(): ByteArray = objectMapper.writeValueAsBytes(o)
+    fun toJson(): String = objectMapper.writeValueAsString(o)
 
     fun value(): T = o
 

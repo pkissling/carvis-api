@@ -2,7 +2,7 @@ package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.model.dtos.ImageDto
-import cloud.carvis.api.properties.S3Properties
+import cloud.carvis.api.properties.S3Buckets
 import com.amazonaws.services.s3.AmazonS3
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.notNullValue
@@ -23,7 +23,7 @@ import java.time.temporal.ChronoUnit.HOURS
 class ImageRestControllerTest : AbstractApplicationTest() {
 
     @Autowired
-    lateinit var s3Properties: S3Properties
+    lateinit var s3Properties: S3Buckets
 
     @Autowired
     lateinit var amazonS3: AmazonS3
@@ -96,7 +96,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     @WithMockUser
     fun `images GET - resize original image`() {
         // given
-        val imagesBucket = s3Properties.bucketNames["images"]
+        val imagesBucket = s3Properties.images
         val image = testDataGenerator
             .withEmptyBucket()
             .withImage("mercedes.jpeg")

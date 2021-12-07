@@ -24,6 +24,7 @@ repositories {
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	implementation(platform("com.amazonaws:aws-java-sdk-bom:1.12.100"))
+	implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:2.3.1"))
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -44,6 +45,7 @@ dependencies {
 	implementation("org.imgscalr:imgscalr-lib:4.2")
 	implementation("com.auth0:auth0:1.35.0")
 	implementation("com.github.ben-manes.caffeine:caffeine")
+	implementation("io.awspring.cloud:spring-cloud-starter-aws-messaging")
 
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

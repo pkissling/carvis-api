@@ -3,7 +3,7 @@ package cloud.carvis.api.service
 import cloud.carvis.api.model.dtos.ImageDto
 import cloud.carvis.api.model.dtos.ImageSize
 import cloud.carvis.api.model.dtos.ImageSize.ORIGINAL
-import cloud.carvis.api.properties.S3Properties
+import cloud.carvis.api.properties.S3Buckets
 import com.amazonaws.HttpMethod
 import com.amazonaws.HttpMethod.GET
 import com.amazonaws.services.s3.AmazonS3
@@ -32,15 +32,11 @@ import javax.imageio.ImageIO
 @Service
 class ImageService(
     private val s3Client: AmazonS3,
-    s3Properties: S3Properties
+    s3Properties: S3Buckets
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val bucketName = s3Properties.bucketNames["images"]
-
-    init {
-        assert(s3Properties.bucketNames["images"] != null)
-    }
+    private val bucketName = s3Properties.images
 
     @Cacheable("imageUrls", sync = true)
     fun fetchImage(id: UUID, size: ImageSize): ImageDto {

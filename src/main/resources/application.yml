@@ -15,12 +15,16 @@ cors:
     - PUT
     - DELETE
 
-s3-buckets:
-  bucket-names:
+s3:
+  buckets:
     images: carvis-dev-images
 
 dynamodb:
   table-name-prefix: dev
+
+sqs:
+  queues:
+    user-signup: carvis-dev-user_signup
 
 spring:
   security:
@@ -44,3 +48,8 @@ sentry:
 
 aws:
   region: eu-west-1
+
+cloud:
+  aws:
+    sns:
+      enabled: false

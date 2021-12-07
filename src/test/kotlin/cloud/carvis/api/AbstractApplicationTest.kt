@@ -3,8 +3,7 @@ package cloud.carvis.api
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.api.restclients.Auth0RestClient
-import cloud.carvis.api.testconfig.AmazonDynamoDbTestConfig
-import cloud.carvis.api.testconfig.AmazonS3TestConfig
+import cloud.carvis.api.testconfig.AmazonTestConfig
 import cloud.carvis.api.testconfig.Auth0TestConfig
 import cloud.carvis.api.testconfig.JwtDecoderTestConfig
 import cloud.carvis.api.testdata.TestDataGenerator
@@ -20,13 +19,14 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    webEnvironment = RANDOM_PORT,
     properties = [
         "spring.data.dynamodb.entity2ddl.auto=create-only",
         "spring.main.allow-bean-definition-overriding=true",
@@ -34,8 +34,7 @@ import org.springframework.test.web.servlet.MvcResult
     ],
     classes = [
         Auth0TestConfig::class,
-        AmazonDynamoDbTestConfig::class,
-        AmazonS3TestConfig::class,
+        AmazonTestConfig::class,
         JwtDecoderTestConfig::class
     ]
 )

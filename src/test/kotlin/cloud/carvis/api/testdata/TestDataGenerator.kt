@@ -8,13 +8,17 @@ import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.CarEntity
 import cloud.carvis.api.model.entities.Entity
 import cloud.carvis.api.model.entities.RequestEntity
-import cloud.carvis.api.properties.S3Properties
+import cloud.carvis.api.model.events.UserSignupEvent
+import cloud.carvis.api.properties.S3Buckets
+import cloud.carvis.api.properties.SqsQueues
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest
 import com.amazonaws.services.s3.AmazonS3
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
+import io.awspring.cloud.messaging.core.QueueMessagingTemplate
+import org.springframework.messaging.support.GenericMessage
 import org.springframework.stereotype.Service
 import java.io.File
 import java.util.*
@@ -26,12 +30,13 @@ class TestDataGenerator(
     private val amazonS3: AmazonS3,
     private val amazonDynamoDB: AmazonDynamoDB,
     private val requestRepository: RequestRepository,
+    private val queueMessagingTemplate: QueueMessagingTemplate,
     val objectMapper: ObjectMapper,
-    s3Properties: S3Properties
+    private val sqsQueues: SqsQueues,
+    private val s3Queues: S3Buckets
 ) {
 
     private var last: Any? = null
-    val imagesBucket = s3Properties.bucketNames["images"]
 
     fun withEmptyDb(): TestDataGenerator {
         amazonDynamoDB.listTables()
@@ -51,8 +56,8 @@ class TestDataGenerator(
     }
 
     fun withEmptyBucket(): TestDataGenerator {
-        val objects = amazonS3.listObjects(imagesBucket)
-        objects.objectSummaries.forEach { amazonS3.deleteObject(imagesBucket, it.key) }
+        val objects = amazonS3.listObjects(s3Queues.images)
+        objects.objectSummaries.forEach { amazonS3.deleteObject(s3Queues.images, it.key) }
         return this
     }
 
@@ -80,7 +85,7 @@ class TestDataGenerator(
     fun withImage(): TestDataGenerator {
         val id = UUID.randomUUID()
         val size = ImageSize.ORIGINAL
-        amazonS3.putObject(imagesBucket, "$id/$size", arbitrary<String>())
+        amazonS3.putObject(s3Queues.images, "$id/$size", arbitrary<String>())
         this.last = Image(id, size)
         return this
     }
@@ -89,7 +94,7 @@ class TestDataGenerator(
         val file = File(TestDataGenerator::class.java.getResource("/images/$path")!!.file)
         val id = UUID.randomUUID()
         val size = ImageSize.ORIGINAL
-        amazonS3.putObject(imagesBucket, "$id/$size", file)
+        amazonS3.putObject(s3Queues.images, "$id/$size", file)
         this.last = Image(id, size)
         return this
     }
@@ -120,7 +125,6 @@ class TestDataGenerator(
         }.let { TestData(objectMapper, it) }
     }
 
-
     private inline fun <reified T> getLast(): T {
         if (this.last !is T) {
             throw RuntimeException("last is not of correct type")
@@ -138,6 +142,18 @@ class TestDataGenerator(
     }
 
     fun getRequest(): TestData<RequestEntity> {
+        return TestData(objectMapper, this.getLast())
+    }
+
+    fun withUserSignupEvent(): TestDataGenerator {
+        val userSignup = random<UserSignupEvent>()
+        val msg = GenericMessage(userSignup.toJson())
+        queueMessagingTemplate.send(sqsQueues.userSignup, msg)
+        last = userSignup
+        return this
+    }
+
+    fun getUserSignupEvent(): TestData<UserSignupEvent> {
         return TestData(objectMapper, this.getLast())
     }
 
