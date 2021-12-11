@@ -1,26 +1,17 @@
 package cloud.carvis.api
 
-import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
-import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
-import cloud.carvis.api.restclients.Auth0RestClient
-import cloud.carvis.api.testconfig.AmazonTestConfig
-import cloud.carvis.api.testconfig.Auth0TestConfig
-import cloud.carvis.api.testconfig.JwtDecoderTestConfig
+import cloud.carvis.api.mocks.Auth0Mock
+import cloud.carvis.api.mocks.AwsMock
 import cloud.carvis.api.testdata.TestDataGenerator
-import com.auth0.json.mgmt.users.User
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.reset
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 
@@ -33,9 +24,8 @@ import org.springframework.test.web.servlet.MvcResult
         "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/invalidprojectid"
     ],
     classes = [
-        Auth0TestConfig::class,
-        AmazonTestConfig::class,
-        JwtDecoderTestConfig::class
+        Auth0Mock::class,
+        AwsMock::class
     ]
 )
 @AutoConfigureMockMvc
@@ -51,25 +41,14 @@ abstract class AbstractApplicationTest {
     @Autowired
     protected lateinit var objectMapper: ObjectMapper
 
-    @MockBean
-    protected lateinit var auth0RestClient: Auth0RestClient
+    @Autowired
+    protected lateinit var auth0Mock: Auth0Mock
 
     @BeforeEach
-    fun superBeforeEach() {
-        resetMocks()
-        mockAuth0()
+    fun mockAuth0Users() {
+        auth0Mock.withUser(userId = Users.VALID_USER_ID, name = Users.VALID_USER_NAME)
     }
 
-    private fun resetMocks() {
-        reset(auth0RestClient)
-    }
-
-    private fun mockAuth0() {
-        val user = User().apply {
-            name = VALID_USER_NAME
-        }
-        doReturn(user).whenever(auth0RestClient).fetchUserDetails(VALID_USER_ID)
-    }
 
     protected final inline fun <reified T : Any> toObject(result: MvcResult): T {
         return objectMapper.readValue<T>(result.response.contentAsByteArray)

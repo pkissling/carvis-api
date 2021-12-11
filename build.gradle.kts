@@ -46,6 +46,7 @@ dependencies {
 	implementation("com.auth0:auth0:1.35.0")
 	implementation("com.github.ben-manes.caffeine:caffeine")
 	implementation("io.awspring.cloud:spring-cloud-starter-aws-messaging")
+	implementation("io.awspring.cloud:spring-cloud-starter-aws-ses")
 
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -55,6 +56,8 @@ dependencies {
 	testImplementation("org.testcontainers:junit-jupiter:1.16.0")
 	testImplementation("com.tyro.oss:arbitrater:1.0.0")
 	testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+	testImplementation("org.mock-server:mockserver-spring-test-listener:5.11.2")
+	testImplementation("org.awaitility:awaitility:4.1.1")
 }
 
 tasks.withType<KotlinCompile> {

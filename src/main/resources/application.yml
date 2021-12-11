@@ -40,6 +40,8 @@ spring:
 logging:
   pattern:
     level: '[%X{traceId}]'
+  level:
+    cloud.carvis: debug
 
 sentry:
   dsn: https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448
@@ -53,3 +55,8 @@ cloud:
   aws:
     sns:
       enabled: false
+
+email:
+  enabled: true
+  user-signup:
+    from-mail: usersignup@carvis.cloud
