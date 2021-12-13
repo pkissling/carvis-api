@@ -15,12 +15,16 @@ cors:
     - PUT
     - DELETE
 
-s3-buckets:
-  bucket-names:
+s3:
+  buckets:
     images: carvis-dev-images
 
 dynamodb:
   table-name-prefix: dev
+
+sqs:
+  queues:
+    user-signup: carvis-dev-user_signup
 
 spring:
   security:
@@ -36,6 +40,8 @@ spring:
 logging:
   pattern:
     level: '[%X{traceId}]'
+  level:
+    cloud.carvis: debug
 
 sentry:
   dsn: https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448
@@ -44,3 +50,14 @@ sentry:
 
 aws:
   region: eu-west-1
+
+cloud:
+  aws:
+    sns:
+      enabled: false
+
+email:
+  enabled: true
+  user-signup:
+    from-mail: usersignup@carvis.cloud
+    permission-url: https://manage.auth0.com/dashboard/eu/carvis/roles/rol_LIjMXu4DezolQ21w/users

@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.*
 
 
-@Suppress("UNCHECKED_CAST")
 class AuthorizationServiceTest : AbstractApplicationTest() {
 
     @Autowired

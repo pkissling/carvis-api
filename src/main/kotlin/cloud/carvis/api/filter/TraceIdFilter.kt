@@ -27,7 +27,7 @@ class TraceIdFilter(
             loggingService.addTraceId(uuid)
             logger.warn { "Incoming request to [${httpRequest.method} ${httpRequest.requestURI}] did not have a Sentry traceId. Generated new traceId: $uuid" }
         } else {
-            logger.debug { "Mapping existing sentry-trace from request: $sentryTraceId" }
+            logger.trace { "Mapping existing sentry-trace from request: $sentryTraceId" }
             loggingService.addTraceId(sentryTraceId)
         }
 

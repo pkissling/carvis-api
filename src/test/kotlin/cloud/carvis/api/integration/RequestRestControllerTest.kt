@@ -5,7 +5,7 @@ import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.api.dao.repositories.RequestRepository
 import cloud.carvis.api.model.dtos.RequestDto
-import cloud.carvis.api.testdata.TestData
+import cloud.carvis.api.util.testdata.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
