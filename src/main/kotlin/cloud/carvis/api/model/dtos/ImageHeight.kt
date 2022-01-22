@@ -1,6 +1,6 @@
 package cloud.carvis.api.model.dtos
 
-enum class ImageSize {
+enum class ImageHeight {
     ORIGINAL,
     `48`,
     `100`,
@@ -12,6 +12,6 @@ enum class ImageSize {
         try {
             this.name.toInt()
         } catch (e: Error) {
-            throw RuntimeException("ImageSize [$this] can not be converted to Integer", e)
+            throw RuntimeException("ImageHeight [$this] can not be converted to Integer", e)
         }
 }

@@ -1,7 +1,7 @@
 package cloud.carvis.api.rest
 
 import cloud.carvis.api.model.dtos.ImageDto
-import cloud.carvis.api.model.dtos.ImageSize
+import cloud.carvis.api.model.dtos.ImageHeight
 import cloud.carvis.api.service.ImageService
 import mu.KotlinLogging
 import org.springframework.http.MediaType
@@ -20,11 +20,11 @@ class ImageRestController(
     @GetMapping("/{id}")
     fun fetchImage(
         @PathVariable id: UUID,
-        @RequestParam(defaultValue = "ORIGINAL") size: ImageSize
+        @RequestParam(defaultValue = "ORIGINAL") height: ImageHeight
     ): ImageDto {
-        logger.info { "start fetchImage(id=$id,size=$size)" }
-        return imageService.fetchImage(id, size)
-            .also { logger.info { "end fetchImage(id=$id,size=$size), return=${it}" } }
+        logger.info { "start fetchImage(id=$id,height=$height)" }
+        return imageService.fetchImage(id, height)
+            .also { logger.info { "end fetchImage(id=$id,height=$height), return=${it}" } }
     }
 
     @PostMapping

@@ -3,7 +3,7 @@ package cloud.carvis.api.util.testdata
 import cloud.carvis.api.dao.repositories.CarRepository
 import cloud.carvis.api.dao.repositories.RequestRepository
 import cloud.carvis.api.model.dtos.CarDto
-import cloud.carvis.api.model.dtos.ImageSize
+import cloud.carvis.api.model.dtos.ImageHeight
 import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.CarEntity
 import cloud.carvis.api.model.entities.Entity
@@ -84,7 +84,7 @@ class TestDataGenerator(
 
     fun withImage(): TestDataGenerator {
         val id = UUID.randomUUID()
-        val size = ImageSize.ORIGINAL
+        val size = ImageHeight.ORIGINAL
         amazonS3.putObject(s3Queues.images, "$id/$size", arbitrary<String>())
         this.last = Image(id, size)
         return this
@@ -93,7 +93,7 @@ class TestDataGenerator(
     fun withImage(path: String): TestDataGenerator {
         val file = File(TestDataGenerator::class.java.getResource("/images/$path")!!.file)
         val id = UUID.randomUUID()
-        val size = ImageSize.ORIGINAL
+        val size = ImageHeight.ORIGINAL
         amazonS3.putObject(s3Queues.images, "$id/$size", file)
         this.last = Image(id, size)
         return this
@@ -159,6 +159,6 @@ class TestDataGenerator(
 
     data class Image(
         val id: UUID,
-        val size: ImageSize
+        val height: ImageHeight
     )
 }

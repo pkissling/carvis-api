@@ -50,10 +50,10 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .getImage()
 
         // when
-        val result = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.size))
+        val result = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
-            .andExpect(jsonPath("$.size").value(image.size.toString()))
+            .andExpect(jsonPath("$.height").value(image.height.toString()))
             .andExpect(jsonPath("$.expiresAt", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
@@ -74,7 +74,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.size").value("ORIGINAL"))
+            .andExpect(jsonPath("$.height").value("ORIGINAL"))
             .andExpect(jsonPath("$.expiresAt").exists())
             .andExpect(jsonPath("$.url").exists())
             .andReturn()
@@ -103,10 +103,10 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .getImage()
 
         // when
-        this.mockMvc.perform(get("/images/{id}?size={size}", image.id, 200))
+        this.mockMvc.perform(get("/images/{id}?height={height}", image.id, 200))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.size").value("200"))
+            .andExpect(jsonPath("$.height").value(200))
             .andExpect(jsonPath("$.expiresAt").exists())
             .andExpect(jsonPath("$.url").exists())
 
@@ -127,12 +127,15 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .getImage()
 
         // when / then
-        this.mockMvc.perform(get("/images/{id}", image.id))
+        val response = this.mockMvc.perform(get("/images/{id}", image.id))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
-            .andExpect(jsonPath("$.size").value("ORIGINAL"))
+            .andExpect(jsonPath("$.height").value("ORIGINAL"))
             .andExpect(jsonPath("$.expiresAt", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
+            .andReturn().response
+
+        response.contentAsString
     }
 
     @Test
@@ -145,7 +148,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .getImage()
 
         // when / then
-        this.mockMvc.perform(get("/images/{id}?size={size}", image.id, "199"))
+        this.mockMvc.perform(get("/images/{id}?height={height}", image.id, "199"))
             .andExpect(status().isBadRequest)
     }
 
@@ -159,12 +162,12 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .getImage()
 
         // when
-        val result0 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.size))
+        val result0 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
-        val result1 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.size))
+        val result1 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.url", notNullValue()))
