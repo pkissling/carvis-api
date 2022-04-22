@@ -14,22 +14,26 @@ class AuthorizationService(
     private val requestRepository: RequestRepository
 ) {
 
-    @Cacheable("carsAuthorization", key = "#carId + '_' + @authorization.username")
+    @Cacheable("carsAuthorization", key = "#carId + '_' + @authorization.userId")
     fun canModifyCar(carId: UUID): Boolean =
         isAdmin() || isCarOwner(carId)
 
-    @Cacheable("requestsAuthorization", key = "#requestId + '_' + @authorization.username")
+    @Cacheable("requestsAuthorization", key = "#requestId + '_' + @authorization.userId")
     fun canModifyRequest(requestId: UUID): Boolean =
         isAdmin() || isRequestOwner(requestId)
 
+    @Cacheable("usersAuthorization", key = "#userId + '_' + @authorization.userId")
+    fun canAccessAndModifyUser(userId: String): Boolean =
+        isAdmin() || isUser(userId)
+
     private fun isRequestOwner(id: UUID): Boolean {
         val request = requestRepository.findByIdOrNull(id) ?: return false
-        return request.createdBy == getUsername()
+        return request.createdBy == getUserId()
     }
 
     fun isCarOwner(id: UUID): Boolean {
         val car = carRepository.findByIdOrNull(id) ?: return false
-        return car.createdBy == getUsername()
+        return car.createdBy == getUserId()
     }
 
     fun isAdmin() =
@@ -37,9 +41,12 @@ class AuthorizationService(
             .map { it.authority }
             .any { it == ADMIN_ROLE }
 
-    fun getUsername(): String =
+    fun getUserId(): String =
         SecurityContextHolder.getContext().authentication.name
             ?: throw RuntimeException("Unable to get username from current context")
+
+    fun isUser(getUserId: String): Boolean =
+        getUserId() == getUserId
 
     companion object {
         const val ADMIN_ROLE = "ROLE_ADMIN"

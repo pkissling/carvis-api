@@ -1,4 +1,4 @@
-package cloud.carvis.api.restclients
+package cloud.carvis.api.clients
 
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.client.mgmt.filter.RolesFilter
@@ -11,7 +11,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     private val logger = KotlinLogging.logger {}
 
-    fun fetchUserDetails(userId: String): User? = try {
+    fun fetchUser(userId: String): User? = try {
         managementApi.users()
             .get(userId, null)
             .execute()
@@ -40,5 +40,14 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
     } catch (e: Exception) {
         logger.error(e) { "Unable to fetch all admins from Auth0" }
         emptyList()
+    }
+
+    fun updateUser(userId: String, user: User): User? = try {
+        managementApi.users()
+            .update(userId, user)
+            .execute()
+    } catch (e: Exception) {
+        logger.error(e) { "Unable to update userId from Auth0: $userId" }
+        null
     }
 }

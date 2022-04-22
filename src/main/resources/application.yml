@@ -33,7 +33,12 @@ spring:
         jwt:
           issuer-uri: ${auth.domain}
   cache:
-    cache-names: userNames,imageUrls,carsAuthorization,requestsAuthorization
+    cache-names:
+      - userNames
+      - imageUrls
+      - carsAuthorization
+      - requestsAuthorization
+      - usersAuthorization
     caffeine:
       spec: maximumSize=500,expireAfterAccess=600s
 

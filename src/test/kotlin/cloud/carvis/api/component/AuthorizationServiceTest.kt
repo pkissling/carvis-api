@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.CacheManager
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.*
 
@@ -99,6 +100,44 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
         assertThat(cache("requestsAuthorization")).hasSize(2)
         assertThat(cache("requestsAuthorization")["${aRequestId}_foo"]).isEqualTo(false)
         assertThat(cache("requestsAuthorization")["${otherRequestId}_foo"]).isEqualTo(false)
+    }
+
+    @Test
+    @WithMockUser(username = "foo")
+    fun `users GET - Cache authorization information`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        val userId = UUID.randomUUID()
+
+        // when
+        this.mockMvc.perform(get("/users/{id}", userId))
+            .andExpect(status().isForbidden)
+        this.mockMvc.perform(get("/users/{id}", userId))
+            .andExpect(status().isForbidden)
+
+        // then
+        assertThat(cache("usersAuthorization")).hasSize(1)
+        assertThat(cache("usersAuthorization")["${userId}_foo"]).isEqualTo(false)
+    }
+
+    @Test
+    @WithMockUser(username = "foo")
+    fun `users GET - Cache authorization information - unique by userId`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        val aUserId = UUID.randomUUID()
+        val otherUserId = UUID.randomUUID()
+
+        // when
+        this.mockMvc.perform(get("/users/{id}", aUserId))
+            .andExpect(status().isForbidden)
+        this.mockMvc.perform(get("/users/{id}", otherUserId))
+            .andExpect(status().isForbidden)
+
+        // then
+        assertThat(cache("usersAuthorization")).hasSize(2)
+        assertThat(cache("usersAuthorization")["${aUserId}_foo"]).isEqualTo(false)
+        assertThat(cache("usersAuthorization")["${otherUserId}_foo"]).isEqualTo(false)
     }
 
     private fun cache(key: String): Map<String, Boolean> {

@@ -42,7 +42,7 @@ class CarRestController(
     fun updateCar(@PathVariable id: UUID, @Valid @RequestBody car: CarDto): CarDto {
         logger.info { "start updateCar(id=$id,car=$car)" }
         return carService.updateCar(id, car)
-            .also { logger.info { "end updateCar(id,$id,car=$car), return=${it}" } }
+            .also { logger.info { "end updateCar(id=$id,car=$car), return=${it}" } }
     }
 
     @ResponseStatus(NO_CONTENT)

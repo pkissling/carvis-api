@@ -43,7 +43,7 @@ class RequestRestController(
     fun updateRequest(@PathVariable id: UUID, @Valid @RequestBody request: RequestDto): RequestDto {
         logger.info { "start updateRequest(id=$id,request=$request)" }
         return requestService.updateRequest(id, request)
-            .also { logger.info { "end updateRequest(id,$id,request=$request), return=${it}" } }
+            .also { logger.info { "end updateRequest(id=$id,request=$request), return=${it}" } }
     }
 
     @ResponseStatus(NO_CONTENT)

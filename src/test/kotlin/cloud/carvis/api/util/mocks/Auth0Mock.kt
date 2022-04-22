@@ -1,6 +1,7 @@
 package cloud.carvis.api.util.mocks
 
 import cloud.carvis.api.config.SecurityConfig
+import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.util.helpers.MockServerUtils
 import com.auth0.client.mgmt.ManagementAPI
 import org.mockserver.model.HttpRequest
@@ -32,22 +33,20 @@ class Auth0Mock {
         return SecurityConfig().jwtDecoder(audience, this.getUrl())
     }
 
-
     fun withUser(
         userId: String,
-        username: String = "j+smith",
         name: String = "John Smith",
-        email: String = "j+smith@example.com"
+        email: String = "j+smith@example.com",
+        company: String? = null
     ): Auth0Mock {
         this.mockApiCall(
             path = "/api/v2/users/$userId",
             body = """
                 {
-                    "userId":"$userId",
-                    "username":"$username",
+                    "user_id":"$userId",
                     "name":"$name",
-                    "email":"$email",
-                    "createdAt":"2021-12-07T18:10:59.126Z"
+                    "email":"$email"
+                    ${company?.let { ",\"user_metadata\": { \"company\": \"$company\" }" } ?: ""}
                 }
                 """
         )
@@ -82,6 +81,21 @@ class Auth0Mock {
                     "name": "Foo Bar"
                   }
                 ]
+                """
+        )
+        return this
+    }
+
+    fun withUpdateResponse(user: UserDto): Auth0Mock {
+        this.mockApiCall(
+            path = "/api/v2/users/${user.userId}",
+            method = "PATCH",
+            body = """
+                {
+                    "user_id":"${user.userId}",
+                    "name":"${user.name}"
+                    ${user.company?.let { ",\"user_metadata\": { \"company\": \"${user.company}\" }" } ?: ""}
+                }
                 """
         )
         return this

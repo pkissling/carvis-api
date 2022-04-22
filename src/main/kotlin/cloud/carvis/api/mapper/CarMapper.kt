@@ -2,11 +2,11 @@ package cloud.carvis.api.mapper
 
 import cloud.carvis.api.model.dtos.CarDto
 import cloud.carvis.api.model.entities.CarEntity
-import cloud.carvis.api.service.UserService
+import cloud.carvis.api.user.service.UserService
 import org.springframework.stereotype.Service
 
 @Service
-class CarMapper(private val auth0RestClient: UserService) : Mapper<CarDto, CarEntity> {
+class CarMapper(private val auth0RestClient: UserService) : EntityMapper<CarDto, CarEntity> {
 
     override fun toDto(entity: CarEntity): CarDto =
         CarDto(

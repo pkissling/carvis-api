@@ -42,7 +42,6 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
             User-ID: ${event.userId}
             E-Mail: ${event.email}
             Name: ${event.name}
-            Benutzername: ${event.username}
 
             Bitte gib dem Nutzer die entsprechende Berechtigung: https://manage.auth0.com/dashboard/eu/carvis/roles/rol_LIjMXu4DezolQ21w/users
             """.trimIndent()

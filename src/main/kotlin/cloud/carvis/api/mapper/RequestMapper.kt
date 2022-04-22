@@ -4,7 +4,7 @@ import cloud.carvis.api.model.dtos.ContactDetailsDto
 import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.RequestEntity
 import cloud.carvis.api.service.AuthorizationService
-import cloud.carvis.api.service.UserService
+import cloud.carvis.api.user.service.UserService
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service
 class RequestMapper(
     private val authorizationService: AuthorizationService,
     private val auth0RestClient: UserService
-) : Mapper<RequestDto, RequestEntity> {
+) : EntityMapper<RequestDto, RequestEntity> {
 
     private val logger = KotlinLogging.logger {}
 
@@ -91,15 +91,15 @@ class RequestMapper(
 
     private fun hideFieldsIfRequired(dto: RequestDto): RequestDto {
         val isAdmin = authorizationService.isAdmin()
-        val username = authorizationService.getUsername()
+        val userId = authorizationService.getUserId()
 
-        if (isAdmin || username == dto.createdBy) {
+        if (isAdmin || userId == dto.createdBy) {
             return dto
         }
 
         logger.debug {
             "Hiding fields for request with id [${dto.id}]. " +
-                    "Owner username [${dto.createdBy}, requester username [$username]"
+                    "Owner userId [${dto.createdBy}, requester userId [$userId]"
         }
 
         return dto.apply {

@@ -2,6 +2,7 @@ package cloud.carvis.api.service
 
 import cloud.carvis.api.model.events.UserSignupEvent
 import cloud.carvis.api.properties.EmailProperties
+import cloud.carvis.api.user.service.UserService
 import mu.KotlinLogging
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.stereotype.Service
@@ -33,7 +34,6 @@ class NotificationService(
                 User-ID: ${event.userId}
                 E-Mail: ${event.email}
                 Name: ${event.name ?: "n/a"}
-                Benutzername: ${event.username ?: "n/a"}
                 
                 Bitte gib dem Nutzer die entsprechende Berechtigung: ${emailProperties.userSignup.permissionUrl}
                 """.trimIndent()
