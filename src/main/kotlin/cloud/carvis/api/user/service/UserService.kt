@@ -60,7 +60,6 @@ class UserService(
         return userMapper.toDto(updatedUser)
     }
 
-    @PreAuthorize("@authorization.canAccessAndModifyUser(#id)")
     fun fetchUser(id: String): UserDto {
         return auth0RestClient.fetchUser(id)
             ?.let { userMapper.toDto(it) }
@@ -69,8 +68,6 @@ class UserService(
 
     fun fetchOwnUser(): UserDto {
         val userId = authorizationService.getUserId()
-        return auth0RestClient.fetchUser(userId)
-            ?.let { userMapper.toDto(it) }
-            ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to extract user from auth context")
+        return fetchUser(userId)
     }
 }

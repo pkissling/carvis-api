@@ -16,7 +16,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(username = "someUserId")
-    fun `users GET - get own user`() {
+    fun `users GET - get user successfully`() {
         // given
         testDataGenerator.withEmptyDb()
         auth0Mock.withUser("someUserId", name = "John Wayne", company = "someCompany")
@@ -30,28 +30,15 @@ class UserRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser(username = "foo")
-    fun `users GET - access other user is forbidden`() {
+    @WithMockUser(username = "someUserId")
+    fun `users GET - get user throws 404`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("bar")
+        auth0Mock.withUser("someUserId", name = "John Wayne", company = "someCompany")
 
         // when / then
-        this.mockMvc.perform(get("/users/{userId}", "bar"))
-            .andExpect(status().isForbidden)
-    }
-
-    @Test
-    @WithMockUser(username = "adminUserId", roles = ["ADMIN"])
-    fun `users GET - access other user as admin`() {
-        // given
-        testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("regularUserId")
-
-        // when / then
-        this.mockMvc.perform(get("/users/{userId}", "regularUserId"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.userId", equalTo("regularUserId")))
+        this.mockMvc.perform(get("/users/{userId}", "404"))
+            .andExpect(status().isNotFound)
     }
 
     @Test
