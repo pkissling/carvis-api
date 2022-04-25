@@ -1,6 +1,7 @@
 package cloud.carvis.api.user.service
 
 import cloud.carvis.api.clients.Auth0RestClient
+import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
 import cloud.carvis.api.user.model.UserDto
 import mu.KotlinLogging
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException
 @Service
 class UserService(
     private val auth0RestClient: Auth0RestClient,
+    private val authorizationService: AuthorizationService,
     private val userMapper: UserMapper
 ) {
 
@@ -63,5 +65,12 @@ class UserService(
         return auth0RestClient.fetchUser(id)
             ?.let { userMapper.toDto(it) }
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "user not found")
+    }
+
+    fun fetchOwnUser(): UserDto {
+        val userId = authorizationService.getUserId()
+        return auth0RestClient.fetchUser(userId)
+            ?.let { userMapper.toDto(it) }
+            ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to extract user from auth context")
     }
 }

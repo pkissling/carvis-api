@@ -113,4 +113,21 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.name", equalTo("Updated Name")))
             .andExpect(jsonPath("$.company", equalTo("updateCompany")))
     }
+
+    @Test
+    @WithMockUser(username = "j.w")
+    fun `my-user GET - fetch successfully`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        auth0Mock.withUser("j.w", name = "John Wayne", company = "Wayne Inc.")
+
+        // when / then
+        this.mockMvc.perform(
+            get("/my-user")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.userId", equalTo("j.w")))
+            .andExpect(jsonPath("$.name", equalTo("John Wayne")))
+            .andExpect(jsonPath("$.company", equalTo("Wayne Inc.")))
+    }
 }
