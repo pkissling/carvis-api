@@ -34,7 +34,7 @@ spring:
           issuer-uri: ${auth.domain}
   cache:
     cache-names:
-      - userNames
+      - auth0-users
       - imageUrls
       - carsAuthorization
       - requestsAuthorization

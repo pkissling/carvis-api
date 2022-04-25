@@ -10,4 +10,8 @@ data class UserDto(
 
     var company: String? = null,
 
-    )
+    var phone: String? = null,
+
+    var email: String? = null
+
+)

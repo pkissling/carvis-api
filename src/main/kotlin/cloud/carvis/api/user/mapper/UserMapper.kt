@@ -13,12 +13,17 @@ class UserMapper() : Mapper<UserDto, User> {
             userId = entity.id,
             name = entity.name,
             company = entity.userMetadata?.get("company")?.toString(),
+            phone = entity.userMetadata?.get("phone")?.toString(),
+            email = entity.email
         )
 
 
     override fun toEntity(dto: UserDto): User =
         User().apply {
             name = dto.name
-            userMetadata = mapOf("company" to dto.company)
+            userMetadata = mapOf(
+                "company" to dto.company,
+                "phone" to dto.phone
+            )
         }
 }

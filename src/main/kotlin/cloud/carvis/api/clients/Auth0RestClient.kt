@@ -4,6 +4,8 @@ import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.client.mgmt.filter.RolesFilter
 import com.auth0.json.mgmt.users.User
 import mu.KotlinLogging
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 
 @Service
@@ -11,6 +13,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     private val logger = KotlinLogging.logger {}
 
+    @Cacheable("auth0-users", sync = true)
     fun fetchUser(userId: String): User? = try {
         managementApi.users()
             .get(userId, null)
@@ -42,6 +45,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         emptyList()
     }
 
+    @CacheEvict("auth0-users", key = "#userId")
     fun updateUser(userId: String, user: User): User? = try {
         managementApi.users()
             .update(userId, user)

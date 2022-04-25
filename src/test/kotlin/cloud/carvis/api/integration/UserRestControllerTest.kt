@@ -15,11 +15,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class UserRestControllerTest : AbstractApplicationTest() {
 
     @Test
-    @WithMockUser(username = "someUserId")
+    @WithMockUser
     fun `users GET - get user successfully`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("someUserId", name = "John Wayne", company = "someCompany")
+        auth0Mock.withUser("someUserId", name = "John Wayne", company = "someCompany", email = "e@mail.com", phone = "123456789")
 
         // when / then
         this.mockMvc.perform(get("/users/{userId}", "someUserId"))
@@ -27,10 +27,12 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.userId", equalTo("someUserId")))
             .andExpect(jsonPath("$.name", equalTo("John Wayne")))
             .andExpect(jsonPath("$.company", equalTo("someCompany")))
+            .andExpect(jsonPath("$.email", equalTo("e@mail.com")))
+            .andExpect(jsonPath("$.phone", equalTo("123456789")))
     }
 
     @Test
-    @WithMockUser(username = "someUserId")
+    @WithMockUser
     fun `users GET - get user throws 404`() {
         // given
         testDataGenerator.withEmptyDb()
@@ -42,13 +44,14 @@ class UserRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser(username = "someUserId")
+    @WithMockUser(username = "the.user.id")
     fun `users PUT - update own user`() {
         // given
         testDataGenerator.withEmptyDb()
-        val user = UserDto("someUserId", name = "Updated Name", company = "updateCompany")
+        val user =
+            UserDto("the.user.id", name = "Updated Name", company = "updateCompany", email = "this@mail.test", phone = "updatedPhone")
         auth0Mock
-            .withUser("someUserId", name = "John Wayne", company = "someCompany")
+            .withUser("the.user.id", name = "John Wayne", company = "someCompany", email = "this@mail.test", phone = "123 456")
             .withUpdateResponse(user)
 
         // when / then
@@ -58,9 +61,11 @@ class UserRestControllerTest : AbstractApplicationTest() {
                 .contentType(APPLICATION_JSON)
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.userId", equalTo("someUserId")))
+            .andExpect(jsonPath("$.userId", equalTo("the.user.id")))
             .andExpect(jsonPath("$.name", equalTo("Updated Name")))
             .andExpect(jsonPath("$.company", equalTo("updateCompany")))
+            .andExpect(jsonPath("$.phone", equalTo("updatedPhone")))
+            .andExpect(jsonPath("$.email", equalTo("this@mail.test")))
     }
 
     @Test
@@ -84,21 +89,23 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users PUT - update other user as admin`() {
         // given
         testDataGenerator.withEmptyDb()
-        val user = UserDto("someUserId", name = "Updated Name", company = "updateCompany")
+        val user = UserDto("a.user.id", name = "Updated Name", company = "updateCompany", phone = "updatedPhone", email = "this@mail.rocks")
         auth0Mock
-            .withUser("someUserId", name = "John Wayne", company = "someCompany")
+            .withUser("a.user.id", name = "John Wayne", company = "someCompany", email = "this@mail.rocks", phone = "123 456")
             .withUpdateResponse(user)
 
         // when / then
         this.mockMvc.perform(
-            put("/users/{id}", "someUserId")
+            put("/users/{id}", "a.user.id")
                 .content(objectMapper.writeValueAsString(user))
                 .contentType(APPLICATION_JSON)
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.userId", equalTo("someUserId")))
+            .andExpect(jsonPath("$.userId", equalTo("a.user.id")))
             .andExpect(jsonPath("$.name", equalTo("Updated Name")))
             .andExpect(jsonPath("$.company", equalTo("updateCompany")))
+            .andExpect(jsonPath("$.phone", equalTo("updatedPhone")))
+            .andExpect(jsonPath("$.email", equalTo("this@mail.rocks")))
     }
 
     @Test
@@ -106,7 +113,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `my-user GET - fetch successfully`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("j.w", name = "John Wayne", company = "Wayne Inc.")
+        auth0Mock.withUser("j.w", email = "j@wayne.com", name = "John Wayne", company = "Wayne Inc.", phone = "+1-555-555-5555")
 
         // when / then
         this.mockMvc.perform(
@@ -116,5 +123,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.userId", equalTo("j.w")))
             .andExpect(jsonPath("$.name", equalTo("John Wayne")))
             .andExpect(jsonPath("$.company", equalTo("Wayne Inc.")))
+            .andExpect(jsonPath("$.phone", equalTo("+1-555-555-5555")))
+            .andExpect(jsonPath("$.email", equalTo("j@wayne.com")))
     }
 }

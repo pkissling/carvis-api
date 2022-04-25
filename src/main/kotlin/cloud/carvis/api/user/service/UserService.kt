@@ -5,7 +5,6 @@ import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
 import cloud.carvis.api.user.model.UserDto
 import mu.KotlinLogging
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -20,7 +19,6 @@ class UserService(
 
     private val logger = KotlinLogging.logger {}
 
-    @Cacheable("userNames", sync = true)
     fun fetchName(userId: String): String? =
         auth0RestClient.fetchUser(userId)
             ?.name
@@ -46,9 +44,6 @@ class UserService(
 
     @PreAuthorize("@authorization.canAccessAndModifyUser(#id)")
     fun updateUser(id: String, user: UserDto): UserDto {
-        if (auth0RestClient.fetchUser(id) == null) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "User with id [$id] not found.")
-        }
         val updatedUser = userMapper.toEntity(user)
             .let { auth0RestClient.updateUser(id, it) }
 
