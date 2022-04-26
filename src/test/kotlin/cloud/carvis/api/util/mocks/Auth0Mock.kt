@@ -33,29 +33,10 @@ class Auth0Mock {
         return SecurityConfig().jwtDecoder(audience, this.getUrl())
     }
 
-    fun withUser(
-        userId: String,
-        name: String = "John Smith",
-        email: String = "j+smith@example.com",
-        company: String? = null,
-        phone: String? = null
-    ): Auth0Mock {
-        val userMetadata = listOf(
-            company?.let { "\"company\": \"$company\"" },
-            phone?.let { "\"phone\": \"$phone\"" }
-        )
+    fun withUser(user: UserDto): Auth0Mock {
         this.mockApiCall(
-            path = "/api/v2/users/$userId",
-            body = """
-                {
-                    "user_id": "$userId",
-                    "name": "$name",
-                    "email": "$email",
-                    "user_metadata": {
-                        ${userMetadata.filter { it?.isNotBlank() ?: false }.joinToString(",\n")}
-                    }   
-                }
-                """
+            path = "/api/v2/users/${user.userId}",
+            body = userJson(user)
         )
         return this
     }
@@ -94,23 +75,18 @@ class Auth0Mock {
     }
 
     fun withUpdateResponse(user: UserDto): Auth0Mock {
-        val userMetadata = listOf(
-            user.company?.let { "\"company\": \"$it\"" },
-            user.phone?.let { "\"phone\": \"$it\"" }
-        )
         this.mockApiCall(
             path = "/api/v2/users/${user.userId}",
             method = "PATCH",
-            body = """
-                {
-                    "user_id": "${user.userId}",
-                    "name": "${user.name}",
-                    "email": "${user.email}",
-                    "user_metadata": {
-                        ${userMetadata.filter { it?.isNotBlank() ?: false }.joinToString(",\n")}
-                    }
-                }
-                """
+            body = userJson(user)
+        )
+        return this
+    }
+
+    fun withUsers(vararg users: UserDto): Auth0Mock {
+        this.mockApiCall(
+            path = "/api/v2/users",
+            body = usersJson(*users)
         )
         return this
     }
@@ -150,5 +126,30 @@ class Auth0Mock {
                     .withBody(body.trimIndent())
             )
         return this
+    }
+
+    private fun userJson(user: UserDto): String {
+        val userMetadata = listOf(
+            user.company?.let { "\"company\": \"$it\"" },
+            user.phone?.let { "\"phone\": \"$it\"" }
+        )
+        return """
+            {
+                "user_id": "${user.userId}",
+                "name": "${user.name}",
+                "email": "${user.email}",
+                "user_metadata": {
+                    ${userMetadata.filter { it?.isNotBlank() ?: false }.joinToString(",\n")}
+                }
+            }
+            """
+    }
+
+    private fun usersJson(vararg users: UserDto): String {
+        return """
+            [
+                ${users.joinToString(",\n") { userJson(it) }}
+            ]
+            """
     }
 }

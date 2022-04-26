@@ -5,10 +5,8 @@ import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
 import cloud.carvis.api.user.model.UserDto
 import mu.KotlinLogging
-import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
-import org.springframework.web.server.ResponseStatusException
 
 @Service
 class UserService(
@@ -18,11 +16,6 @@ class UserService(
 ) {
 
     private val logger = KotlinLogging.logger {}
-
-    fun fetchName(userId: String): String? =
-        auth0RestClient.fetchUser(userId)
-            ?.name
-            .also { logger.debug { "Resolved name [$it] for userId: $userId" } }
 
     fun fetchAllAdminEmails(): List<String> {
         val admins = auth0RestClient.fetchAllAdmins()
@@ -43,26 +36,31 @@ class UserService(
     }
 
     @PreAuthorize("@authorization.canAccessAndModifyUser(#id)")
-    fun updateUser(id: String, user: UserDto): UserDto {
-        val updatedUser = userMapper.toEntity(user)
+    fun updateUser(id: String, user: UserDto): UserDto =
+        userMapper.toEntity(user)
             .let { auth0RestClient.updateUser(id, it) }
-
-        if (updatedUser == null) {
-            logger.warn { "Error while updating user with id [$id]" }
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "cannot update user")
-        }
-
-        return userMapper.toDto(updatedUser)
-    }
+            .let { userMapper.toDto(it) }
 
     fun fetchUser(id: String): UserDto {
         return auth0RestClient.fetchUser(id)
-            ?.let { userMapper.toDto(it) }
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "user not found")
+            .let { userMapper.toDto(it) }
     }
 
     fun fetchOwnUser(): UserDto {
         val userId = authorizationService.getUserId()
         return fetchUser(userId)
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun fetchAllUsers(): List<UserDto> {
+        return auth0RestClient.fetchAllUsers()
+            .map { userMapper.toDto(it) }
+    }
+
+    fun fetchUserSafe(userId: String): UserDto? = try {
+        this.fetchUser(userId)
+    } catch (e: Exception) {
+        logger.warn { "Error while fetching user with userId: $userId" }
+        null
     }
 }

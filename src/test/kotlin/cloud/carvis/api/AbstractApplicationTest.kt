@@ -2,13 +2,13 @@ package cloud.carvis.api
 
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
+import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.util.mocks.Auth0Mock
 import cloud.carvis.api.util.mocks.AwsMock
 import cloud.carvis.api.util.testdata.TestDataGenerator
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
@@ -50,7 +50,7 @@ abstract class AbstractApplicationTest {
 
     @BeforeEach
     fun beforeAll() {
-        auth0Mock.withUser(userId = VALID_USER_ID, name = VALID_USER_NAME)
+        auth0Mock.withUser(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
     }
 
     @AfterEach

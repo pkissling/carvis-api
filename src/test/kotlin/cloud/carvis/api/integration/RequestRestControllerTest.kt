@@ -334,6 +334,42 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         assertThat(returnedRequest.updatedAt).isBetween(start, now())
     }
 
+    @Test
+    @WithMockUser(username = VALID_USER_ID)
+    fun `requests GET - enrich username`() {
+        // given
+        val request = testDataGenerator
+            .withEmptyDb()
+            .withRequest(VALID_USER_ID)
+            .getRequest()
+            .value()
+
+        // when / then
+        this.mockMvc
+            .perform(get("/requests/{id}", request.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.createdBy").value(VALID_USER_ID))
+            .andExpect(jsonPath("$.ownerName").value(VALID_USER_NAME))
+    }
+
+    @Test
+    @WithMockUser
+    fun `requests GET - enrich username with fallback`() {
+        // given
+        val request = testDataGenerator
+            .withEmptyDb()
+            .withRequest("404")
+            .getRequest()
+            .value()
+
+        // when / then
+        this.mockMvc
+            .perform(get("/requests/{id}", request.id))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.createdBy").value("404"))
+            .andExpect(jsonPath("$.ownerName").value("404"))
+    }
+
     fun assert(attribute: String, value: Any? = null): ResultActions {
         val request: TestData<RequestDto> = testDataGenerator.random()
         request.setValue(attribute, value)

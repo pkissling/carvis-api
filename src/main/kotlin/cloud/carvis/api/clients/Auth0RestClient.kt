@@ -2,26 +2,27 @@ package cloud.carvis.api.clients
 
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.client.mgmt.filter.RolesFilter
+import com.auth0.exception.APIException
 import com.auth0.json.mgmt.users.User
 import mu.KotlinLogging
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     private val logger = KotlinLogging.logger {}
 
-    @Cacheable("auth0-users", sync = true)
-    fun fetchUser(userId: String): User? = try {
-        managementApi.users()
-            .get(userId, null)
-            .execute()
-    } catch (e: Exception) {
-        logger.error(e) { "Unable to fetch userId from Auth0: $userId" }
-        null
-    }
+    @Cacheable("auth0-user", sync = true)
+    fun fetchUser(userId: String): User =
+        withErrorHandling {
+            managementApi.users()
+                .get(userId, null)
+                .execute()
+        }
 
     fun fetchAllAdmins(): List<User> = try {
         val roles = managementApi.roles()
@@ -46,12 +47,29 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
     }
 
     @CacheEvict("auth0-users", key = "#userId")
-    fun updateUser(userId: String, user: User): User? = try {
-        managementApi.users()
-            .update(userId, user)
-            .execute()
+    fun updateUser(userId: String, user: User): User =
+        withErrorHandling {
+            managementApi.users()
+                .update(userId, user)
+                .execute()
+        }
+
+    @Cacheable("auth0-users", sync = true)
+    fun fetchAllUsers(): List<User> =
+        withErrorHandling {
+            managementApi.users()
+                .list(null)
+                .execute()
+                .items
+        }
+
+    private fun <T : Any> withErrorHandling(fn: () -> T): T = try {
+        fn.invoke()
+    } catch (e: APIException) {
+        logger.error(e) { "Error while calling Auth0" }
+        throw ResponseStatusException(HttpStatus.valueOf(e.statusCode), e.message)
     } catch (e: Exception) {
-        logger.error(e) { "Unable to update userId from Auth0: $userId" }
-        null
+        logger.error(e) { "Error while calling Auth0" }
+        throw e
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 @Service
 class RequestMapper(
     private val authorizationService: AuthorizationService,
-    private val auth0RestClient: UserService
+    private val userService: UserService
 ) : EntityMapper<RequestDto, RequestEntity> {
 
     private val logger = KotlinLogging.logger {}
@@ -50,7 +50,7 @@ class RequestMapper(
             modelYear = entity.modelYear,
             mustHaves = entity.mustHaves,
             noGos = entity.noGos,
-            ownerName = entity.createdBy?.let { auth0RestClient.fetchName(it) },
+            ownerName = entity.createdBy?.let { userService.fetchUserSafe(it)?.name } ?: entity.createdBy,
             transmission = entity.transmission,
             type = entity.type,
             vision = entity.vision,

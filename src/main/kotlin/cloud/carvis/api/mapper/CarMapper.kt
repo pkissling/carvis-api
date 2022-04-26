@@ -6,7 +6,7 @@ import cloud.carvis.api.user.service.UserService
 import org.springframework.stereotype.Service
 
 @Service
-class CarMapper(private val auth0RestClient: UserService) : EntityMapper<CarDto, CarEntity> {
+class CarMapper(private val userService: UserService) : EntityMapper<CarDto, CarEntity> {
 
     override fun toDto(entity: CarEntity): CarDto =
         CarDto(
@@ -32,7 +32,7 @@ class CarMapper(private val auth0RestClient: UserService) : EntityMapper<CarDto,
             modelDetails = entity.modelDetails,
             modelSeries = entity.modelSeries,
             modelYear = entity.modelYear,
-            ownerName = entity.createdBy?.let { auth0RestClient.fetchName(it) },
+            ownerName = entity.createdBy?.let { userService.fetchUserSafe(it)?.name } ?: entity.createdBy,
             price = entity.price,
             shortDescription = entity.shortDescription,
             transmission = entity.transmission,

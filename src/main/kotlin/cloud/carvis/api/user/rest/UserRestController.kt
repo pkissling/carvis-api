@@ -34,4 +34,11 @@ class UserRestController(
         return userService.updateUser(id, user)
             .also { logger.info { "end updateUser(id=$id,user=$user), return=${it}" } }
     }
+
+    @GetMapping("/users")
+    fun fetchAllUsers(): List<UserDto> {
+        logger.info { "start fetchAllUsers()" }
+        return userService.fetchAllUsers()
+            .also { logger.info { "end fetchAllUsers() return=${it}" } }
+    }
 }

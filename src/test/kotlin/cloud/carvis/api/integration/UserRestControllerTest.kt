@@ -19,7 +19,15 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users GET - get user successfully`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("someUserId", name = "John Wayne", company = "someCompany", email = "e@mail.com", phone = "123456789")
+        auth0Mock.withUser(
+            UserDto(
+                userId = "someUserId",
+                name = "John Wayne",
+                company = "someCompany",
+                email = "e@mail.com",
+                phone = "123456789"
+            )
+        )
 
         // when / then
         this.mockMvc.perform(get("/users/{userId}", "someUserId"))
@@ -36,7 +44,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users GET - get user throws 404`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("someUserId", name = "John Wayne", company = "someCompany")
+        auth0Mock.withUser(UserDto(userId = "someUserId", name = "John Wayne", company = "someCompany"))
 
         // when / then
         this.mockMvc.perform(get("/users/{userId}", "404"))
@@ -51,7 +59,15 @@ class UserRestControllerTest : AbstractApplicationTest() {
         val user =
             UserDto("the.user.id", name = "Updated Name", company = "updateCompany", email = "this@mail.test", phone = "updatedPhone")
         auth0Mock
-            .withUser("the.user.id", name = "John Wayne", company = "someCompany", email = "this@mail.test", phone = "123 456")
+            .withUser(
+                UserDto(
+                    userId = "the.user.id",
+                    name = "John Wayne",
+                    company = "someCompany",
+                    email = "this@mail.test",
+                    phone = "123 456"
+                )
+            )
             .withUpdateResponse(user)
 
         // when / then
@@ -91,7 +107,15 @@ class UserRestControllerTest : AbstractApplicationTest() {
         testDataGenerator.withEmptyDb()
         val user = UserDto("a.user.id", name = "Updated Name", company = "updateCompany", phone = "updatedPhone", email = "this@mail.rocks")
         auth0Mock
-            .withUser("a.user.id", name = "John Wayne", company = "someCompany", email = "this@mail.rocks", phone = "123 456")
+            .withUser(
+                UserDto(
+                    userId = "a.user.id",
+                    name = "John Wayne",
+                    company = "someCompany",
+                    email = "this@mail.rocks",
+                    phone = "123 456"
+                )
+            )
             .withUpdateResponse(user)
 
         // when / then
@@ -113,17 +137,61 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `my-user GET - fetch successfully`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser("j.w", email = "j@wayne.com", name = "John Wayne", company = "Wayne Inc.", phone = "+1-555-555-5555")
+        auth0Mock.withUser(
+            UserDto(
+                userId = "j.w",
+                email = "j@wayne.com",
+                name = "John Wayne",
+                company = "Wayne Inc.",
+                phone = "+1-555-555-5555"
+            )
+        )
 
         // when / then
-        this.mockMvc.perform(
-            get("/my-user")
-        )
+        this.mockMvc.perform(get("/my-user"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.userId", equalTo("j.w")))
             .andExpect(jsonPath("$.name", equalTo("John Wayne")))
             .andExpect(jsonPath("$.company", equalTo("Wayne Inc.")))
             .andExpect(jsonPath("$.phone", equalTo("+1-555-555-5555")))
             .andExpect(jsonPath("$.email", equalTo("j@wayne.com")))
+    }
+
+    @Test
+    @WithMockUser(roles = ["USER"])
+    fun `users GET - users receives forbidden response`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(get("/users"))
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users GET - returns list of users for admins`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        auth0Mock
+            .withUsers(
+                UserDto(userId = "userId1", name = "Name 1", email = "e@mail.1", phone = "+1", company = "comp1"),
+                UserDto(userId = "userId2", name = "Name 2", email = "e@mail.2", phone = "+2", company = "comp2")
+            )
+
+        // when / then
+        this.mockMvc.perform(get("/users"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()", equalTo(2)))
+            .andExpect(jsonPath("$[0].userId", equalTo("userId1")))
+            .andExpect(jsonPath("$[0].name", equalTo("Name 1")))
+            .andExpect(jsonPath("$[0].email", equalTo("e@mail.1")))
+            .andExpect(jsonPath("$[0].phone", equalTo("+1")))
+            .andExpect(jsonPath("$[0].company", equalTo("comp1")))
+            .andExpect(jsonPath("$[1].userId", equalTo("userId2")))
+            .andExpect(jsonPath("$[1].name", equalTo("Name 2")))
+            .andExpect(jsonPath("$[1].email", equalTo("e@mail.2")))
+            .andExpect(jsonPath("$[1].phone", equalTo("+2")))
+            .andExpect(jsonPath("$[1].company", equalTo("comp2")))
     }
 }
