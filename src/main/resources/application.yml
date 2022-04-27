@@ -69,3 +69,11 @@ email:
   user-signup:
     from-mail: usersignup@carvis.cloud
     permission-url: https://manage.auth0.com/dashboard/eu/carvis/roles/rol_LIjMXu4DezolQ21w/users
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - prometheus
+          - health
