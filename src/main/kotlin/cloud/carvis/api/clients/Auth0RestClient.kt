@@ -55,13 +55,40 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         }
 
     @Cacheable("auth0-users", sync = true)
-    fun fetchAllUsers(): List<User> =
-        withErrorHandling {
+    fun fetchAllUsers(): List<Pair<User, List<String>>> {
+        val users = withErrorHandling {
             managementApi.users()
                 .list(null)
                 .execute()
                 .items
         }
+
+        val roles = withErrorHandling {
+            managementApi.roles()
+                .list(null)
+                .execute()
+                .items
+        }
+
+        val userRoleMap = roles.flatMap { role ->
+            withErrorHandling {
+                managementApi.roles()
+                    .listUsers(role.id, null)
+                    .execute()
+                    .items
+            }
+                .associate { user -> Pair(user.id, role.name) }
+                .asSequence()
+
+        }
+            .distinct()
+            .groupBy({ it.key }, { it.value })
+
+        return users
+            .map { Pair(it, userRoleMap[it.id] ?: emptyList()) }
+            .toList()
+    }
+
 
     private fun <T : Any> withErrorHandling(fn: () -> T): T = try {
         fn.invoke()
