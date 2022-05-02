@@ -2,7 +2,10 @@ package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.user.model.UserRole.ADMIN
+import cloud.carvis.api.user.model.UserRole.USER
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.Matchers.hasItems
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
@@ -143,7 +146,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
                 email = "j@wayne.com",
                 name = "John Wayne",
                 company = "Wayne Inc.",
-                phone = "+1-555-555-5555"
+                phone = "+1-555-555-5555",
+                roles = listOf(USER, ADMIN)
             )
         )
 
@@ -155,6 +159,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.company", equalTo("Wayne Inc.")))
             .andExpect(jsonPath("$.phone", equalTo("+1-555-555-5555")))
             .andExpect(jsonPath("$.email", equalTo("j@wayne.com")))
+            .andExpect(jsonPath("$.roles.length()").value(2))
+            .andExpect(jsonPath("$.roles", hasItems("user", "admin")))
     }
 
     @Test
@@ -173,25 +179,35 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users GET - returns list of users for admins`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock
-            .withUsers(
-                UserDto(userId = "userId1", name = "Name 1", email = "e@mail.1", phone = "+1", company = "comp1"),
-                UserDto(userId = "userId2", name = "Name 2", email = "e@mail.2", phone = "+2", company = "comp2")
-            )
+        auth0Mock.withUsers(
+            UserDto(userId = "userId1", name = "Name 1", email = "e@mail.1", phone = "+1", company = "comp1", roles = listOf(ADMIN, USER)),
+            UserDto(userId = "userId2", name = "Name 2", email = "e@mail.2", phone = "+2", company = "comp2", roles = listOf(USER)),
+            UserDto(userId = "userId3", name = "Name 3", email = "e@mail.3", phone = "+3", company = "comp3")
+        )
 
         // when / then
         this.mockMvc.perform(get("/users"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.length()", equalTo(2)))
+            .andExpect(jsonPath("$.length()", equalTo(3)))
             .andExpect(jsonPath("$[0].userId", equalTo("userId1")))
             .andExpect(jsonPath("$[0].name", equalTo("Name 1")))
             .andExpect(jsonPath("$[0].email", equalTo("e@mail.1")))
             .andExpect(jsonPath("$[0].phone", equalTo("+1")))
             .andExpect(jsonPath("$[0].company", equalTo("comp1")))
+            .andExpect(jsonPath("$[0].roles.length()").value(2))
+            .andExpect(jsonPath("$[0].roles", hasItems("user", "admin")))
             .andExpect(jsonPath("$[1].userId", equalTo("userId2")))
             .andExpect(jsonPath("$[1].name", equalTo("Name 2")))
             .andExpect(jsonPath("$[1].email", equalTo("e@mail.2")))
             .andExpect(jsonPath("$[1].phone", equalTo("+2")))
             .andExpect(jsonPath("$[1].company", equalTo("comp2")))
+            .andExpect(jsonPath("$[1].roles.length()").value(1))
+            .andExpect(jsonPath("$[1].roles", hasItems("user")))
+            .andExpect(jsonPath("$[2].userId", equalTo("userId3")))
+            .andExpect(jsonPath("$[2].name", equalTo("Name 3")))
+            .andExpect(jsonPath("$[2].email", equalTo("e@mail.3")))
+            .andExpect(jsonPath("$[2].phone", equalTo("+3")))
+            .andExpect(jsonPath("$[2].company", equalTo("comp3")))
+            .andExpect(jsonPath("$[2].roles.length()").value(0))
     }
 }

@@ -1,5 +1,6 @@
 package cloud.carvis.api.user.rest
 
+import cloud.carvis.api.user.model.UpdateUserRoleDto
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.service.UserService
 import mu.KotlinLogging
@@ -40,5 +41,12 @@ class UserRestController(
         logger.info { "start fetchAllUsers()" }
         return userService.fetchAllUsers()
             .also { logger.info { "end fetchAllUsers() return=${it}" } }
+    }
+
+    @PutMapping("/users/{id}/roles")
+    fun updateUserRoles(@PathVariable id: String, @RequestBody dto: UpdateUserRoleDto): UserDto {
+        logger.info { "start updateUserRoles(id=$id,dto=$dto)" }
+        return userService.updateUserRoles(id, dto)
+            .also { logger.info { "end updateUserRoles($dto) return=${it}" } }
     }
 }

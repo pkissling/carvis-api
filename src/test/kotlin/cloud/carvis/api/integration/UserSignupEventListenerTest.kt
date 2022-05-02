@@ -1,6 +1,8 @@
 package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
+import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.user.model.UserRole
 import cloud.carvis.api.util.helpers.SesHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -16,8 +18,16 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
     fun `onMessage - success`() {
         // given
         auth0Mock
-            .withRole("admin", roleId = "rol_1283injasd")
-            .withUserRoleAssignment("rol_1283injasd", "dummy@dummy.com")
+            .withUsers(
+                UserDto(
+                    userId = "user-id",
+                    name = "na-me",
+                    company = "com-pany",
+                    phone = "ph-one",
+                    email = "dummy@dummy.com",
+                    roles = listOf(UserRole.ADMIN)
+                )
+            )
 
         // when
         val event = testDataGenerator

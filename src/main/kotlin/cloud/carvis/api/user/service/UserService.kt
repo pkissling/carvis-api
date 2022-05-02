@@ -3,6 +3,7 @@ package cloud.carvis.api.user.service
 import cloud.carvis.api.clients.Auth0RestClient
 import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
+import cloud.carvis.api.user.model.UpdateUserRoleDto
 import cloud.carvis.api.user.model.UserDto
 import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
@@ -35,10 +36,10 @@ class UserService(
             .also { logger.debug { "Resolved following admin emails: $it" } }
     }
 
-    @PreAuthorize("@authorization.canAccessAndModifyUser(#id)")
-    fun updateUser(id: String, user: UserDto): UserDto =
+    @PreAuthorize("@authorization.canAccessAndModifyUser(#userId)")
+    fun updateUser(userId: String, user: UserDto): UserDto =
         userMapper.toEntity(user)
-            .let { auth0RestClient.updateUser(id, it) }
+            .let { auth0RestClient.updateUser(userId, it) }
             .let { userMapper.toDto(it) }
 
     fun fetchUser(id: String): UserDto {
@@ -52,15 +53,24 @@ class UserService(
     }
 
     @PreAuthorize("@authorization.isAdmin()")
-    fun fetchAllUsers(): List<UserDto> {
-        return auth0RestClient.fetchAllUsers()
-            .map { userMapper.toDto(it) }
-    }
+    fun fetchAllUsers(): List<UserDto> = auth0RestClient.fetchAllUsers()
+        .map { userMapper.toDto(it) }
 
     fun fetchUserSafe(userId: String): UserDto? = try {
         this.fetchUser(userId)
     } catch (e: Exception) {
         logger.warn { "Error while fetching user with userId: $userId" }
         null
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun updateUserRoles(userId: String, dto: UpdateUserRoleDto): UserDto {
+        if (dto.addRoles.isNotEmpty()) {
+            auth0RestClient.addUserRole(userId, dto.addRoles)
+        }
+        if (dto.removeRoles.isNotEmpty()) {
+            auth0RestClient.removeUserRole(userId, dto.removeRoles)
+        }
+        return fetchUser(userId)
     }
 }

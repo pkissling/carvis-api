@@ -2,6 +2,7 @@ package cloud.carvis.api.util.mocks
 
 import cloud.carvis.api.config.SecurityConfig
 import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.user.model.UserRole
 import cloud.carvis.api.util.helpers.MockServerUtils
 import com.auth0.client.mgmt.ManagementAPI
 import org.mockserver.model.HttpRequest
@@ -38,39 +39,24 @@ class Auth0Mock {
             path = "/api/v2/users/${user.userId}",
             body = userJson(user)
         )
-        return this
-    }
-
-    fun withRole(roleName: String, roleId: String = "rol_1283injasd"): Auth0Mock {
         this.mockApiCall(
-            path = "/api/v2/roles",
-            body = """
-                [
-                  {
-                    "id": "$roleId",
-                    "name": "$roleName",
-                    "description": "$roleName"
-                  }
-                ]
-                """
+            path = "/api/v2/users/${user.userId}/roles",
+            body = rolesJson(*user.roles.toTypedArray())
         )
         return this
     }
 
-    fun withUserRoleAssignment(roleId: String, email: String): Auth0Mock {
-        this.mockApiCall(
-            path = "/api/v2/roles/$roleId/users",
-            body = """
-                [
-                  {
-                    "user_id": "auth0|ijasdjiasdai",
-                    "email": "dummy@dummy.com",
-                    "picture": "http://foo.bar",
-                    "name": "Foo Bar"
-                  }
-                ]
-                """
-        )
+    fun withRoleUsers(vararg users: UserDto): Auth0Mock {
+        val roles: Map<UserRole, List<UserDto>> = users
+            .flatMap { it.roles }
+            .distinct()
+            .associateWith { role -> users.filter { it.roles.contains(role) } }
+        roles.forEach { (roleName, users) ->
+            this.mockApiCall(
+                path = "/api/v2/roles/id_$roleName/users",
+                body = usersJson(*users.toTypedArray())
+            )
+        }
         return this
     }
 
@@ -88,7 +74,20 @@ class Auth0Mock {
             path = "/api/v2/users",
             body = usersJson(*users)
         )
+        withRoles(*users)
+        withRoleUsers(*users)
         return this
+    }
+
+    fun withRoles(vararg users: UserDto) {
+        val distinctRoles = users
+            .flatMap { it.roles }
+            .distinct()
+            .toTypedArray()
+        this.mockApiCall(
+            path = "/api/v2/roles",
+            body = rolesJson(*distinctRoles)
+        )
     }
 
     fun verify(request: HttpRequest, times: VerificationTimes) {
@@ -149,6 +148,24 @@ class Auth0Mock {
         return """
             [
                 ${users.joinToString(",\n") { userJson(it) }}
+            ]
+            """
+    }
+
+    private fun roleJson(roleName: UserRole): String {
+        return """
+            {
+                "id": "id_${roleName.toJsonValue()}",
+                "name": "${roleName.toJsonValue()}",
+                "description": "description_${roleName.toJsonValue()}"
+            }
+            """
+    }
+
+    private fun rolesJson(vararg roleNames: UserRole): String {
+        return """
+            [
+                ${roleNames.joinToString(",\n") { roleJson(it) }}
             ]
             """
     }

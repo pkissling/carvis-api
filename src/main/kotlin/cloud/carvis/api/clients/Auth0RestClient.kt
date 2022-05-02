@@ -1,5 +1,6 @@
 package cloud.carvis.api.clients
 
+import cloud.carvis.api.user.model.UserRole
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.client.mgmt.filter.RolesFilter
 import com.auth0.exception.APIException
@@ -17,24 +18,30 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
     private val logger = KotlinLogging.logger {}
 
     @Cacheable("auth0-user", sync = true)
-    fun fetchUser(userId: String): User =
-        withErrorHandling {
+    fun fetchUser(userId: String): UserWithRoles {
+        val user = withErrorHandling {
             managementApi.users()
                 .get(userId, null)
                 .execute()
         }
 
-    fun fetchAllAdmins(): List<User> = try {
-        val roles = managementApi.roles()
-            .list(RolesFilter().withName("admin"))
-            .execute()
-            .items
-
-        if (roles.size > 1) {
-            throw RuntimeException("Auth0 did return more than 1 role for roleName 'admin': $roles")
+        val roles = withErrorHandling {
+            managementApi.users()
+                .listRoles(userId, null)
+                .execute()
+                .items
+                .map { UserRole.from(it.name) }
         }
 
-        val adminRole = roles.firstOrNull()
+        return UserWithRoles(user, roles)
+    }
+
+    fun fetchAllAdmins(): List<User> = try {
+        val adminRole = managementApi.roles()
+            .list(rolesFilter("admin"))
+            .execute()
+            .items
+            .firstOrNull()
             ?: throw RuntimeException("Auth0 did return not return an roleId from role 'admin'")
 
         managementApi.roles()
@@ -47,15 +54,26 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
     }
 
     @CacheEvict("auth0-users", key = "#userId")
-    fun updateUser(userId: String, user: User): User =
-        withErrorHandling {
+    fun updateUser(userId: String, userWithRoles: UserWithRoles): UserWithRoles {
+        val updatedUser = withErrorHandling {
             managementApi.users()
-                .update(userId, user)
+                .update(userId, userWithRoles.user)
                 .execute()
         }
 
+        val roles = withErrorHandling {
+            managementApi.users()
+                .listRoles(userId, null)
+                .execute()
+                .items
+                .map { UserRole.from(it.name) }
+        }
+
+        return UserWithRoles(updatedUser, roles)
+    }
+
     @Cacheable("auth0-users", sync = true)
-    fun fetchAllUsers(): List<Pair<User, List<String>>> {
+    fun fetchAllUsers(): List<UserWithRoles> {
         val users = withErrorHandling {
             managementApi.users()
                 .list(null)
@@ -70,33 +88,71 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
                 .items
         }
 
-        val userRoleMap = roles.flatMap { role ->
+        val usersWithRole = roles.flatMap { role ->
             withErrorHandling {
                 managementApi.roles()
                     .listUsers(role.id, null)
                     .execute()
                     .items
             }
-                .associate { user -> Pair(user.id, role.name) }
+                .associate { user -> Pair(user.id, UserRole.from(role.name)) }
                 .asSequence()
 
         }
-            .distinct()
             .groupBy({ it.key }, { it.value })
+            .map { (userId, roles) -> UserWithRoles(users.first { it.id == userId }, roles) }
 
-        return users
-            .map { Pair(it, userRoleMap[it.id] ?: emptyList()) }
-            .toList()
+        val usersWithoutRole = users
+            .filter { user -> !usersWithRole.map { it.user.id }.contains(user.id) }
+            .map { UserWithRoles(it, emptyList()) }
+
+        return usersWithRole + usersWithoutRole
     }
 
+    fun addUserRole(userId: String, addRoles: List<String>) {
+        val roleIds = withErrorHandling {
+            managementApi.roles()
+                .list(rolesFilter(*addRoles.toTypedArray()))
+                .execute()
+                .items
+                .map { it.id }
+        }
+        withErrorHandling {
+            managementApi.users()
+                .addRoles(userId, roleIds)
+                .execute()
+        }
+    }
+
+    fun removeUserRole(userId: String, removeRoles: List<String>) {
+        val roleIds = withErrorHandling {
+            managementApi.roles()
+                .list(rolesFilter(*removeRoles.toTypedArray()))
+                .execute()
+                .items
+                .map { it.id }
+        }
+        withErrorHandling {
+            managementApi.users()
+                .removeRoles(userId, roleIds)
+                .execute()
+        }
+    }
+
+
+    private fun rolesFilter(vararg addRoles: String): RolesFilter =
+        RolesFilter().also { roleFilter -> addRoles.forEach { role -> roleFilter.withName(role) } }
 
     private fun <T : Any> withErrorHandling(fn: () -> T): T = try {
         fn.invoke()
     } catch (e: APIException) {
         logger.error(e) { "Error while calling Auth0" }
-        throw ResponseStatusException(HttpStatus.valueOf(e.statusCode), e.message)
+        val statusCode = if (e.statusCode == 404) HttpStatus.NOT_FOUND else HttpStatus.BAD_REQUEST
+        throw ResponseStatusException(statusCode, "Auth0 message: ${e.message}")
     } catch (e: Exception) {
         logger.error(e) { "Error while calling Auth0" }
         throw e
     }
 }
+
+data class UserWithRoles(val user: User, val roles: List<UserRole>)
