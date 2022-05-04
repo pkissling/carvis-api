@@ -3,6 +3,7 @@ package cloud.carvis.api.component
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
+import cloud.carvis.api.user.model.UserDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
@@ -32,6 +33,7 @@ class UserServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - enrich username`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
             .withEmptyDb()
             .withCar(VALID_USER_ID)
@@ -68,6 +70,7 @@ class UserServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - cache username`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = Users.VALID_USER_ID, name = Users.VALID_USER_NAME))
         val car = testDataGenerator
             .withEmptyDb()
             .withCar(VALID_USER_ID)

@@ -5,6 +5,7 @@ import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.api.dao.repositories.RequestRepository
 import cloud.carvis.api.model.dtos.RequestDto
+import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.util.testdata.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -55,6 +56,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `request GET - success`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val request = testDataGenerator
             .withEmptyDb()
             .withRequest(VALID_USER_ID)
@@ -190,6 +192,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `requests POST - create request success`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         testDataGenerator.withEmptyDb()
         val request: TestData<RequestDto> = testDataGenerator.random()
         val start = now()
@@ -277,6 +280,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `request PUT - update existing request`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val start = now()
         val existingRequest = testDataGenerator
             .withEmptyDb()
@@ -338,6 +342,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `requests GET - enrich username`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val request = testDataGenerator
             .withEmptyDb()
             .withRequest(VALID_USER_ID)

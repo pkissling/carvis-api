@@ -9,8 +9,7 @@ import org.hamcrest.Matchers.hasItems
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -22,7 +21,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users GET - get user successfully`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser(
+        auth0Mock.withUsers(
             UserDto(
                 userId = "someUserId",
                 name = "John Wayne",
@@ -47,7 +46,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users GET - get user throws 404`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser(UserDto(userId = "someUserId", name = "John Wayne", company = "someCompany"))
+        auth0Mock.withUsers(UserDto(userId = "someUserId", name = "John Wayne", company = "someCompany"))
 
         // when / then
         this.mockMvc.perform(get("/users/{userId}", "404"))
@@ -62,7 +61,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
         val user =
             UserDto("the.user.id", name = "Updated Name", company = "updateCompany", email = "this@mail.test", phone = "updatedPhone")
         auth0Mock
-            .withUser(
+            .withUsers(
                 UserDto(
                     userId = "the.user.id",
                     name = "John Wayne",
@@ -110,7 +109,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
         testDataGenerator.withEmptyDb()
         val user = UserDto("a.user.id", name = "Updated Name", company = "updateCompany", phone = "updatedPhone", email = "this@mail.rocks")
         auth0Mock
-            .withUser(
+            .withUsers(
                 UserDto(
                     userId = "a.user.id",
                     name = "John Wayne",
@@ -140,7 +139,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `my-user GET - fetch successfully`() {
         // given
         testDataGenerator.withEmptyDb()
-        auth0Mock.withUser(
+        auth0Mock.withUsers(
             UserDto(
                 userId = "j.w",
                 email = "j@wayne.com",
@@ -209,5 +208,168 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$[2].phone", equalTo("+3")))
             .andExpect(jsonPath("$[2].company", equalTo("comp3")))
             .andExpect(jsonPath("$[2].roles.length()").value(0))
+    }
+
+    @Test
+    @WithMockUser
+    fun `users-id-roles PUT - users receives forbidden response`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(
+            post("/users/{id}/roles", "some.userId")
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles PUT - bad request`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(
+            post("/users/{id}/roles", "some.userId")
+                .content("[]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles PUT - no roles yields bad request`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(
+            post("/users/{id}/roles", "some.userId")
+                .content("[]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles PUT - invalid role yields bad request`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        auth0Mock.withUsers(UserDto(userId = "userId", name = "Name", roles = listOf(USER)))
+
+        // when / then
+        this.mockMvc.perform(
+            post("/users/{id}/roles", "some.userId")
+                .content("[\"foobar\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles PUT - success`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        auth0Mock
+            .withUsers(UserDto(userId = "d.joe", name = "Name", roles = listOf(USER)))
+            .withAddRoleResponse("d.joe")
+
+        // when / then
+        this.mockMvc.perform(
+            post("/users/{id}/roles", "d.joe")
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.userId", equalTo("d.joe")))
+            .andExpect(jsonPath("$.roles.length()", equalTo(1)))
+            .andExpect(jsonPath("$.roles", hasItems("user")))
+    }
+
+    @Test
+    @WithMockUser
+    fun `users-id-roles DELETE - users receives forbidden response`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(
+            delete("/users/{id}/roles", "some.userId")
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles DELETE - bad request`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(
+            delete("/users/{id}/roles", "some.userId")
+                .content("[]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles DELETE - no roles yields bad request`() {
+        // given
+        testDataGenerator.withEmptyDb()
+
+        // when / then
+        this.mockMvc.perform(
+            delete("/users/{id}/roles", "some.userId")
+                .content("[]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles DELETE - invalid role yields bad request`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        auth0Mock.withUsers(UserDto(userId = "userId", name = "Name", roles = listOf(USER)))
+
+        // when / then
+        this.mockMvc.perform(
+            delete("/users/{id}/roles", "some.userId")
+                .content("[\"foobar\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles DELETE - success`() {
+        // given
+        testDataGenerator.withEmptyDb()
+        auth0Mock
+            .withUsers(UserDto(userId = "d.joe", name = "Name", roles = emptyList()))
+            .withRemoveRoleResponse("d.joe")
+
+        // when / then
+        this.mockMvc.perform(
+            delete("/users/{id}/roles", "d.joe")
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.userId", equalTo("d.joe")))
+            .andExpect(jsonPath("$.roles.length()", equalTo(0)))
     }
 }

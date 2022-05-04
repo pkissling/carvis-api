@@ -3,11 +3,13 @@ package cloud.carvis.api.user.service
 import cloud.carvis.api.clients.Auth0RestClient
 import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
-import cloud.carvis.api.user.model.UpdateUserRoleDto
 import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.user.model.UserRole
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class UserService(
@@ -64,13 +66,22 @@ class UserService(
     }
 
     @PreAuthorize("@authorization.isAdmin()")
-    fun updateUserRoles(userId: String, dto: UpdateUserRoleDto): UserDto {
-        if (dto.addRoles.isNotEmpty()) {
-            auth0RestClient.addUserRole(userId, dto.addRoles)
+    fun addUserRoles(userId: String, addRoles: List<UserRole>): UserDto {
+        if (addRoles.isEmpty()) {
+            logger.info { "No role to be added provided for userId: $userId" }
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to add provided")
         }
-        if (dto.removeRoles.isNotEmpty()) {
-            auth0RestClient.removeUserRole(userId, dto.removeRoles)
+        auth0RestClient.addUserRole(userId, addRoles)
+        return fetchUser(userId)
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun removeUserRoles(userId: String, removeRoles: List<UserRole>): UserDto {
+        if (removeRoles.isEmpty()) {
+            logger.info { "No role to be removed provided for userId: $userId" }
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to remove provided")
         }
+        auth0RestClient.removeUserRole(userId, removeRoles)
         return fetchUser(userId)
     }
 }

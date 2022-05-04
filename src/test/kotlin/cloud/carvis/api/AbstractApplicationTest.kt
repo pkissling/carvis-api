@@ -48,11 +48,6 @@ abstract class AbstractApplicationTest {
     @Autowired
     protected lateinit var auth0Mock: Auth0Mock
 
-    @BeforeEach
-    fun beforeAll() {
-        auth0Mock.withUser(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
-    }
-
     @AfterEach
     fun afterEach() {
         auth0Mock.reset()

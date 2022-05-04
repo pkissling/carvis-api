@@ -1,6 +1,7 @@
 package cloud.carvis.api.clients
 
 import cloud.carvis.api.user.model.UserRole
+import cloud.carvis.api.user.model.UserRole.ADMIN
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.client.mgmt.filter.RolesFilter
 import com.auth0.exception.APIException
@@ -9,6 +10,8 @@ import mu.KotlinLogging
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
@@ -19,7 +22,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     @Cacheable("auth0-user", sync = true)
     fun fetchUser(userId: String): UserWithRoles {
-        val user = withErrorHandling {
+        val user = withErrorHandling(NOT_FOUND) {
             managementApi.users()
                 .get(userId, null)
                 .execute()
@@ -38,7 +41,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     fun fetchAllAdmins(): List<User> = try {
         val adminRole = managementApi.roles()
-            .list(rolesFilter("admin"))
+            .list(rolesFilter(ADMIN))
             .execute()
             .items
             .firstOrNull()
@@ -109,7 +112,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         return usersWithRole + usersWithoutRole
     }
 
-    fun addUserRole(userId: String, addRoles: List<String>) {
+    fun addUserRole(userId: String, addRoles: List<UserRole>) {
         val roleIds = withErrorHandling {
             managementApi.roles()
                 .list(rolesFilter(*addRoles.toTypedArray()))
@@ -124,7 +127,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         }
     }
 
-    fun removeUserRole(userId: String, removeRoles: List<String>) {
+    fun removeUserRole(userId: String, removeRoles: List<UserRole>) {
         val roleIds = withErrorHandling {
             managementApi.roles()
                 .list(rolesFilter(*removeRoles.toTypedArray()))
@@ -139,19 +142,21 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         }
     }
 
+    private fun rolesFilter(vararg roles: UserRole): RolesFilter =
+        RolesFilter().also { roleFilter ->
+            roles
+                .map { it.toJsonValue() }
+                .forEach { role -> roleFilter.withName(role) }
+        }
 
-    private fun rolesFilter(vararg addRoles: String): RolesFilter =
-        RolesFilter().also { roleFilter -> addRoles.forEach { role -> roleFilter.withName(role) } }
-
-    private fun <T : Any> withErrorHandling(fn: () -> T): T = try {
+    private fun <T : Any> withErrorHandling(except: HttpStatus? = null, fn: () -> T): T = try {
         fn.invoke()
-    } catch (e: APIException) {
-        logger.error(e) { "Error while calling Auth0" }
-        val statusCode = if (e.statusCode == 404) HttpStatus.NOT_FOUND else HttpStatus.BAD_REQUEST
-        throw ResponseStatusException(statusCode, "Auth0 message: ${e.message}")
     } catch (e: Exception) {
         logger.error(e) { "Error while calling Auth0" }
-        throw e
+        if (e is APIException && e.statusCode == except?.value()) {
+            throw ResponseStatusException(e.statusCode, "Auth0 message: ${e.message}", e)
+        }
+        throw ResponseStatusException(INTERNAL_SERVER_ERROR, "Auth0 message: ${e.message}", e)
     }
 }
 

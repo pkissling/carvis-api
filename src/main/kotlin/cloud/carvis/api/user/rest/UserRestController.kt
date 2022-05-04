@@ -1,7 +1,7 @@
 package cloud.carvis.api.user.rest
 
-import cloud.carvis.api.user.model.UpdateUserRoleDto
 import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.user.model.UserRole
 import cloud.carvis.api.user.service.UserService
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.*
@@ -43,10 +43,18 @@ class UserRestController(
             .also { logger.info { "end fetchAllUsers() return=${it}" } }
     }
 
-    @PutMapping("/users/{id}/roles")
-    fun updateUserRoles(@PathVariable id: String, @RequestBody dto: UpdateUserRoleDto): UserDto {
-        logger.info { "start updateUserRoles(id=$id,dto=$dto)" }
-        return userService.updateUserRoles(id, dto)
-            .also { logger.info { "end updateUserRoles($dto) return=${it}" } }
+    @PostMapping("/users/{id}/roles")
+    fun addUserRoles(@PathVariable id: String, @RequestBody addRoles: List<UserRole>): UserDto {
+        logger.info { "start addUserRoles(id=$id,addRoles=$addRoles)" }
+        return userService.addUserRoles(id, addRoles)
+            .also { logger.info { "end addUserRoles(id=$id,addRoles=$addRoles) return=${it}" } }
     }
+
+    @DeleteMapping("/users/{id}/roles")
+    fun removeUserRoles(@PathVariable id: String, @RequestBody removeRoles: List<UserRole>): UserDto {
+        logger.info { "start removeUserRoles(id=$id,removeRoles=$removeRoles)" }
+        return userService.removeUserRoles(id, removeRoles)
+            .also { logger.info { "end removeUserRoles(id=$id,removeRoles=$removeRoles) return=${it}" } }
+    }
+
 }

@@ -11,6 +11,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import org.mockserver.model.MediaType.APPLICATION_JSON
 import org.mockserver.verify.VerificationTimes
+import org.mockserver.verify.VerificationTimes.exactly
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -32,18 +33,6 @@ class Auth0Mock {
     fun jwtDecoder(@Value("\${auth.audience}") audience: String): JwtDecoder {
         this.mockOidcConfigEndpoint()
         return SecurityConfig().jwtDecoder(audience, this.getUrl())
-    }
-
-    fun withUser(user: UserDto): Auth0Mock {
-        this.mockApiCall(
-            path = "/api/v2/users/${user.userId}",
-            body = userJson(user)
-        )
-        this.mockApiCall(
-            path = "/api/v2/users/${user.userId}/roles",
-            body = rolesJson(*user.roles.toTypedArray())
-        )
-        return this
     }
 
     fun withRoleUsers(vararg users: UserDto): Auth0Mock {
@@ -74,8 +63,17 @@ class Auth0Mock {
             path = "/api/v2/users",
             body = usersJson(*users)
         )
+        users.forEach { withUser(it) }
         withRoles(*users)
         withRoleUsers(*users)
+        return this
+    }
+
+    fun withUser(user: UserDto): Auth0Mock {
+        this.mockApiCall(
+            path = "/api/v2/users/${user.userId}",
+            body = userJson(user)
+        )
         return this
     }
 
@@ -88,9 +86,44 @@ class Auth0Mock {
             path = "/api/v2/roles",
             body = rolesJson(*distinctRoles)
         )
+        distinctRoles.forEach { withRole(it) }
+        users.forEach { withUserRoles(it) }
     }
 
-    fun verify(request: HttpRequest, times: VerificationTimes) {
+    fun withUserRoles(user: UserDto) {
+        mockApiCall(
+            path = "/api/v2/users/${user.userId}/roles",
+            body = rolesJson(*user.roles.toTypedArray()),
+        )
+    }
+
+    fun withRole(role: UserRole) {
+        mockApiCall(
+            path = "/api/v2/roles",
+            body = rolesJson(role),
+            queryParams = mapOf("name_filter" to role.toJsonValue())
+        )
+        mockApiCall(
+            path = "/api/v2/roles/id_$role",
+            body = roleJson(role)
+        )
+    }
+
+    fun withAddRoleResponse(userId: String)
+        = mockApiCall(
+            path = "/api/v2/users/$userId/roles",
+            method = "POST",
+            statusCode = 200
+        )
+
+    fun withRemoveRoleResponse(userId: String)
+        = mockApiCall(
+            path = "/api/v2/users/$userId/roles",
+            method = "DELETE",
+            statusCode = 200
+        )
+
+    fun verify(request: HttpRequest, times: VerificationTimes = exactly(1)) {
         mockServer.verify(request, times)
     }
 
@@ -111,12 +144,16 @@ class Auth0Mock {
         body: String = "",
         method: String = "GET",
         statusCode: Int = 200,
-        contentType: MediaType = APPLICATION_JSON
+        contentType: MediaType = APPLICATION_JSON,
+        queryParams: Map<String, String> = emptyMap()
     ): Auth0Mock {
         mockServer.`when`(
             request()
                 .withMethod(method)
                 .withPath(path)
+                .apply {
+                    queryParams.forEach { withQueryStringParameter(it.key, it.value) }
+                }
         )
             .respond(
                 response()
