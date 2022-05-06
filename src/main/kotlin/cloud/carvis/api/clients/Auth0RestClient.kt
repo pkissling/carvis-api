@@ -20,7 +20,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     private val logger = KotlinLogging.logger {}
 
-    @Cacheable("auth0-user", key = "#userId", sync = true)
+    @Cacheable("auth0-users", key = "#userId", sync = true)
     fun fetchUser(userId: String): UserWithRoles {
         val user = withErrorHandling(NOT_FOUND) {
             managementApi.users()
@@ -56,7 +56,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         emptyList()
     }
 
-    @CacheEvict(value = ["auth0-user", "auth0-users"], allEntries = true)
+    @CacheEvict("auth0-users", key = "#userId")
     fun updateUser(userId: String, userWithRoles: UserWithRoles): UserWithRoles {
         val updatedUser = withErrorHandling {
             managementApi.users()
@@ -75,7 +75,6 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         return UserWithRoles(updatedUser, roles)
     }
 
-    @Cacheable("auth0-users", sync = true)
     fun fetchAllUsers(): List<UserWithRoles> {
         val users = withErrorHandling {
             managementApi.users()
@@ -112,7 +111,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         return usersWithRole + usersWithoutRole
     }
 
-    @CacheEvict(value = ["auth0-user", "auth0-users"], allEntries = true)
+    @CacheEvict("auth0-users", key = "#userId")
     fun addUserRole(userId: String, addRoles: List<UserRole>) {
         val roleIds = withErrorHandling {
             managementApi.roles()
@@ -128,7 +127,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         }
     }
 
-    @CacheEvict(value = ["auth0-user", "auth0-users"], allEntries = true)
+    @CacheEvict("auth0-users", key = "#userId")
     fun removeUserRole(userId: String, removeRoles: List<UserRole>) {
         val roleIds = withErrorHandling {
             managementApi.roles()
@@ -144,7 +143,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         }
     }
 
-    @CacheEvict(value = ["auth0-user", "auth0-users"], allEntries = true)
+    @CacheEvict("auth0-users", key = "#userId")
     fun deleteUser(userId: String) {
         withErrorHandling(NOT_FOUND) {
             managementApi.users()

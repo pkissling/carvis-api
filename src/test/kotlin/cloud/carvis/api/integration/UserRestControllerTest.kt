@@ -7,14 +7,12 @@ import cloud.carvis.api.user.model.UserRole.USER
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItems
-import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.JsonBody.json
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.CacheManager
-import org.springframework.cache.interceptor.SimpleKey
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -161,7 +159,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(roles = ["ADMIN"])
-    fun `users PUT - evicts cache after update`() {
+    fun `users PUT - updates cache after update`() {
         // given
         val user = UserDto(
             userId = "a.user.id",
@@ -185,8 +183,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
         this.mockMvc.perform(get("/users/{userId}", "a.user.id"))
             .andExpect(status().isOk)
-        assertThat(cacheManager.getCache("auth0-user")?.get("a.user.id"), notNullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+        assertThat(cacheManager.getCache("auth0-users")?.get("a.user.id"), notNullValue())
 
         // when
         this.mockMvc.perform(
@@ -197,10 +194,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
 
         // then
-        assertThat(cacheManager.getCache("auth0-user")?.get("a.user.id"), nullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get("a.user.id"), nullValue())
     }
-
 
     @Test
     @WithMockUser(username = "j.w")
@@ -360,8 +355,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
         this.mockMvc.perform(get("/users/{userId}", "d.joe"))
             .andExpect(status().isOk)
-        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), notNullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+        assertThat(cacheManager.getCache("auth0-users")?.get("d.joe"), notNullValue())
 
         // when
         this.mockMvc.perform(
@@ -372,8 +366,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), nullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get("d.joe"), nullValue())
     }
 
     @Test
@@ -464,8 +457,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
         this.mockMvc.perform(get("/users/{userId}", "d.joe"))
             .andExpect(status().isOk)
-        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), notNullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+        assertThat(cacheManager.getCache("auth0-users")?.get("d.joe"), notNullValue())
 
         // when
         this.mockMvc.perform(
@@ -476,8 +468,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), nullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get("d.joe"), nullValue())
     }
 
     @Test
@@ -520,8 +511,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
         this.mockMvc.perform(get("/users/{userId}", "d.joe"))
             .andExpect(status().isOk)
-        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), notNullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+        assertThat(cacheManager.getCache("auth0-users")?.get("d.joe"), notNullValue())
 
         // when
         this.mockMvc.perform(
@@ -530,7 +520,13 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
 
         // then
-        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), nullValue())
-        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get("d.joe"), nullValue())
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users DELETE - returns 404 if user not found`() {
+        this.mockMvc.perform(delete("/users/{userId}", "404"))
+            .andExpect(status().isNotFound)
     }
 }
