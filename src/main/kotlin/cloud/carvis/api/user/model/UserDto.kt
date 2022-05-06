@@ -12,6 +12,8 @@ data class UserDto(
 
     var phone: String? = null,
 
-    var email: String? = null
+    var email: String? = null,
+
+    var roles: List<UserRole> = emptyList()
 
 )

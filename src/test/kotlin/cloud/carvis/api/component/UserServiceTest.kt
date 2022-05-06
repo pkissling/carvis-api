@@ -3,10 +3,10 @@ package cloud.carvis.api.component
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
+import cloud.carvis.api.user.model.UserDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
-import org.mockserver.verify.VerificationTimes.exactly
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.CacheManager
 import org.springframework.security.test.context.support.WithMockUser
@@ -32,6 +32,7 @@ class UserServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - enrich username`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
             .withEmptyDb()
             .withCar(VALID_USER_ID)
@@ -68,6 +69,7 @@ class UserServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - cache username`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
             .withEmptyDb()
             .withCar(VALID_USER_ID)
@@ -85,6 +87,7 @@ class UserServiceTest : AbstractApplicationTest() {
         // then
         auth0Mock.verify(
             request()
-                .withPath("/api/v2/users/a-random-user-id"), exactly(1))
+                .withPath("/api/v2/users/a-random-user-id")
+        )
     }
 }

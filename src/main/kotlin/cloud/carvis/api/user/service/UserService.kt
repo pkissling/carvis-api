@@ -4,9 +4,12 @@ import cloud.carvis.api.clients.Auth0RestClient
 import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
 import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.user.model.UserRole
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class UserService(
@@ -35,10 +38,10 @@ class UserService(
             .also { logger.debug { "Resolved following admin emails: $it" } }
     }
 
-    @PreAuthorize("@authorization.canAccessAndModifyUser(#id)")
-    fun updateUser(id: String, user: UserDto): UserDto =
+    @PreAuthorize("@authorization.canAccessAndModifyUser(#userId)")
+    fun updateUser(userId: String, user: UserDto): UserDto =
         userMapper.toEntity(user)
-            .let { auth0RestClient.updateUser(id, it) }
+            .let { auth0RestClient.updateUser(userId, it) }
             .let { userMapper.toDto(it) }
 
     fun fetchUser(id: String): UserDto {
@@ -52,15 +55,36 @@ class UserService(
     }
 
     @PreAuthorize("@authorization.isAdmin()")
-    fun fetchAllUsers(): List<UserDto> {
-        return auth0RestClient.fetchAllUsers()
-            .map { userMapper.toDto(it) }
-    }
+    fun fetchAllUsers(): List<UserDto> = auth0RestClient.fetchAllUsers()
+        .map { userMapper.toDto(it) }
 
     fun fetchUserSafe(userId: String): UserDto? = try {
         this.fetchUser(userId)
     } catch (e: Exception) {
         logger.warn { "Error while fetching user with userId: $userId" }
         null
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun addUserRoles(userId: String, addRoles: List<UserRole>) {
+        if (addRoles.isEmpty()) {
+            logger.info { "No role to be added provided for userId: $userId" }
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to add provided")
+        }
+        auth0RestClient.addUserRole(userId, addRoles)
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun removeUserRoles(userId: String, removeRoles: List<UserRole>) {
+        if (removeRoles.isEmpty()) {
+            logger.info { "No role to be removed provided for userId: $userId" }
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to remove provided")
+        }
+        auth0RestClient.removeUserRole(userId, removeRoles)
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun deleteUser(userId: String) {
+        auth0RestClient.deleteUser(userId)
     }
 }

@@ -5,6 +5,7 @@ import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.api.dao.repositories.CarRepository
 import cloud.carvis.api.model.dtos.CarDto
+import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.util.testdata.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
@@ -41,6 +42,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - one cars`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
             .withEmptyDb()
             .withCar(VALID_USER_ID)
@@ -111,6 +113,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `cars POST - create car success`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         testDataGenerator.withEmptyDb()
         val car: TestData<CarDto> = testDataGenerator.random()
         val start = now()
@@ -165,6 +168,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = VALID_USER_ID)
     fun `car PUT - update existing car`() {
         // given
+        auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val start = now()
         val existingCar = testDataGenerator
             .withEmptyDb()
