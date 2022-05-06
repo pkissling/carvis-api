@@ -11,7 +11,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import org.mockserver.model.MediaType.APPLICATION_JSON
 import org.mockserver.verify.VerificationTimes
-import org.mockserver.verify.VerificationTimes.exactly
+import org.mockserver.verify.VerificationTimes.once
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -77,7 +77,7 @@ class Auth0Mock {
         return this
     }
 
-    fun withRoles(vararg users: UserDto) {
+    fun withRoles(vararg users: UserDto): Auth0Mock {
         val distinctRoles = users
             .flatMap { it.roles }
             .distinct()
@@ -88,6 +88,7 @@ class Auth0Mock {
         )
         distinctRoles.forEach { withRole(it) }
         users.forEach { withUserRoles(it) }
+        return this
     }
 
     fun withUserRoles(user: UserDto) {
@@ -109,22 +110,26 @@ class Auth0Mock {
         )
     }
 
-    fun withAddRoleResponse(userId: String)
-        = mockApiCall(
-            path = "/api/v2/users/$userId/roles",
-            method = "POST",
-            statusCode = 200
-        )
+    fun withAddRoleResponse(userId: String) = mockApiCall(
+        path = "/api/v2/users/$userId/roles",
+        method = "POST",
+        statusCode = 200
+    )
 
-    fun withRemoveRoleResponse(userId: String)
-        = mockApiCall(
-            path = "/api/v2/users/$userId/roles",
-            method = "DELETE",
-            statusCode = 200
-        )
+    fun withRemoveRoleResponse(userId: String) = mockApiCall(
+        path = "/api/v2/users/$userId/roles",
+        method = "DELETE",
+        statusCode = 200
+    )
 
-    fun verify(request: HttpRequest, times: VerificationTimes = exactly(1)) {
-        mockServer.verify(request, times)
+    fun withDeleteUserResponse(userId: String) = mockApiCall(
+        path = "/api/v2/users/$userId",
+        method = "DELETE",
+        statusCode = 200
+    )
+
+    fun verify(vararg requests: HttpRequest, times: VerificationTimes = once()) {
+        mockServer.verify(*requests)
     }
 
     fun reset() =

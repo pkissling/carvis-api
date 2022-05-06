@@ -66,22 +66,25 @@ class UserService(
     }
 
     @PreAuthorize("@authorization.isAdmin()")
-    fun addUserRoles(userId: String, addRoles: List<UserRole>): UserDto {
+    fun addUserRoles(userId: String, addRoles: List<UserRole>) {
         if (addRoles.isEmpty()) {
             logger.info { "No role to be added provided for userId: $userId" }
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to add provided")
         }
         auth0RestClient.addUserRole(userId, addRoles)
-        return fetchUser(userId)
     }
 
     @PreAuthorize("@authorization.isAdmin()")
-    fun removeUserRoles(userId: String, removeRoles: List<UserRole>): UserDto {
+    fun removeUserRoles(userId: String, removeRoles: List<UserRole>) {
         if (removeRoles.isEmpty()) {
             logger.info { "No role to be removed provided for userId: $userId" }
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to remove provided")
         }
         auth0RestClient.removeUserRole(userId, removeRoles)
-        return fetchUser(userId)
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun deleteUser(userId: String) {
+        auth0RestClient.deleteUser(userId)
     }
 }

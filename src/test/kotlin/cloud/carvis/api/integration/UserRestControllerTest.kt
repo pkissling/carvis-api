@@ -4,9 +4,17 @@ import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.model.UserRole.ADMIN
 import cloud.carvis.api.user.model.UserRole.USER
-import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.*
+import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItems
+import org.hamcrest.Matchers.hasSize
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockserver.model.HttpRequest.request
+import org.mockserver.model.JsonBody.json
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cache.CacheManager
+import org.springframework.cache.interceptor.SimpleKey
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -16,11 +24,21 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 class UserRestControllerTest : AbstractApplicationTest() {
 
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+    @Autowired
+    private lateinit var cacheManager: CacheManager
+
+    @BeforeEach
+    fun beforeEach() {
+        cacheManager.cacheNames
+            .mapNotNull { cacheManager.getCache(it) }
+            .forEach { it.clear() }
+    }
+
     @Test
     @WithMockUser
     fun `users GET - get user successfully`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock.withUsers(
             UserDto(
                 userId = "someUserId",
@@ -45,7 +63,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser
     fun `users GET - get user throws 404`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock.withUsers(UserDto(userId = "someUserId", name = "John Wayne", company = "someCompany"))
 
         // when / then
@@ -57,9 +74,13 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = "the.user.id")
     fun `users PUT - update own user`() {
         // given
-        testDataGenerator.withEmptyDb()
-        val user =
-            UserDto("the.user.id", name = "Updated Name", company = "updateCompany", email = "this@mail.test", phone = "updatedPhone")
+        val user = UserDto(
+            userId = "the.user.id",
+            name = "Updated Name",
+            company = "updateCompany",
+            email = "this@mail.test",
+            phone = "updatedPhone"
+        )
         auth0Mock
             .withUsers(
                 UserDto(
@@ -90,7 +111,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = "foo")
     fun `users PUT - update other user is forbidden`() {
         // given
-        testDataGenerator.withEmptyDb()
         val user = UserDto("bar", name = "Updated Name", company = "updateCompany")
 
         // when / then
@@ -106,8 +126,13 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(username = "adminUser", roles = ["ADMIN"])
     fun `users PUT - update other user as admin`() {
         // given
-        testDataGenerator.withEmptyDb()
-        val user = UserDto("a.user.id", name = "Updated Name", company = "updateCompany", phone = "updatedPhone", email = "this@mail.rocks")
+        val user = UserDto(
+            userId = "a.user.id",
+            name = "Updated Name",
+            company = "updateCompany",
+            phone = "updatedPhone",
+            email = "this@mail.rocks"
+        )
         auth0Mock
             .withUsers(
                 UserDto(
@@ -135,10 +160,52 @@ class UserRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users PUT - evicts cache after update`() {
+        // given
+        val user = UserDto(
+            userId = "a.user.id",
+            name = "Updated Name",
+            company = "updateCompany",
+            phone = "updatedPhone",
+            email = "this@mail.rocks"
+        )
+        auth0Mock
+            .withUsers(
+                UserDto(
+                    userId = "a.user.id",
+                    name = "John Wayne",
+                    company = "someCompany",
+                    email = "this@mail.rocks",
+                    phone = "123 456"
+                )
+            )
+            .withUpdateResponse(user)
+        this.mockMvc.perform(get("/users"))
+            .andExpect(status().isOk)
+        this.mockMvc.perform(get("/users/{userId}", "a.user.id"))
+            .andExpect(status().isOk)
+        assertThat(cacheManager.getCache("auth0-user")?.get("a.user.id"), notNullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+
+        // when
+        this.mockMvc.perform(
+            put("/users/{id}", "a.user.id")
+                .content(objectMapper.writeValueAsString(user))
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+
+        // then
+        assertThat(cacheManager.getCache("auth0-user")?.get("a.user.id"), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
+    }
+
+
+    @Test
     @WithMockUser(username = "j.w")
     fun `my-user GET - fetch successfully`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock.withUsers(
             UserDto(
                 userId = "j.w",
@@ -165,10 +232,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser(roles = ["USER"])
     fun `users GET - users receives forbidden response`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(get("/users"))
             .andExpect(status().isForbidden)
     }
@@ -177,7 +240,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(roles = ["ADMIN"])
     fun `users GET - returns list of users for admins`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock.withUsers(
             UserDto(userId = "userId1", name = "Name 1", email = "e@mail.1", phone = "+1", company = "comp1", roles = listOf(ADMIN, USER)),
             UserDto(userId = "userId2", name = "Name 2", email = "e@mail.2", phone = "+2", company = "comp2", roles = listOf(USER)),
@@ -213,10 +275,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `users-id-roles PUT - users receives forbidden response`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(
             post("/users/{id}/roles", "some.userId")
                 .content("[\"user\"]")
@@ -228,10 +286,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles PUT - bad request`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(
             post("/users/{id}/roles", "some.userId")
                 .content("[]")
@@ -243,10 +297,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles PUT - no roles yields bad request`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(
             post("/users/{id}/roles", "some.userId")
                 .content("[]")
@@ -259,7 +309,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles PUT - invalid role yields bad request`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock.withUsers(UserDto(userId = "userId", name = "Name", roles = listOf(USER)))
 
         // when / then
@@ -275,30 +324,61 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles PUT - success`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock
             .withUsers(UserDto(userId = "d.joe", name = "Name", roles = listOf(USER)))
             .withAddRoleResponse("d.joe")
 
-        // when / then
+        // when
         this.mockMvc.perform(
             post("/users/{id}/roles", "d.joe")
                 .content("[\"user\"]")
                 .contentType(APPLICATION_JSON)
         )
+            .andExpect(status().isNoContent)
+
+        // then
+        auth0Mock.verify(
+            request()
+                .withPath("/api/v2/roles")
+                .withMethod("GET")
+                .withQueryStringParameter("name_filter", "user"),
+            request()
+                .withPath("/api/v2/users/d.joe/roles")
+                .withMethod("POST")
+                .withBody(json("""{ "roles" : [ "id_user" ] }"""))
+        )
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles PUT - evicts cache after update`() {
+        // given
+        auth0Mock
+            .withUsers(UserDto(userId = "d.joe", name = "Name", roles = listOf(USER)))
+            .withAddRoleResponse("d.joe")
+        this.mockMvc.perform(get("/users"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.userId", equalTo("d.joe")))
-            .andExpect(jsonPath("$.roles.length()", equalTo(1)))
-            .andExpect(jsonPath("$.roles", hasItems("user")))
+        this.mockMvc.perform(get("/users/{userId}", "d.joe"))
+            .andExpect(status().isOk)
+        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), notNullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+
+        // when
+        this.mockMvc.perform(
+            post("/users/{id}/roles", "d.joe")
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isNoContent)
+
+        // then
+        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
     }
 
     @Test
     @WithMockUser
     fun `users-id-roles DELETE - users receives forbidden response`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(
             delete("/users/{id}/roles", "some.userId")
                 .content("[\"user\"]")
@@ -310,10 +390,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles DELETE - bad request`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(
             delete("/users/{id}/roles", "some.userId")
                 .content("[]")
@@ -325,10 +401,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles DELETE - no roles yields bad request`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(
             delete("/users/{id}/roles", "some.userId")
                 .content("[]")
@@ -341,7 +413,6 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles DELETE - invalid role yields bad request`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock.withUsers(UserDto(userId = "userId", name = "Name", roles = listOf(USER)))
 
         // when / then
@@ -357,19 +428,109 @@ class UserRestControllerTest : AbstractApplicationTest() {
     @WithMockUser(roles = ["ADMIN"])
     fun `users-id-roles DELETE - success`() {
         // given
-        testDataGenerator.withEmptyDb()
         auth0Mock
-            .withUsers(UserDto(userId = "d.joe", name = "Name", roles = emptyList()))
+            .withRoles(UserDto(userId = "d.joe", name = "Name", roles = listOf(USER)))
             .withRemoveRoleResponse("d.joe")
 
-        // when / then
+        // when
         this.mockMvc.perform(
             delete("/users/{id}/roles", "d.joe")
                 .content("[\"user\"]")
                 .contentType(APPLICATION_JSON)
         )
+            .andExpect(status().isNoContent)
+
+        // then
+        auth0Mock.verify(
+            request()
+                .withPath("/api/v2/roles")
+                .withMethod("GET")
+                .withQueryStringParameter("name_filter", "user"),
+            request()
+                .withPath("/api/v2/users/d.joe/roles")
+                .withMethod("DELETE")
+                .withBody(json("""{ "roles" : [ "id_user" ] }"""))
+        )
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id-roles DELETE - evicts cache after update`() {
+        // given
+        auth0Mock
+            .withUsers(UserDto(userId = "d.joe", name = "Name", roles = listOf(USER)))
+            .withRemoveRoleResponse("d.joe")
+        this.mockMvc.perform(get("/users"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.userId", equalTo("d.joe")))
-            .andExpect(jsonPath("$.roles.length()", equalTo(0)))
+        this.mockMvc.perform(get("/users/{userId}", "d.joe"))
+            .andExpect(status().isOk)
+        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), notNullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+
+        // when
+        this.mockMvc.perform(
+            delete("/users/{id}/roles", "d.joe")
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isNoContent)
+
+        // then
+        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
+    }
+
+    @Test
+    @WithMockUser
+    fun `users DELETE - users receives forbidden response`() {
+        this.mockMvc.perform(
+            delete("/users/{id}", "some.userId")
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users DELETE - success`() {
+        // given
+        auth0Mock.withDeleteUserResponse("usr")
+
+        // when
+        this.mockMvc.perform(
+            delete("/users/{id}", "usr")
+        )
+            .andExpect(status().isOk)
+
+        // then
+        auth0Mock.verify(
+            request()
+                .withPath("/api/v2/users/usr")
+                .withMethod("DELETE")
+        )
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users DELETE - evicts cache after delete`() {
+        // given
+        auth0Mock
+            .withUsers(UserDto(userId = "d.joe", name = "Name", roles = listOf(USER)))
+            .withDeleteUserResponse("d.joe")
+        this.mockMvc.perform(get("/users"))
+            .andExpect(status().isOk)
+        this.mockMvc.perform(get("/users/{userId}", "d.joe"))
+            .andExpect(status().isOk)
+        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), notNullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get() as ArrayList<*>, hasSize(1))
+
+        // when
+        this.mockMvc.perform(
+            delete("/users/{id}", "d.joe")
+        )
+            .andExpect(status().isOk)
+
+        // then
+        assertThat(cacheManager.getCache("auth0-user")?.get("d.joe"), nullValue())
+        assertThat(cacheManager.getCache("auth0-users")?.get(SimpleKey())?.get(), nullValue())
     }
 }
