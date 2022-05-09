@@ -29,6 +29,7 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
             .disable()
             .authorizeRequests()
             .mvcMatchers("/actuator/health").permitAll()
+            .mvcMatchers("/my-user").permitAll()
             .anyRequest().hasAnyRole("USER", "ADMIN")
             .and()
             .oauth2ResourceServer()

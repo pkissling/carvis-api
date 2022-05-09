@@ -4,8 +4,11 @@ import cloud.carvis.api.dao.repositories.CarRepository
 import cloud.carvis.api.dao.repositories.RequestRepository
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpStatus
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
 @Service("authorization")
@@ -41,9 +44,13 @@ class AuthorizationService(
             .map { it.authority }
             .any { it == ADMIN_ROLE }
 
-    fun getUserId(): String =
-        SecurityContextHolder.getContext().authentication.name
-            ?: throw RuntimeException("Unable to get username from current context")
+    fun getUserId(): String {
+        val authentication = SecurityContextHolder.getContext().authentication
+        if (authentication is AnonymousAuthenticationToken || authentication.name.isEmpty()) {
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cannot obtain userId from anonymous user")
+        }
+        return authentication.name
+    }
 
     fun isUser(getUserId: String): Boolean =
         getUserId() == getUserId

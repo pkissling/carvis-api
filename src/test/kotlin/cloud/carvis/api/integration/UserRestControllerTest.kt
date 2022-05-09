@@ -226,6 +226,12 @@ class UserRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
+    fun `my-user GET - return unauthorized`() {
+        this.mockMvc.perform(get("/my-user"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
     @WithMockUser(roles = ["USER"])
     fun `users GET - users receives forbidden response`() {
         this.mockMvc.perform(get("/users"))
