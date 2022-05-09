@@ -1,6 +1,7 @@
 package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
+import cloud.carvis.api.clients.UserWithRoles
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.model.UserRole.ADMIN
 import cloud.carvis.api.user.model.UserRole.USER
@@ -183,7 +184,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
         this.mockMvc.perform(get("/users/{userId}", "a.user.id"))
             .andExpect(status().isOk)
-        assertThat(cacheManager.getCache("auth0-users")?.get("a.user.id"), notNullValue())
+        assertThat((cacheManager.getCache("auth0-users")?.get("a.user.id")?.get() as UserWithRoles).user.name, equalTo("John Wayne"))
 
         // when
         this.mockMvc.perform(
@@ -194,7 +195,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
 
         // then
-        assertThat(cacheManager.getCache("auth0-users")?.get("a.user.id"), nullValue())
+        assertThat((cacheManager.getCache("auth0-users")?.get("a.user.id")?.get() as UserWithRoles).user.name, equalTo("Updated Name"))
     }
 
     @Test

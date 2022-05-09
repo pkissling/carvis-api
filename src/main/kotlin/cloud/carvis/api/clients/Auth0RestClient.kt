@@ -8,6 +8,7 @@ import com.auth0.exception.APIException
 import com.auth0.json.mgmt.users.User
 import mu.KotlinLogging
 import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
@@ -56,7 +57,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         emptyList()
     }
 
-    @CacheEvict("auth0-users", key = "#userId")
+    @CachePut("auth0-users", key = "#userId")
     fun updateUser(userId: String, userWithRoles: UserWithRoles): UserWithRoles {
         val updatedUser = withErrorHandling {
             managementApi.users()
