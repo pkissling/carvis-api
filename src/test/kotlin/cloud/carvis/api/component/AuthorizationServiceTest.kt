@@ -3,10 +3,7 @@ package cloud.carvis.api.component
 import cloud.carvis.api.AbstractApplicationTest
 import com.github.benmanes.caffeine.cache.Cache
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.cache.CacheManager
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -15,21 +12,10 @@ import java.util.*
 
 class AuthorizationServiceTest : AbstractApplicationTest() {
 
-    @Autowired
-    lateinit var cacheManager: CacheManager
-
-    @BeforeEach
-    fun beforeEach() {
-        cacheManager.cacheNames
-            .mapNotNull { cacheManager.getCache(it) }
-            .forEach { it.clear() }
-    }
-
     @Test
     @WithMockUser(username = "foo")
     fun `car DELETE - Cache authorization information`() {
         // given
-        testDataGenerator.withEmptyDb()
         val notExistingCarId = UUID.randomUUID()
 
         // when
@@ -47,7 +33,6 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = "foo")
     fun `car DELETE - Cache authorization information - unique by carId`() {
         // given
-        testDataGenerator.withEmptyDb()
         val aCarId = UUID.randomUUID()
         val otherCarId = UUID.randomUUID()
 
@@ -67,7 +52,6 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = "foo")
     fun `request DELETE - Cache authorization information`() {
         // given
-        testDataGenerator.withEmptyDb()
         val notRequestId = UUID.randomUUID()
 
         // when
@@ -85,7 +69,6 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
     @WithMockUser(username = "foo")
     fun `request DELETE - Cache authorization information - unique by requestId`() {
         // given
-        testDataGenerator.withEmptyDb()
         val aRequestId = UUID.randomUUID()
         val otherRequestId = UUID.randomUUID()
 

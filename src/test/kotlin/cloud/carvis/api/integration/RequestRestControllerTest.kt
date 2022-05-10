@@ -28,10 +28,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `requests GET - no requests`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(get("/requests"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
@@ -42,7 +38,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `requests GET - with requests`() {
         // given
         testDataGenerator
-            .withEmptyDb()
             .withRequest()
             .withRequest()
 
@@ -58,7 +53,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val request = testDataGenerator
-            .withEmptyDb()
             .withRequest(VALID_USER_ID)
             .getRequest().value()
 
@@ -104,10 +98,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `request GET - not found`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(get("/requests/{id}", UUID.randomUUID()))
             .andExpect(status().isNotFound)
     }
@@ -117,7 +107,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `requests GET - admin can read all fields`() {
         // given
         testDataGenerator
-            .withEmptyDb()
             .withRequest()
             .getRequest().value()
 
@@ -134,7 +123,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `request GET - with hidden fields`() {
         // given
         val request = testDataGenerator
-            .withEmptyDb()
             .withRequest("foo")
             .getRequest().value()
 
@@ -155,7 +143,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `requests GET - with some hidden fields`() {
         // given
         testDataGenerator
-            .withEmptyDb()
             .withRequest("foo")
             .withRequest("bar")
 
@@ -174,7 +161,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `request DELETE - success`() {
         // given
         val request = testDataGenerator
-            .withEmptyDb()
             .withRequest("foo")
             .getRequest().value()
 
@@ -193,7 +179,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `requests POST - create request success`() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
-        testDataGenerator.withEmptyDb()
         val request: TestData<RequestDto> = testDataGenerator.random()
         val start = now()
 
@@ -283,7 +268,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val start = now()
         val existingRequest = testDataGenerator
-            .withEmptyDb()
             .withRequest(VALID_USER_ID)
             .getRequest()
             .value()
@@ -344,7 +328,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val request = testDataGenerator
-            .withEmptyDb()
             .withRequest(VALID_USER_ID)
             .getRequest()
             .value()
@@ -362,7 +345,6 @@ class RequestRestControllerTest : AbstractApplicationTest() {
     fun `requests GET - enrich username with fallback`() {
         // given
         val request = testDataGenerator
-            .withEmptyDb()
             .withRequest("404")
             .getRequest()
             .value()

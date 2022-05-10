@@ -8,31 +8,18 @@ import cloud.carvis.api.user.model.UserRole.USER
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItems
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.JsonBody.json
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.cache.CacheManager
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.util.*
 
 
 class UserRestControllerTest : AbstractApplicationTest() {
-
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
-    @Autowired
-    private lateinit var cacheManager: CacheManager
-
-    @BeforeEach
-    fun beforeEach() {
-        cacheManager.cacheNames
-            .mapNotNull { cacheManager.getCache(it) }
-            .forEach { it.clear() }
-    }
 
     @Test
     @WithMockUser
@@ -535,5 +522,89 @@ class UserRestControllerTest : AbstractApplicationTest() {
     fun `users DELETE - returns 404 if user not found`() {
         this.mockMvc.perform(delete("/users/{userId}", "404"))
             .andExpect(status().isNotFound)
+    }
+
+    @Test
+    @WithMockUser(roles = ["USER"])
+    fun `new-users GET - return forbidden for user with role user`() {
+        // given
+        testDataGenerator
+            .withNewUsers(2)
+
+        // when / then
+        this.mockMvc.perform(get("/users/new-users-count"))
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `new-users GET - return actual userIds`() {
+        // given
+        testDataGenerator
+            .withNewUsers(2)
+
+        this.mockMvc.perform(get("/users/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(2))
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `new-users GET - dismiss new user after assigning role`() {
+        // given
+        val userId = UUID.randomUUID().toString()
+        auth0Mock
+            .withUsers(UserDto(userId = userId, roles = listOf(USER)))
+            .withAddRoleResponse(userId)
+        testDataGenerator
+            .withNewUsers(listOf(userId))
+        this.mockMvc.perform(get("/users/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(1))
+
+        // when
+        this.mockMvc.perform(
+            post("/users/{id}/roles", userId)
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isNoContent)
+
+        // then
+        this.mockMvc.perform(get("/users/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(0))
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `notifications GET - reduce new user count after assigning role`() {
+        // given
+        val userId1 = UUID.randomUUID().toString()
+        val userId2 = UUID.randomUUID().toString()
+        auth0Mock
+            .withUsers(
+                UserDto(userId = userId1, roles = listOf(USER)),
+                UserDto(userId = userId2, roles = listOf(USER))
+            )
+            .withAddRoleResponse(userId1)
+        testDataGenerator
+            .withNewUsers(listOf(userId1, userId2))
+        this.mockMvc.perform(get("/users/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(2))
+
+        // when
+        this.mockMvc.perform(
+            post("/users/{id}/roles", userId1)
+                .content("[\"user\"]")
+                .contentType(APPLICATION_JSON)
+        )
+            .andExpect(status().isNoContent)
+
+        // then
+        this.mockMvc.perform(get("/users/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(1))
     }
 }

@@ -2,13 +2,17 @@ package cloud.carvis.api.events.listener
 
 import cloud.carvis.api.model.events.UserSignupEvent
 import cloud.carvis.api.service.NotificationService
+import cloud.carvis.api.user.service.UserService
 import io.awspring.cloud.messaging.listener.SqsMessageDeletionPolicy.NO_REDRIVE
 import io.awspring.cloud.messaging.listener.annotation.SqsListener
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
 @Service
-class UserSignupEventListener(private val notificationService: NotificationService) {
+class UserSignupEventListener(
+    private val notificationService: NotificationService,
+    private val userService: UserService
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -16,5 +20,6 @@ class UserSignupEventListener(private val notificationService: NotificationServi
     fun onMessage(event: UserSignupEvent) {
         logger.info("received $event")
         notificationService.notifyUserSignup(event)
+        userService.persistNewUserSignup(event)
     }
 }

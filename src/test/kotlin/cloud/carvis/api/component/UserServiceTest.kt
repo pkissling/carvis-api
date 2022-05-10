@@ -4,11 +4,8 @@ import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.api.user.model.UserDto
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.cache.CacheManager
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -17,24 +14,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 class UserServiceTest : AbstractApplicationTest() {
 
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
-    @Autowired
-    private lateinit var cacheManager: CacheManager
-
-    @BeforeEach
-    fun beforeEach() {
-        cacheManager.cacheNames
-            .mapNotNull { cacheManager.getCache(it) }
-            .forEach { it.clear() }
-    }
-
     @Test
     @WithMockUser(username = VALID_USER_ID)
     fun `cars GET - enrich username`() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar(VALID_USER_ID)
             .getCar()
             .value()
@@ -52,7 +37,6 @@ class UserServiceTest : AbstractApplicationTest() {
     fun `cars GET - enrich username with fallback`() {
         // given
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar("404")
             .getCar()
             .value()
@@ -71,7 +55,6 @@ class UserServiceTest : AbstractApplicationTest() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar(VALID_USER_ID)
             .getCar()
             .value()

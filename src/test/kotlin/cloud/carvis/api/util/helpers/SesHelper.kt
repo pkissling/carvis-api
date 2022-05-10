@@ -5,8 +5,8 @@ import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 import org.awaitility.Awaitility
 import org.springframework.stereotype.Service
+import java.io.File
 import java.nio.file.Files
-import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 import kotlin.streams.toList
@@ -14,30 +14,23 @@ import kotlin.streams.toList
 @Service
 class SesHelper(private val localStack: AwsMock.CarvisLocalStack) {
 
-    fun firstMail(): DocumentContext {
+    fun cleanMails() = localStack.execInContainer("rm -rf /data/ses/*")
+
+    fun latestMail(): DocumentContext {
         withTimeout { folderExists("ses") }
-        val file = firstFile("ses")
+        val file = latestFile("ses")
             ?: throw RuntimeException("Unable to extract email from folder 'ses'")
         val json = file.readText(Charsets.UTF_8)
         return JsonPath.parse(json)
     }
 
-
-    private fun hasFolder(path: String): Boolean {
-        return listFiles(path)
-            .find { it.isDirectory() } != null
-    }
-
-    private fun firstFile(path: String): Path? {
-        return listFiles(path)
-            .find { it.isRegularFile() }
-    }
+    private fun latestFile(path: String): File? = listFiles(path)
+        .maxByOrNull { it.lastModified() }
 
     private fun folderExists(path: String): Boolean =
         localStack.getDataDir().resolve(path).exists()
 
-
-    private fun listFiles(path: String): List<Path> {
+    private fun listFiles(path: String): List<File> {
         val childDir = localStack.getDataDir().resolve(path)
         if (!childDir.isReadable()) {
             return emptyList()
@@ -45,6 +38,7 @@ class SesHelper(private val localStack: AwsMock.CarvisLocalStack) {
 
         return Files.walk(childDir)
             .filter { it.isRegularFile() }
+            .map { it.toFile() }
             .toList()
     }
 

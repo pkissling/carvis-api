@@ -1,11 +1,15 @@
 package cloud.carvis.api.user.service
 
 import cloud.carvis.api.clients.Auth0RestClient
+import cloud.carvis.api.dao.repositories.NewUserRepository
+import cloud.carvis.api.model.entities.NewUserEntity
+import cloud.carvis.api.model.events.UserSignupEvent
 import cloud.carvis.api.service.AuthorizationService
 import cloud.carvis.api.user.mapper.UserMapper
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.model.UserRole
 import mu.KotlinLogging
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -15,28 +19,11 @@ import org.springframework.web.server.ResponseStatusException
 class UserService(
     private val auth0RestClient: Auth0RestClient,
     private val authorizationService: AuthorizationService,
-    private val userMapper: UserMapper
+    private val userMapper: UserMapper,
+    private val newUserRepository: NewUserRepository
 ) {
 
     private val logger = KotlinLogging.logger {}
-
-    fun fetchAllAdminEmails(): List<String> {
-        val admins = auth0RestClient.fetchAllAdmins()
-        if (admins.isEmpty()) {
-            throw RuntimeException("No users with admin role returned by Auth0.")
-        }
-
-        val adminsWithoutEmail = admins
-            .filter { it.email.isNullOrBlank() }
-
-        if (adminsWithoutEmail.isNotEmpty()) {
-            logger.warn { "Following admins have no email address set in Auth0: $adminsWithoutEmail" }
-        }
-
-        return admins
-            .map { it.email }
-            .also { logger.debug { "Resolved following admin emails: $it" } }
-    }
 
     @PreAuthorize("@authorization.canAccessAndModifyUser(#userId)")
     fun updateUser(userId: String, user: UserDto): UserDto =
@@ -72,6 +59,9 @@ class UserService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to add provided")
         }
         auth0RestClient.addUserRole(userId, addRoles)
+        newUserRepository.findByIdOrNull(userId)
+            ?.let { logger.info { "Deleting new user entity for userId: $userId" } }
+            ?.let { newUserRepository.deleteById(userId) }
     }
 
     @PreAuthorize("@authorization.isAdmin()")
@@ -86,5 +76,18 @@ class UserService(
     @PreAuthorize("@authorization.isAdmin()")
     fun deleteUser(userId: String) {
         auth0RestClient.deleteUser(userId)
+    }
+
+    @PreAuthorize("@authorization.isAdmin()")
+    fun fetchNewUsersCount(): Long =
+        newUserRepository.count()
+
+    fun persistNewUserSignup(event: UserSignupEvent) {
+        val entity = newUserRepository.findByIdOrNull(event.userId)
+        if (entity != null) {
+            logger.warn { "New user already persisted with userId [${event.userId}]. Skipping..." }
+            return
+        }
+        newUserRepository.save(NewUserEntity(userId = event.userId))
     }
 }

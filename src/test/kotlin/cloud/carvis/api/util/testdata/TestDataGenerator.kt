@@ -1,27 +1,35 @@
 package cloud.carvis.api.util.testdata
 
 import cloud.carvis.api.dao.repositories.CarRepository
+import cloud.carvis.api.dao.repositories.NewUserRepository
 import cloud.carvis.api.dao.repositories.RequestRepository
 import cloud.carvis.api.model.dtos.CarDto
 import cloud.carvis.api.model.dtos.ImageHeight
 import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.model.entities.CarEntity
 import cloud.carvis.api.model.entities.Entity
+import cloud.carvis.api.model.entities.NewUserEntity
 import cloud.carvis.api.model.entities.RequestEntity
 import cloud.carvis.api.model.events.UserSignupEvent
 import cloud.carvis.api.properties.S3Buckets
 import cloud.carvis.api.properties.SqsQueues
+import cloud.carvis.api.util.helpers.SesHelper
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
 import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.sqs.AmazonSQSAsync
+import com.amazonaws.services.sqs.model.PurgeQueueRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
+import org.awaitility.Awaitility.await
 import org.springframework.messaging.support.GenericMessage
 import org.springframework.stereotype.Service
 import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.math.absoluteValue
 
 @Service
@@ -33,25 +41,36 @@ class TestDataGenerator(
     private val queueMessagingTemplate: QueueMessagingTemplate,
     val objectMapper: ObjectMapper,
     private val sqsQueues: SqsQueues,
-    private val s3Queues: S3Buckets
+    private val s3Queues: S3Buckets,
+    private val newUserRepository: NewUserRepository,
+    private val amazonSqs: AmazonSQSAsync,
+    private val sesHelper: SesHelper
 ) {
 
     private var last: Any? = null
 
     fun withEmptyDb(): TestDataGenerator {
-        amazonDynamoDB.listTables()
+        val tables = amazonDynamoDB.listTables()
             .tableNames
-            .flatMap {
-                amazonDynamoDB.scan(it, emptyMap())
-                    .items
-                    .map { item -> it to item["id"]!! }
-            }
+            .map { amazonDynamoDB.describeTable(it) }
+            .map { it.table }
+        tables.forEach { amazonDynamoDB.deleteTable(it.tableName) }
+        await().atMost(10, SECONDS)
+            .until { amazonDynamoDB.listTables().tableNames.size == 0 }
+        tables
             .map {
-                DeleteItemRequest()
-                    .withTableName(it.first)
-                    .withKey(mapOf("id" to it.second))
+                CreateTableRequest()
+                    .withTableName(it.tableName)
+                    .withKeySchema(it.keySchema)
+                    .withAttributeDefinitions(it.attributeDefinitions)
+                    .withProvisionedThroughput(
+                        ProvisionedThroughput(
+                            it.provisionedThroughput.readCapacityUnits,
+                            it.provisionedThroughput.writeCapacityUnits
+                        )
+                    )
             }
-            .forEach { amazonDynamoDB.deleteItem(it) }
+            .forEach { amazonDynamoDB.createTable(it) }
         return this
     }
 
@@ -74,6 +93,7 @@ class TestDataGenerator(
         when (entity) {
             is CarEntity -> carRepository.save(entity)
             is RequestEntity -> requestRepository.save(entity)
+            is NewUserEntity -> newUserRepository.save(entity)
             else -> throw RuntimeException("unable to save entity")
         }.also { this.last = it }
     }
@@ -155,6 +175,31 @@ class TestDataGenerator(
 
     fun getUserSignupEvent(): TestData<UserSignupEvent> {
         return TestData(objectMapper, this.getLast())
+    }
+
+    fun withNewUsers(count: Int): TestDataGenerator {
+        val entityIds = (0 until count).map { it.toString() }.toList()
+        return withNewUsers(entityIds)
+    }
+
+    fun withNewUsers(userIds: List<String>): TestDataGenerator {
+        userIds.map {
+            val entity = random<NewUserEntity>()
+            entity.value().userId = it
+            save(entity.value())
+        }
+        return this
+    }
+
+    fun withEmptyQueues(): TestDataGenerator {
+        amazonSqs.listQueues().queueUrls
+            .map { PurgeQueueRequest().withQueueUrl(it) }
+            .forEach { amazonSqs.purgeQueue(it) }
+        return this
+    }
+
+    fun withNoMails() {
+        sesHelper.cleanMails()
     }
 
     data class Image(

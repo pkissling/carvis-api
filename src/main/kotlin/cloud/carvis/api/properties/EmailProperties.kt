@@ -22,7 +22,7 @@ class EmailProperties {
         lateinit var fromMail: String
 
         @NotNull
-        lateinit var permissionUrl: String
+        lateinit var userManagementUrl: String
 
     }
 }

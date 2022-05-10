@@ -1,8 +1,5 @@
 package cloud.carvis.api
 
-import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
-import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
-import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.util.mocks.Auth0Mock
 import cloud.carvis.api.util.mocks.AwsMock
 import cloud.carvis.api.util.testdata.TestDataGenerator
@@ -16,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
+import org.springframework.cache.CacheManager
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 
@@ -47,6 +45,25 @@ abstract class AbstractApplicationTest {
 
     @Autowired
     protected lateinit var auth0Mock: Auth0Mock
+
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+    @Autowired
+    protected lateinit var cacheManager: CacheManager
+
+    @BeforeEach
+    fun purgeCaches() {
+        cacheManager.cacheNames
+            .mapNotNull { cacheManager.getCache(it) }
+            .forEach { it.clear() }
+    }
+
+    @BeforeEach
+    fun cleanUp() {
+        testDataGenerator
+            .withEmptyDb()
+            .withEmptyQueues()
+            .withNoMails()
+    }
 
     @AfterEach
     fun afterEach() {

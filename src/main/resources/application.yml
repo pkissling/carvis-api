@@ -67,7 +67,7 @@ email:
   enabled: true
   user-signup:
     from-mail: usersignup@carvis.cloud
-    permission-url: https://manage.auth0.com/dashboard/eu/carvis/roles/rol_LIjMXu4DezolQ21w/users
+    user-management-url: https://carvis.cloud/user-management
 
 management:
   endpoints:

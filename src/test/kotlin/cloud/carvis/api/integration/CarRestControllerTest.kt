@@ -29,10 +29,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `cars GET - no cars`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(get("/cars"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()", equalTo(0)))
@@ -44,7 +40,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar(VALID_USER_ID)
             .getCar()
             .value()
@@ -85,10 +80,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `car GET - not found`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc.perform(get("/cars/{id}", UUID.randomUUID()))
             .andExpect(status().isNotFound)
     }
@@ -98,7 +89,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `car GET - found`() {
         // given
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar()
             .getCar()
             .value()
@@ -114,7 +104,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `cars POST - create car success`() {
         // given
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
-        testDataGenerator.withEmptyDb()
         val car: TestData<CarDto> = testDataGenerator.random()
         val start = now()
 
@@ -171,7 +160,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
         auth0Mock.withUsers(UserDto(userId = VALID_USER_ID, name = VALID_USER_NAME))
         val start = now()
         val existingCar = testDataGenerator
-            .withEmptyDb()
             .withCar(VALID_USER_ID)
             .getCar()
             .value()
@@ -224,7 +212,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `car PUT - update other users car forbidden`() {
         // given
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar("bar")
             .getCar()
             .value()
@@ -245,7 +232,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
         // given
         val start = now()
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar("bar")
             .getCar()
             .value()
@@ -272,7 +258,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @WithMockUser
     fun `car PUT - car does not exist`() {
         // given
-        testDataGenerator.withEmptyDb()
         val car = testDataGenerator.random<CarDto>()
 
         // when / then
@@ -290,7 +275,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `cars DELETE - delete car success`() {
         // given
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar(VALID_USER_ID)
             .getCar()
             .value()
@@ -310,10 +294,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `car DELETE - car does not exist`() {
-        // given
-        testDataGenerator.withEmptyDb()
-
-        // when / then
         this.mockMvc
             .perform(delete("/cars/{id}", UUID.randomUUID().toString()))
             .andExpect(status().isForbidden)
@@ -324,7 +304,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
     fun `car DELETE - admin can delete other users car`() {
         // given
         val car = testDataGenerator
-            .withEmptyDb()
             .withCar("foo")
             .getCar().value()
 

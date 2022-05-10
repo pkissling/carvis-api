@@ -98,7 +98,7 @@ class Auth0Mock {
         )
     }
 
-    fun withRole(role: UserRole) {
+    fun withRole(role: UserRole): Auth0Mock {
         mockApiCall(
             path = "/api/v2/roles",
             body = rolesJson(role),
@@ -108,6 +108,7 @@ class Auth0Mock {
             path = "/api/v2/roles/id_$role",
             body = roleJson(role)
         )
+        return this
     }
 
     fun withAddRoleResponse(userId: String) = mockApiCall(
