@@ -13,6 +13,8 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
+import com.amazonaws.services.sqs.model.CreateQueueRequest
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.test.context.TestConfiguration
@@ -42,7 +44,7 @@ class AwsMock {
         @JvmStatic
         @Container
         var localStackContainer: LocalStackContainer =
-            LocalStackContainer(DockerImageName.parse("localstack/localstack:0.13.1"))
+            LocalStackContainer(DockerImageName.parse("localstack/localstack:0.14.2"))
                 .withServices(SQS, S3, DYNAMODB, SES)
                 .withEnv("DATA_DIR", "/data")
                 .withFileSystemBind(tempDir.pathString, "/data")
@@ -74,8 +76,35 @@ class AwsMock {
                 .build()
                 .also { createQueues(sqsQueues, it) }
 
-        private fun createQueues(sqsQueues: SqsQueues, amazonSqs: AmazonSQSAsync) =
-            sqsQueues.forEach { amazonSqs.createQueue(it) }
+        private fun createQueues(sqsQueues: SqsQueues, amazonSqs: AmazonSQSAsync) {
+            sqsQueues.forEach { queueName ->
+                val dlqArn = createDlq(amazonSqs, queueName)
+                createQueue(amazonSqs, queueName, dlqArn)
+            }
+        }
+
+        private fun createQueue(amazonSqs: AmazonSQSAsync, queueName: String, dlqArn: String) {
+            amazonSqs.createQueue(
+                CreateQueueRequest()
+                    .withQueueName(queueName)
+                    .withAttributes(
+                        mapOf(
+                            "RedrivePolicy" to """{ "maxReceiveCount": 1, "deadLetterTargetArn": "$dlqArn" }""",
+                            "VisibilityTimeout" to "0"
+                        )
+                    )
+            )
+        }
+
+        private fun createDlq(amazonSqs: AmazonSQSAsync, queueName: String): String {
+            val dlq = amazonSqs.createQueue("${queueName}_dlq")
+            return amazonSqs.getQueueAttributes(
+                GetQueueAttributesRequest(dlq.queueUrl)
+                    .withAttributeNames("QueueArn")
+            )
+                .attributes["QueueArn"]
+                ?: throw RuntimeException("QueueArn required")
+        }
 
         @Bean
         fun queueMessagingTemplate(amazonSqsAsync: AmazonSQSAsync): QueueMessagingTemplate =

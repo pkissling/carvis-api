@@ -59,9 +59,11 @@ class UserService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to add provided")
         }
         auth0RestClient.addUserRole(userId, addRoles)
-        newUserRepository.findByIdOrNull(userId)
-            ?.let { logger.info { "Deleting new user entity for userId: $userId" } }
-            ?.let { newUserRepository.deleteById(userId) }
+        val hasNewUserEntity = newUserRepository.existsById(userId)
+        if (hasNewUserEntity) {
+            logger.info { "Deleting new user entity for userId: $userId" }
+            newUserRepository.deleteById(userId)
+        }
     }
 
     @PreAuthorize("@authorization.isAdmin()")

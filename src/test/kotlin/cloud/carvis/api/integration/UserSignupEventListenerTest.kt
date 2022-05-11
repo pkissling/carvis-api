@@ -2,17 +2,27 @@ package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.dao.repositories.NewUserRepository
+import cloud.carvis.api.service.NotificationService
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.model.UserRole
+import cloud.carvis.api.user.service.UserService
 import cloud.carvis.api.util.helpers.SesHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.data.repository.findByIdOrNull
-import java.util.concurrent.TimeUnit
+import org.springframework.test.annotation.DirtiesContext
+import java.util.concurrent.TimeUnit.SECONDS
 
 
+// inject spies properly
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class UserSignupEventListenerTest : AbstractApplicationTest() {
 
     @Autowired
@@ -20,6 +30,12 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
 
     @Autowired
     private lateinit var sesHelper: SesHelper
+
+    @SpyBean
+    private lateinit var userServiceSpy: UserService
+
+    @SpyBean
+    private lateinit var notificationServiceSpy: NotificationService
 
     @Test
     fun `onMessage - send mail to admin`() {
@@ -87,7 +103,7 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
             .value()
 
         // then
-        await().atMost(10, TimeUnit.SECONDS)
+        await().atMost(10, SECONDS)
             .until { newUserRepository.count() == 1L }
         assertThat(newUserRepository.findByIdOrNull(event.userId)).isNotNull
     }
@@ -117,11 +133,29 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
             .getUserSignupEvent()
             .value()
 
-
         // then
-        await().atMost(10, TimeUnit.SECONDS)
+        await().atMost(10, SECONDS)
             .until { newUserRepository.findAll().count() == 2 }
         assertThat(newUserRepository.findByIdOrNull(eventOne.userId)).isNotNull
         assertThat(newUserRepository.findByIdOrNull(eventTwo.userId)).isNotNull
+    }
+
+    @Test
+    fun `onMessage - processing error`() {
+        // given
+        doThrow(RuntimeException::class).`when`(userServiceSpy).persistNewUserSignup(any())
+        doNothing().`when`(notificationServiceSpy).notifyUserSignup(any())
+
+        // when
+        val event = testDataGenerator
+            .withUserSignupEvent()
+            .getUserSignupEvent()
+            .value()
+
+        // then
+        await().atMost(10, SECONDS)
+            .until { testDataGenerator.getUserSignupDlqMessages().isNotEmpty() }
+        verify(notificationServiceSpy).notifyUserSignup(event)
+        verify(userServiceSpy).persistNewUserSignup(event)
     }
 }

@@ -19,7 +19,9 @@ import com.amazonaws.services.dynamodbv2.model.CreateTableRequest
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.sqs.AmazonSQSAsync
+import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.PurgeQueueRequest
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
@@ -192,15 +194,33 @@ class TestDataGenerator(
     }
 
     fun withEmptyQueues(): TestDataGenerator {
-        amazonSqs.listQueues().queueUrls
+        val queues = amazonSqs.listQueues()
+        queues.queueUrls
             .map { PurgeQueueRequest().withQueueUrl(it) }
             .forEach { amazonSqs.purgeQueue(it) }
+        await().atMost(30, SECONDS)
+            .until {
+                queues.queueUrls
+                .map { amazonSqs.receiveMessage(it) }
+                .map { it.messages }
+                .all { it.isEmpty() }}
         return this
     }
 
     fun withNoMails() {
         sesHelper.cleanMails()
     }
+
+    fun getUserSignupDlqMessages(): List<Message> {
+        val queueUrl = amazonSqs.listQueues(sqsQueues.userSignup)
+            .queueUrls
+            .first { it.endsWith("_dlq") }
+        return amazonSqs.receiveMessage(
+            ReceiveMessageRequest()
+                .withQueueUrl(queueUrl)
+        ).messages
+    }
+
 
     data class Image(
         val id: UUID,
