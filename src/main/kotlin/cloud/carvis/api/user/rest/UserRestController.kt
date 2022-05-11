@@ -67,7 +67,7 @@ class UserRestController(
             .also { logger.info { "end deleteUser(id=$id)" } }
     }
 
-    @GetMapping("/users/new-users-count")
+    @GetMapping("/new-users-count")
     fun fetchNewUsersCount(): Long {
         logger.info { "start fetchNewUsersCount()" }
         return userService.fetchNewUsersCount()

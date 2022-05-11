@@ -1,13 +1,14 @@
 package cloud.carvis.api.user.mapper
 
 import cloud.carvis.api.clients.UserWithRoles
+import cloud.carvis.api.dao.repositories.NewUserRepository
 import cloud.carvis.api.mapper.Mapper
 import cloud.carvis.api.user.model.UserDto
 import com.auth0.json.mgmt.users.User
 import org.springframework.stereotype.Service
 
 @Service
-class UserMapper() : Mapper<UserDto, UserWithRoles> {
+class UserMapper(private val newUserRepository: NewUserRepository) : Mapper<UserDto, UserWithRoles> {
 
     override fun toDto(entity: UserWithRoles): UserDto =
         UserDto(
@@ -16,7 +17,8 @@ class UserMapper() : Mapper<UserDto, UserWithRoles> {
             company = entity.user.userMetadata?.get("company")?.toString(),
             phone = entity.user.userMetadata?.get("phone")?.toString(),
             email = entity.user.email,
-            roles = entity.roles
+            roles = entity.roles,
+            isNewUser = entity.user.id?.let { newUserRepository.existsById(it) } ?: false
         )
 
 

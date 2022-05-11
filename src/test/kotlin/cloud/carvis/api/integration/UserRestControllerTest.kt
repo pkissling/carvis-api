@@ -43,6 +43,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.company", equalTo("someCompany")))
             .andExpect(jsonPath("$.email", equalTo("e@mail.com")))
             .andExpect(jsonPath("$.phone", equalTo("123456789")))
+            .andExpect(jsonPath("$.isNewUser", equalTo(false)))
     }
 
     @Test
@@ -210,6 +211,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.email", equalTo("j@wayne.com")))
             .andExpect(jsonPath("$.roles.length()").value(2))
             .andExpect(jsonPath("$.roles", hasItems("user", "admin")))
+            .andExpect(jsonPath("$.isNewUser", equalTo(false)))
     }
 
     @Test
@@ -532,7 +534,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .withNewUsers(2)
 
         // when / then
-        this.mockMvc.perform(get("/users/new-users-count"))
+        this.mockMvc.perform(get("/new-users-count"))
             .andExpect(status().isForbidden)
     }
 
@@ -543,7 +545,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
         testDataGenerator
             .withNewUsers(2)
 
-        this.mockMvc.perform(get("/users/new-users-count"))
+        this.mockMvc.perform(get("/new-users-count"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$").value(2))
     }
@@ -557,8 +559,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .withUsers(UserDto(userId = userId, roles = listOf(USER)))
             .withAddRoleResponse(userId)
         testDataGenerator
-            .withNewUsers(listOf(userId))
-        this.mockMvc.perform(get("/users/new-users-count"))
+            .withNewUsers(userId)
+        this.mockMvc.perform(get("/new-users-count"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$").value(1))
 
@@ -571,7 +573,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        this.mockMvc.perform(get("/users/new-users-count"))
+        this.mockMvc.perform(get("/new-users-count"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$").value(0))
     }
@@ -589,8 +591,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
             )
             .withAddRoleResponse(userId1)
         testDataGenerator
-            .withNewUsers(listOf(userId1, userId2))
-        this.mockMvc.perform(get("/users/new-users-count"))
+            .withNewUsers(userId1, userId2)
+        this.mockMvc.perform(get("/new-users-count"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$").value(2))
 
@@ -603,8 +605,29 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        this.mockMvc.perform(get("/users/new-users-count"))
+        this.mockMvc.perform(get("/new-users-count"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$").value(1))
     }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users GET - with new and not new user`() {
+        // given
+        auth0Mock.withUsers(
+            UserDto(userId = "userId1"),
+            UserDto(userId = "userId2")
+        )
+        testDataGenerator.withNewUsers("userId2")
+
+        // when / then
+        this.mockMvc.perform(get("/users"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()", equalTo(2)))
+            .andExpect(jsonPath("$[0].userId", equalTo("userId1")))
+            .andExpect(jsonPath("$[0].isNewUser", equalTo(false)))
+            .andExpect(jsonPath("$[1].userId", equalTo("userId2")))
+            .andExpect(jsonPath("$[1].isNewUser", equalTo(true)))
+    }
+
 }

@@ -14,6 +14,8 @@ data class UserDto(
 
     var email: String? = null,
 
-    var roles: List<UserRole> = emptyList()
+    var roles: List<UserRole> = emptyList(),
+
+    var isNewUser: Boolean = false
 
 )

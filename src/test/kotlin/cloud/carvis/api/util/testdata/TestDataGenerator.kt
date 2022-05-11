@@ -181,10 +181,10 @@ class TestDataGenerator(
 
     fun withNewUsers(count: Int): TestDataGenerator {
         val entityIds = (0 until count).map { it.toString() }.toList()
-        return withNewUsers(entityIds)
+        return withNewUsers(*entityIds.toTypedArray())
     }
 
-    fun withNewUsers(userIds: List<String>): TestDataGenerator {
+    fun withNewUsers(vararg userIds: String): TestDataGenerator {
         userIds.map {
             val entity = random<NewUserEntity>()
             entity.value().userId = it
