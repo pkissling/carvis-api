@@ -78,6 +78,9 @@ class UserService(
     @PreAuthorize("@authorization.isAdmin()")
     fun deleteUser(userId: String) {
         auth0RestClient.deleteUser(userId)
+        if (newUserRepository.existsById(userId)) {
+            newUserRepository.deleteById(userId)
+        }
     }
 
     @PreAuthorize("@authorization.isAdmin()")

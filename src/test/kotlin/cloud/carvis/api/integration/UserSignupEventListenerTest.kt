@@ -145,6 +145,7 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
         // given
         doThrow(RuntimeException::class).`when`(userServiceSpy).persistNewUserSignup(any())
         doNothing().`when`(notificationServiceSpy).notifyUserSignup(any())
+        assertThat(testDataGenerator.getUserSignupDlqMessages()).isEmpty()
 
         // when
         val event = testDataGenerator

@@ -643,4 +643,24 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$[1].isNewUser", equalTo(true)))
     }
 
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `users-id DELETE - decrement new users counter`() {
+        // given
+        auth0Mock.withDeleteUserResponse("rnd.id")
+        testDataGenerator
+            .withNewUsers("rnd.id")
+        this.mockMvc.perform(get("/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(1))
+
+        // when
+        this.mockMvc.perform(delete("/users/{id}", "rnd.id"))
+            .andExpect(status().isOk)
+
+        // then
+        this.mockMvc.perform(get("/new-users-count"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").value(0))
+    }
 }
