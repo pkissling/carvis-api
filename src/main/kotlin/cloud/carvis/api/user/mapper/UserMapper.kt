@@ -18,7 +18,8 @@ class UserMapper(private val newUserRepository: NewUserRepository) : Mapper<User
             phone = entity.user.userMetadata?.get("phone")?.toString(),
             email = entity.user.email,
             roles = entity.roles,
-            isNewUser = entity.user.id?.let { newUserRepository.existsById(it) } ?: false
+            isNewUser = entity.user.id?.let { newUserRepository.existsById(it) } ?: false,
+            picture = entity.user.picture
         )
 
 

@@ -31,7 +31,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
                 name = "John Wayne",
                 company = "someCompany",
                 email = "e@mail.com",
-                phone = "123456789"
+                phone = "123456789",
+                picture = "some.pic"
             )
         )
 
@@ -44,6 +45,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.email", equalTo("e@mail.com")))
             .andExpect(jsonPath("$.phone", equalTo("123456789")))
             .andExpect(jsonPath("$.isNewUser", equalTo(false)))
+            .andExpect(jsonPath("$.picture", equalTo("some.pic")))
     }
 
     @Test
@@ -197,7 +199,8 @@ class UserRestControllerTest : AbstractApplicationTest() {
                 name = "John Wayne",
                 company = "Wayne Inc.",
                 phone = "+1-555-555-5555",
-                roles = listOf(USER, ADMIN)
+                roles = listOf(USER, ADMIN),
+                picture = "https://pic.com"
             )
         )
 
@@ -212,6 +215,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.roles.length()").value(2))
             .andExpect(jsonPath("$.roles", hasItems("user", "admin")))
             .andExpect(jsonPath("$.isNewUser", equalTo(false)))
+            .andExpect(jsonPath("$.picture", equalTo("https://pic.com")))
     }
 
     @Test
@@ -233,7 +237,15 @@ class UserRestControllerTest : AbstractApplicationTest() {
         // given
         auth0Mock.withUsers(
             UserDto(userId = "userId1", name = "Name 1", email = "e@mail.1", phone = "+1", company = "comp1", roles = listOf(ADMIN, USER)),
-            UserDto(userId = "userId2", name = "Name 2", email = "e@mail.2", phone = "+2", company = "comp2", roles = listOf(USER)),
+            UserDto(
+                userId = "userId2",
+                name = "Name 2",
+                email = "e@mail.2",
+                phone = "+2",
+                company = "comp2",
+                roles = listOf(USER),
+                picture = "pix"
+            ),
             UserDto(userId = "userId3", name = "Name 3", email = "e@mail.3", phone = "+3", company = "comp3")
         )
 
@@ -255,6 +267,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$[1].company", equalTo("comp2")))
             .andExpect(jsonPath("$[1].roles.length()").value(1))
             .andExpect(jsonPath("$[1].roles", hasItems("user")))
+            .andExpect(jsonPath("$[1].picture", equalTo("pix")))
             .andExpect(jsonPath("$[2].userId", equalTo("userId3")))
             .andExpect(jsonPath("$[2].name", equalTo("Name 3")))
             .andExpect(jsonPath("$[2].email", equalTo("e@mail.3")))
@@ -540,7 +553,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(roles = ["ADMIN"])
-    fun `new-users GET - return actual userIds`() {
+    fun `new-users-count GET - return actual count`() {
         // given
         testDataGenerator
             .withNewUsers(2)
@@ -552,7 +565,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(roles = ["ADMIN"])
-    fun `new-users GET - dismiss new user after assigning role`() {
+    fun `new-users-count GET - dismiss new user after assigning role`() {
         // given
         val userId = UUID.randomUUID().toString()
         auth0Mock
@@ -580,7 +593,7 @@ class UserRestControllerTest : AbstractApplicationTest() {
 
     @Test
     @WithMockUser(roles = ["ADMIN"])
-    fun `notifications GET - reduce new user count after assigning role`() {
+    fun `new-users-count GET - reduce new user count after assigning role`() {
         // given
         val userId1 = UUID.randomUUID().toString()
         val userId2 = UUID.randomUUID().toString()

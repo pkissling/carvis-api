@@ -16,6 +16,8 @@ data class UserDto(
 
     var roles: List<UserRole> = emptyList(),
 
-    var isNewUser: Boolean = false
+    var isNewUser: Boolean = false,
+
+    var picture: String? = null
 
 )

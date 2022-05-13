@@ -182,7 +182,8 @@ class Auth0Mock {
                 "email": "${user.email}",
                 "user_metadata": {
                     ${userMetadata.filter { it?.isNotBlank() ?: false }.joinToString(",\n")}
-                }
+                },
+                "picture": "${user.picture}"
             }
             """
     }
