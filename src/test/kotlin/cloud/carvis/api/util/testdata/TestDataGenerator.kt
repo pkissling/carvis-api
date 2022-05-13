@@ -221,6 +221,15 @@ class TestDataGenerator(
         ).messages
     }
 
+    fun getUserSignupMessages(): List<Message> {
+        val queueUrl = amazonSqs.listQueues(sqsQueues.userSignup)
+            .queueUrls
+            .first { !it.endsWith("_dlq") }
+        return amazonSqs.receiveMessage(
+            ReceiveMessageRequest()
+                .withQueueUrl(queueUrl)
+        ).messages
+    }
 
     data class Image(
         val id: UUID,

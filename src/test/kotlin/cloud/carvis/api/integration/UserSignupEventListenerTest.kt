@@ -2,27 +2,18 @@ package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.dao.repositories.NewUserRepository
-import cloud.carvis.api.service.NotificationService
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.model.UserRole
-import cloud.carvis.api.user.service.UserService
 import cloud.carvis.api.util.helpers.SesHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doNothing
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.verify
+import org.mockserver.model.HttpRequest.request
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.test.annotation.DirtiesContext
 import java.util.concurrent.TimeUnit.SECONDS
 
 
-// inject spies properly
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class UserSignupEventListenerTest : AbstractApplicationTest() {
 
     @Autowired
@@ -30,12 +21,6 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
 
     @Autowired
     private lateinit var sesHelper: SesHelper
-
-    @SpyBean
-    private lateinit var userServiceSpy: UserService
-
-    @SpyBean
-    private lateinit var notificationServiceSpy: NotificationService
 
     @Test
     fun `onMessage - send mail to admin`() {
@@ -143,9 +128,11 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
     @Test
     fun `onMessage - processing error`() {
         // given
-        doThrow(RuntimeException::class).`when`(userServiceSpy).persistNewUserSignup(any())
-        doNothing().`when`(notificationServiceSpy).notifyUserSignup(any())
-        assertThat(testDataGenerator.getUserSignupDlqMessages()).isEmpty()
+        auth0Mock.mockApiCall(
+            path = "/api/v2/roles",
+            queryParams = mapOf("name_filter" to "admin"),
+            statusCode = 500
+        )
 
         // when
         val event = testDataGenerator
@@ -156,7 +143,13 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
         // then
         await().atMost(10, SECONDS)
             .until { testDataGenerator.getUserSignupDlqMessages().isNotEmpty() }
-        verify(notificationServiceSpy).notifyUserSignup(event)
-        verify(userServiceSpy).persistNewUserSignup(event)
+        assertThat(newUserRepository.count()).isEqualTo(1L)
+        assertThat(newUserRepository.existsById(event.userId)).isTrue
+        auth0Mock.verify(
+            request()
+                .withPath("/api/v2/roles")
+                .withQueryStringParameter("name_filter", "admin")
+                .withMethod("GET")
+        )
     }
 }

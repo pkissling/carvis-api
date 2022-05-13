@@ -145,7 +145,7 @@ class Auth0Mock {
     private fun getUrl(): String =
         "http://localhost:${mockServer.port}/"
 
-    private fun mockApiCall(
+    fun mockApiCall(
         path: String,
         body: String = "",
         method: String = "GET",
