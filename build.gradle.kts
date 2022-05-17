@@ -50,6 +50,7 @@ dependencies {
     implementation("io.awspring.cloud:spring-cloud-starter-aws-messaging")
     implementation("io.awspring.cloud:spring-cloud-starter-aws-ses")
     implementation("org.springframework.cloud:spring-cloud-starter-sleuth")
+    implementation("com.drewnoakes:metadata-extractor:2.18.0")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

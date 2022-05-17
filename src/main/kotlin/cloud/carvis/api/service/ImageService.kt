@@ -9,9 +9,13 @@ import com.amazonaws.HttpMethod.GET
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.util.IOUtils
+import com.drew.imaging.ImageMetadataReader
+import com.drew.metadata.Metadata
+import com.drew.metadata.exif.ExifIFD0Directory
 import mu.KotlinLogging
 import org.imgscalr.Scalr
-import org.imgscalr.Scalr.Method.QUALITY
+import org.imgscalr.Scalr.Rotation
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
@@ -52,11 +56,11 @@ class ImageService(
         if (originalExists) {
             logger.info { "Resizing image [$id] from ORIGINAL to [$height]" }
             val stopWatch = startTimer()
-            val (contentType, image, originalLength) = getObject(id, ORIGINAL)
-            val (resizedImage, resizedLength) = resizeImage(id, contentType, image, height)
+            val (contentType, originalImage) = getObject(id, ORIGINAL)
+            val (resizedImage, resizedLength) = resizeImage(id, contentType, originalImage, height)
             putObject(id, resizedImage, height, contentType, resizedLength)
             val took = finishTimer(stopWatch)
-            logger.info { "Finished resizing image [$id] from ORIGINAL to [$height]. Took ${took}ms to resize with ${originalLength / 1024}KB to ${resizedLength / 1024}KB" }
+            logger.info { "Finished resizing image [$id] from ORIGINAL to [$height]. Took ${took}ms to resize with ${originalImage.size / 1024}KB to ${resizedLength / 1024}KB" }
             return this.fetchImage(id, height)
         }
 
@@ -122,19 +126,21 @@ class ImageService(
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error while generating presigned url", e)
     }
 
-    private fun getObject(id: UUID, height: ImageHeight): Triple<MediaType, InputStream, Long> = try {
+    private fun getObject(id: UUID, height: ImageHeight): Pair<MediaType, ByteArray> = try {
         val obj = s3Client.getObject(this.bucketName, "$id/$height")
         val mediaType = MediaType.valueOf(obj.objectMetadata.contentType)
-        Triple(mediaType, obj.objectContent, obj.objectMetadata.contentLength)
+        mediaType to IOUtils.toByteArray(obj.objectContent)
     } catch (e: Exception) {
         logger.error(e) { "Unable to fetch image: $id/$height" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "cannot fetch image from s3")
     }
 
-    private fun resizeImage(id: UUID, contentType: MediaType, inputStream: InputStream, height: ImageHeight): Pair<InputStream, Long> =
+    private fun resizeImage(id: UUID, contentType: MediaType, bytes: ByteArray, height: ImageHeight): Pair<InputStream, Long> =
         try {
-            val image = ImageIO.read(inputStream)
-            val resizedImage = Scalr.resize(image, QUALITY, height.toInt())
+            val rotation = calculateRotation(bytes.inputStream())
+            val image = ImageIO.read(bytes.inputStream())
+            val resizedImage = Scalr.resize(image, height.toInt())
+                .let { img -> rotation?.let { Scalr.rotate(img, rotation) } ?: img }
             ByteArrayOutputStream()
                 .also { ImageIO.write(resizedImage, contentType.subtype, it) }
                 .let { ByteArrayInputStream(it.toByteArray()) to it.size().toLong() }
@@ -142,4 +148,15 @@ class ImageService(
             logger.error(e) { "Failed to resize image with id: $id" }
             throw ResponseStatusException(INTERNAL_SERVER_ERROR, "failed to resize image")
         }
+
+    private fun calculateRotation(image: InputStream): Rotation? {
+        val metadata: Metadata = ImageMetadataReader.readMetadata(image)
+        val exifIFD0: ExifIFD0Directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory::class.java) ?: return null
+        return when (exifIFD0.getInt(ExifIFD0Directory.TAG_ORIENTATION)) {
+            6 -> Rotation.CW_90
+            3 -> Rotation.CW_180
+            8 -> Rotation.CW_270
+            else -> null
+        }
+    }
 }

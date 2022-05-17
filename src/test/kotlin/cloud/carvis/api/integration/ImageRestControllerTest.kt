@@ -18,6 +18,7 @@ import java.time.Instant.now
 import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.temporal.ChronoUnit.HOURS
+import javax.imageio.ImageIO
 
 
 class ImageRestControllerTest : AbstractApplicationTest() {
@@ -114,7 +115,55 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
         assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/ORIGINAL")).isTrue
         assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/200")).isTrue
-        assertThat(amazonS3.getObject(imagesBucket, "${image.id}/200").objectMetadata.contentType).isEqualTo("image/jpeg")
+        assertThat(amazonS3.getObject(imagesBucket, "${image.id}/200")).extracting { it.objectMetadata.contentType }.isEqualTo("image/jpeg")
+    }
+
+    @Test
+    @WithMockUser
+    fun `images GET - retain portrait orientation`() {
+        // given
+        val imagesBucket = s3Properties.images
+        val image = testDataGenerator
+            .withEmptyBucket()
+            .withImage("portrait.jpg")
+            .getImage()
+
+        // when
+        this.mockMvc.perform(get("/images/{id}?height={height}", image.id, 200))
+            .andExpect(status().isOk)
+
+        // then
+        assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/ORIGINAL")).isTrue
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/200")).isTrue
+        val resizedImage = amazonS3.getObject(imagesBucket, "${image.id}/200")
+            .let { ImageIO.read(it.objectContent) }
+        assertThat(resizedImage.height).isEqualTo(200)
+        assertThat(resizedImage.width).isEqualTo(133)
+    }
+
+    @Test
+    @WithMockUser
+    fun `images GET - retain landscape orientation`() {
+        // given
+        val imagesBucket = s3Properties.images
+        val image = testDataGenerator
+            .withEmptyBucket()
+            .withImage("mercedes.jpeg")
+            .getImage()
+
+        // when
+        this.mockMvc.perform(get("/images/{id}?height={height}", image.id, 200))
+            .andExpect(status().isOk)
+
+        // then
+        assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/ORIGINAL")).isTrue
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "${image.id}/200")).isTrue
+        val resizedImage = amazonS3.getObject(imagesBucket, "${image.id}/200")
+            .let { ImageIO.read(it.objectContent) }
+        assertThat(resizedImage.height).isEqualTo(85)
+        assertThat(resizedImage.width).isEqualTo(200)
     }
 
     @Test
