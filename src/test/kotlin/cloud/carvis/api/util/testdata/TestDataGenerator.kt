@@ -10,6 +10,8 @@ import cloud.carvis.api.model.entities.CarEntity
 import cloud.carvis.api.model.entities.Entity
 import cloud.carvis.api.model.entities.NewUserEntity
 import cloud.carvis.api.model.entities.RequestEntity
+import cloud.carvis.api.model.events.CarvisCommand
+import cloud.carvis.api.model.events.CarvisCommandType.DELETE_IMAGE
 import cloud.carvis.api.model.events.UserSignupEvent
 import cloud.carvis.api.properties.S3Buckets
 import cloud.carvis.api.properties.SqsQueues
@@ -43,7 +45,7 @@ class TestDataGenerator(
     private val queueMessagingTemplate: QueueMessagingTemplate,
     val objectMapper: ObjectMapper,
     private val sqsQueues: SqsQueues,
-    private val s3Queues: S3Buckets,
+    private val s3Buckets: S3Buckets,
     private val newUserRepository: NewUserRepository,
     private val amazonSqs: AmazonSQSAsync,
     private val sesHelper: SesHelper
@@ -76,16 +78,19 @@ class TestDataGenerator(
         return this
     }
 
-    fun withEmptyBucket(): TestDataGenerator {
-        val objects = amazonS3.listObjects(s3Queues.images)
-        objects.objectSummaries.forEach { amazonS3.deleteObject(s3Queues.images, it.key) }
+    fun withEmptyBuckets(): TestDataGenerator {
+        val objects = amazonS3.listObjects(s3Buckets.images)
+        objects.objectSummaries.forEach { amazonS3.deleteObject(s3Buckets.images, it.key) }
         return this
     }
 
-    fun withCar(createdBy: String? = null): TestDataGenerator {
+    fun withCar(createdBy: String? = null, imageIds: List<UUID> = emptyList()): TestDataGenerator {
         val car = random<CarEntity>()
         if (createdBy != null) {
             car.value().createdBy = createdBy
+        }
+        if (imageIds.isNotEmpty()) {
+            car.value().images = imageIds
         }
         save(car.value())
         return this
@@ -104,20 +109,23 @@ class TestDataGenerator(
         return TestData(objectMapper, getLast())
     }
 
-    fun withImage(): TestDataGenerator {
-        val id = UUID.randomUUID()
+    fun withImage(imageId: UUID): TestDataGenerator {
         val size = ImageHeight.ORIGINAL
-        amazonS3.putObject(s3Queues.images, "$id/$size", arbitrary<String>())
-        this.last = Image(id, size)
+        amazonS3.putObject(s3Buckets.images, "$imageId/$size", arbitrary<String>())
+        this.last = Image(imageId, size)
         return this
+    }
+
+    fun withImage(): TestDataGenerator {
+        return withImage(UUID.randomUUID())
     }
 
     fun withImage(path: String): TestDataGenerator {
         val file = File(TestDataGenerator::class.java.getResource("/images/$path")!!.file)
-        val id = UUID.randomUUID()
-        val size = ImageHeight.ORIGINAL
-        amazonS3.putObject(s3Queues.images, "$id/$size", file)
-        this.last = Image(id, size)
+        val imageId = UUID.randomUUID()
+        val height = ImageHeight.ORIGINAL
+        amazonS3.putObject(s3Buckets.images, "$imageId/$height", file)
+        this.last = Image(imageId, height)
         return this
     }
 
@@ -139,6 +147,11 @@ class TestDataGenerator(
                 price = price!!.abs()
             }
             is RequestDto -> value.apply {
+                horsePower = horsePower!!.absoluteValue
+                capacity = capacity!!.absoluteValue
+                mileage = mileage!!.absoluteValue
+            }
+            is CarEntity -> value.apply {
                 horsePower = horsePower!!.absoluteValue
                 capacity = capacity!!.absoluteValue
                 mileage = mileage!!.absoluteValue
@@ -201,14 +214,16 @@ class TestDataGenerator(
         await().atMost(30, SECONDS)
             .until {
                 queues.queueUrls
-                .map { amazonSqs.receiveMessage(it) }
-                .map { it.messages }
-                .all { it.isEmpty() }}
+                    .map { amazonSqs.receiveMessage(it) }
+                    .map { it.messages }
+                    .all { it.isEmpty() }
+            }
         return this
     }
 
-    fun withNoMails() {
+    fun withNoMails(): TestDataGenerator {
         sesHelper.cleanMails()
+        return this
     }
 
     fun getUserSignupDlqMessages(): List<Message> {
@@ -221,10 +236,17 @@ class TestDataGenerator(
         ).messages
     }
 
-    fun getUserSignupMessages(): List<Message> {
-        val queueUrl = amazonSqs.listQueues(sqsQueues.userSignup)
+    fun withDeleteImageCommand(id: UUID): TestDataGenerator {
+        val command = CarvisCommand(id, DELETE_IMAGE)
+        queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
+        last = command
+        return this
+    }
+
+    fun getCarvisCommandDlqMessages(): List<Message> {
+        val queueUrl = amazonSqs.listQueues(sqsQueues.carvisCommand)
             .queueUrls
-            .first { !it.endsWith("_dlq") }
+            .first { it.endsWith("_dlq") }
         return amazonSqs.receiveMessage(
             ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)

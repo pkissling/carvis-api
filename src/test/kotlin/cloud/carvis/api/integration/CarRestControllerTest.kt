@@ -5,10 +5,13 @@ import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
 import cloud.carvis.api.dao.repositories.CarRepository
 import cloud.carvis.api.model.dtos.CarDto
+import cloud.carvis.api.properties.S3Buckets
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.util.testdata.TestData
+import com.amazonaws.services.s3.AmazonS3
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.hasItem
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
@@ -25,6 +28,12 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
     @Autowired
     private lateinit var carRepository: CarRepository
+
+    @Autowired
+    private lateinit var s3Properties: S3Buckets
+
+    @Autowired
+    private lateinit var amazonS3: AmazonS3
 
     @Test
     @WithMockUser
@@ -109,7 +118,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
 
 
         // when
-        val response = this.mockMvc
+        val returnedCar = this.mockMvc
             .perform(
                 post("/cars")
                     .content(car.toJson())
@@ -118,7 +127,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", APPLICATION_JSON.toString()))
             .andReturn()
-        val returnedCar = toObject<CarDto>(response)
+            .toObject<CarDto>()
 
         // then
         assertThat(carRepository.count()).isEqualTo(1)
@@ -167,7 +176,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val updatedCar: TestData<CarDto> = testDataGenerator.random()
 
         // when
-        val response = this.mockMvc
+        val returnedCar = this.mockMvc
             .perform(
                 put("/cars/{id}", carId)
                     .content(updatedCar.toJson())
@@ -201,7 +210,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.updatedBy").value(VALID_USER_ID))
             .andExpect(jsonPath("$.vin").value(updatedCar.value().vin))
             .andReturn()
-        val returnedCar = toObject<CarDto>(response)
+            .toObject<CarDto>()
 
         // then
         assertThat(returnedCar.updatedAt).isBetween(start, now())
@@ -271,6 +280,40 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
+    @WithMockUser(username = "patrick", roles = ["USER"])
+    fun `car PUT - delete images in s3`() {
+        // given
+        val imagesBucket = s3Properties.images
+        val imageId1 = UUID.randomUUID()
+        val imageId2 = UUID.randomUUID()
+        val car = testDataGenerator
+            .withImage(imageId1)
+            .withImage(imageId2)
+            .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
+            .getCar()
+        car.value().images = listOf(imageId1)
+        assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId1/ORIGINAL")).isTrue
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId2/ORIGINAL")).isTrue
+
+        this.mockMvc
+            .perform(
+                put("/cars/{id}", car.value().id)
+                    .content(car.toJson())
+                    .contentType(APPLICATION_JSON)
+            )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.images.length()").value(1))
+            .andExpect(jsonPath("$.images", hasItem(imageId1.toString())))
+
+        awaitAssert {
+            assertThat(amazonS3.listObjects(imagesBucket).objectSummaries.count()).isEqualTo(2)
+            assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId1/ORIGINAL")).isTrue
+            assertThat(amazonS3.doesObjectExist(imagesBucket, "deleted/$imageId2/ORIGINAL")).isTrue
+        }
+    }
+
+    @Test
     @WithMockUser(username = VALID_USER_ID)
     fun `cars DELETE - delete car success`() {
         // given
@@ -317,6 +360,36 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .perform(get("/cars", car.id))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
+    }
+
+    @Test
+    @WithMockUser(username = "patrick", roles = ["USER"])
+    fun `car DELETE - delete images in s3`() {
+        // given
+        val imagesBucket = s3Properties.images
+        val imageId1 = UUID.randomUUID()
+        val imageId2 = UUID.randomUUID()
+        val car = testDataGenerator
+            .withImage(imageId1)
+            .withImage(imageId2)
+            .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
+            .getCar()
+        assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId1/ORIGINAL")).isTrue
+        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId2/ORIGINAL")).isTrue
+
+        this.mockMvc
+            .perform(
+                delete("/cars/{id}", car.value().id)
+            )
+            .andExpect(status().isNoContent)
+
+        assertThat(carRepository.existsById(car.value().id!!)).isFalse
+        awaitAssert {
+            assertThat(amazonS3.listObjects(imagesBucket).objectSummaries.count()).isEqualTo(2)
+            assertThat(amazonS3.doesObjectExist(imagesBucket, "deleted/$imageId1/ORIGINAL")).isTrue
+            assertThat(amazonS3.doesObjectExist(imagesBucket, "deleted/$imageId2/ORIGINAL")).isTrue
+        }
     }
 
     fun assert(httpStatus: ResultMatcher, attribute: String, value: Any? = null) {

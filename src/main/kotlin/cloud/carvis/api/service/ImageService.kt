@@ -7,6 +7,7 @@ import cloud.carvis.api.properties.S3Buckets
 import com.amazonaws.HttpMethod
 import com.amazonaws.HttpMethod.GET
 import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.model.CopyObjectRequest
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.util.IOUtils
@@ -44,27 +45,28 @@ class ImageService(
     private val bucketName = s3Properties.images
 
     @Cacheable("imageUrls", sync = true)
-    fun fetchImage(id: UUID, height: ImageHeight): ImageDto {
-        val exists = imageExists(id, height)
+    fun fetchImage(imageId: UUID, height: ImageHeight): ImageDto {
+        val exists = imageExists("$imageId/$height")
         if (exists) {
+            val key = "$imageId/$height"
             val expiresAt = now().plus(12, HOURS)
-            val url = generatePresignedUrl(id, height, GET, expiresAt)
-            return ImageDto(id, url, height, expiresAt)
+            val url = generatePresignedUrl(key, GET, expiresAt)
+            return ImageDto(imageId, url, height, expiresAt)
         }
 
-        val originalExists = imageExists(id, ORIGINAL)
+        val originalExists = imageExists("$imageId/${ORIGINAL}")
         if (originalExists) {
-            logger.info { "Resizing image [$id] from ORIGINAL to [$height]" }
+            logger.info { "Resizing image [$imageId] from ORIGINAL to [$height]" }
             val stopWatch = startTimer()
-            val (contentType, originalImage) = getObject(id, ORIGINAL)
-            val (resizedImage, resizedLength) = resizeImage(id, contentType, originalImage, height)
-            putObject(id, resizedImage, height, contentType, resizedLength)
+            val (contentType, originalImage) = getObject("$imageId/${ORIGINAL}")
+            val (resizedImage, resizedLength) = resizeImage(imageId, contentType, originalImage, height)
+            putObject("$imageId/$height", resizedImage, contentType, resizedLength)
             val took = finishTimer(stopWatch)
-            logger.info { "Finished resizing image [$id] from ORIGINAL to [$height]. Took ${took}ms to resize with ${originalImage.size / 1024}KB to ${resizedLength / 1024}KB" }
-            return this.fetchImage(id, height)
+            logger.info { "Finished resizing image [$imageId] from ORIGINAL to [$height]. Took ${took}ms to resize with ${originalImage.size / 1024}KB to ${resizedLength / 1024}KB" }
+            return this.fetchImage(imageId, height)
         }
 
-        logger.info { "Image with id [$id] not found" }
+        logger.info { "Image with id [$imageId] not found" }
         throw ResponseStatusException(NOT_FOUND, "image not found")
     }
 
@@ -72,8 +74,14 @@ class ImageService(
         val id = UUID.randomUUID()
         val size = ORIGINAL
         val expiresAt = now().plus(12, HOURS)
-        val url = generatePresignedUrl(id, size, HttpMethod.PUT, expiresAt, contentType)
+        val key = "$id/$size"
+        val url = generatePresignedUrl(key, HttpMethod.PUT, expiresAt, contentType)
         return ImageDto(id, url, size, expiresAt)
+    }
+
+    fun deleteImage(imageId: UUID) {
+        logger.info { "Deleting imageId: $imageId" }
+        this.delete("$imageId")
     }
 
     private fun finishTimer(stopWatch: StopWatch): Long {
@@ -85,59 +93,58 @@ class ImageService(
         StopWatch()
             .apply { start() }
 
-    private fun putObject(id: UUID, inputStream: InputStream, height: ImageHeight, contentType: MediaType, length: Long) = try {
+    private fun putObject(key: String, inputStream: InputStream, contentType: MediaType, length: Long) = try {
         val metaData = ObjectMetadata().apply {
             this.contentType = contentType.toString()
             this.contentLength = length
         }
-        s3Client.putObject(this.bucketName, "$id/$height", inputStream, metaData)
-            .also { logger.debug { "Saved s3 object [$id/$height]" } }
+        s3Client.putObject(this.bucketName, key, inputStream, metaData)
+            .also { logger.debug { "Saved s3 object [$key]" } }
     } catch (e: Exception) {
-        logger.error(e) { "Unable to save file: $id/$height" }
+        logger.error(e) { "Unable to save file: $key" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "unable to save file in s3")
     }
 
-    private fun imageExists(id: UUID, height: ImageHeight): Boolean = try {
-        s3Client.doesObjectExist(this.bucketName, "$id/$height")
-            .also { logger.debug { "Image [$id/$height] exists: $it" } }
+    private fun imageExists(key: String): Boolean = try {
+        s3Client.doesObjectExist(this.bucketName, key)
+            .also { logger.debug { "Image [$key] exists: $it" } }
     } catch (e: Exception) {
-        logger.error(e) { "Unable to check if image exists in s3: $id/$height" }
+        logger.error(e) { "Unable to check if image exists in s3: $key" }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "unable to check image in s3")
     }
 
-    private fun generatePresignedUrl(
-        id: UUID,
-        height: ImageHeight,
-        method: HttpMethod,
-        expiresAt: Instant,
-        contentType: MediaType? = null
-    ): URL = try {
+    private fun generatePresignedUrl(key: String, method: HttpMethod, expiresAt: Instant, contentType: MediaType? = null): URL = try {
         s3Client.generatePresignedUrl(
-            GeneratePresignedUrlRequest(this.bucketName, "$id/$height")
+            GeneratePresignedUrlRequest(this.bucketName, key)
                 .withMethod(method)
                 .withContentType(contentType?.toString())
                 .withExpiration(Date.from(expiresAt))
         )
     } catch (e: Exception) {
         logger.error(e) {
-            "Exception caught while generating presigned URL for path " +
-                    "[$id/$height], expiration [$expiresAt] and contentType [$contentType]"
+            "Exception caught while generating presigned URL for key " +
+                    "[$key], expiration [$expiresAt] and contentType [$contentType]"
         }
         throw ResponseStatusException(INTERNAL_SERVER_ERROR, "communication error while generating presigned url", e)
     }
 
-    private fun getObject(id: UUID, height: ImageHeight): Pair<MediaType, ByteArray> = try {
-        val obj = s3Client.getObject(this.bucketName, "$id/$height")
-        val mediaType = MediaType.valueOf(obj.objectMetadata.contentType)
-        mediaType to IOUtils.toByteArray(obj.objectContent)
-    } catch (e: Exception) {
-        logger.error(e) { "Unable to fetch image: $id/$height" }
-        throw ResponseStatusException(INTERNAL_SERVER_ERROR, "cannot fetch image from s3")
+    private fun getObject(key: String): Pair<MediaType, ByteArray> {
+        try {
+            val obj = s3Client.getObject(this.bucketName, key)
+            val mediaType = MediaType.valueOf(obj.objectMetadata.contentType)
+            return mediaType to IOUtils.toByteArray(obj.objectContent)
+        } catch (e: Exception) {
+            logger.error(e) { "Unable to fetch image: $key" }
+            throw ResponseStatusException(INTERNAL_SERVER_ERROR, "cannot fetch image from s3")
+        }
     }
 
-    private fun resizeImage(id: UUID, contentType: MediaType, bytes: ByteArray, height: ImageHeight): Pair<InputStream, Long> =
+    private fun resizeImage(imageId: UUID, contentType: MediaType, bytes: ByteArray, height: ImageHeight): Pair<InputStream, Long> =
         try {
             val rotation = calculateRotation(bytes.inputStream())
+            if (rotation == null) {
+                logger.warn { "Unable to determine extract orientation for imageId: $imageId" }
+            }
             val image = ImageIO.read(bytes.inputStream())
             val resizedImage = Scalr.resize(image, height.toInt())
                 .let { img -> rotation?.let { Scalr.rotate(img, rotation) } ?: img }
@@ -145,13 +152,17 @@ class ImageService(
                 .also { ImageIO.write(resizedImage, contentType.subtype, it) }
                 .let { ByteArrayInputStream(it.toByteArray()) to it.size().toLong() }
         } catch (e: Exception) {
-            logger.error(e) { "Failed to resize image with id: $id" }
+            logger.error(e) { "Failed to resize image with id: $imageId" }
             throw ResponseStatusException(INTERNAL_SERVER_ERROR, "failed to resize image")
         }
 
     private fun calculateRotation(image: InputStream): Rotation? {
         val metadata: Metadata = ImageMetadataReader.readMetadata(image)
         val exifIFD0: ExifIFD0Directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory::class.java) ?: return null
+        val hasOrientation = exifIFD0.containsTag(ExifIFD0Directory.TAG_ORIENTATION)
+        if (!hasOrientation) {
+            return null
+        }
         return when (exifIFD0.getInt(ExifIFD0Directory.TAG_ORIENTATION)) {
             6 -> Rotation.CW_90
             3 -> Rotation.CW_180
@@ -159,4 +170,27 @@ class ImageService(
             else -> null
         }
     }
+
+
+    private fun delete(key: String) {
+        logger.debug { "Deleting image(s) with key: $key" }
+        val childs = s3Client.listObjects(bucketName, key)
+            .objectSummaries
+            .map { it.key }
+        if (childs.isEmpty()) {
+            throw RuntimeException("Should have deleted key [$key], but it did not exist in S3")
+        }
+        childs.forEach { childKey ->
+            s3Client.copyObject(
+                CopyObjectRequest()
+                    .withSourceBucketName(bucketName)
+                    .withDestinationBucketName(bucketName)
+                    .withSourceKey(childKey)
+                    .withDestinationKey("deleted/$childKey")
+            )
+            s3Client.deleteObject(bucketName, childKey)
+        }
+        logger.debug { "Deleted image(s) with key: $key" }
+    }
 }
+

@@ -1,6 +1,7 @@
 package cloud.carvis.api.service
 
 import cloud.carvis.api.dao.repositories.CarRepository
+import cloud.carvis.api.events.service.CarvisCommandPublisher
 import cloud.carvis.api.mapper.CarMapper
 import cloud.carvis.api.model.dtos.CarDto
 import mu.KotlinLogging
@@ -14,7 +15,8 @@ import java.util.*
 @Service
 class CarService(
     private val carRepository: CarRepository,
-    private val carMapper: CarMapper
+    private val carMapper: CarMapper,
+    private val commandPublisher: CarvisCommandPublisher
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -25,16 +27,15 @@ class CarService(
             .toList()
     }
 
-    fun fetchCar(id: UUID): CarDto {
+    fun fetchCar(carId: UUID): CarDto {
 
-        val car = carRepository.findByIdOrNull(id)
+        val car = carRepository.findByIdOrNull(carId)
         if (car == null) {
-            logger.info { "Car with id [$id] not found" }
+            logger.info { "Car with id [$carId] not found" }
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
         }
 
-        return car
-            .let { carMapper.toDto(it) }
+        return car.let { carMapper.toDto(it) }
     }
 
     fun createCar(car: CarDto): CarDto {
@@ -43,25 +44,32 @@ class CarService(
             .let { carMapper.toDto(it) }
     }
 
-    @PreAuthorize("@authorization.canModifyCar(#id)")
-    fun updateCar(id: UUID, car: CarDto): CarDto {
+    @PreAuthorize("@authorization.canModifyCar(#carId)")
+    fun updateCar(carId: UUID, car: CarDto): CarDto {
 
-        val carToUpdate = carRepository.findByIdOrNull(id)
+        val carToUpdate = carRepository.findByIdOrNull(carId)
 
         if (carToUpdate == null) {
-            logger.info { "Car with id [$id] not found" }
+            logger.info { "Car with id [$carId] not found" }
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
         }
 
-        // what happens if images ger deleted during update?
-        return carMapper.forUpdate(id, car, carToUpdate)
+        val removeImageIds = carToUpdate.images.filter { !car.images.contains(it) }
+        if (removeImageIds.isNotEmpty()) {
+            commandPublisher.deleteImages(removeImageIds)
+        }
+
+        return carMapper.forUpdate(carId, car, carToUpdate)
             .let { carRepository.save(it) }
             .let { carMapper.toDto(it) }
     }
 
-    @PreAuthorize("@authorization.canModifyCar(#id)")
-    fun deleteCar(id: UUID) {
-        // TODO delete images?
-        carRepository.deleteById(id)
+    @PreAuthorize("@authorization.canModifyCar(#carId)")
+    fun deleteCar(carId: UUID) {
+        val car = carRepository.findByIdOrNull(carId)
+        if (car != null) {
+            carRepository.deleteById(carId)
+            commandPublisher.deleteImages(car.images)
+        }
     }
 }

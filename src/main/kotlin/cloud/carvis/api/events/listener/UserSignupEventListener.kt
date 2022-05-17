@@ -36,7 +36,7 @@ class UserSignupEventListener(
         fn.invoke(event)
         null
     } catch (e: Exception) {
-        logger.error(e) { "Error while executing function after user signup: $fnDescription" }
+        logger.error(e) { "Error while executing function after receiving UserSignupEvent: $fnDescription" }
         e
     }
 }

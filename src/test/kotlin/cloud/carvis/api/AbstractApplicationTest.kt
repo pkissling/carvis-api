@@ -5,6 +5,7 @@ import cloud.carvis.api.util.mocks.AwsMock
 import cloud.carvis.api.util.testdata.TestDataGenerator
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDO
 import org.springframework.cache.CacheManager
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
+import java.util.concurrent.TimeUnit
 
 
 @SpringBootTest(
@@ -63,6 +65,7 @@ abstract class AbstractApplicationTest {
             .withEmptyDb()
             .withEmptyQueues()
             .withNoMails()
+            .withEmptyBuckets()
     }
 
     @AfterEach
@@ -70,8 +73,20 @@ abstract class AbstractApplicationTest {
         auth0Mock.reset()
     }
 
-    protected final inline fun <reified T : Any> toObject(result: MvcResult): T {
-        return objectMapper.readValue<T>(result.response.contentAsByteArray)
+    protected fun awaitAssert(timeout: Long = 10, fn: () -> Unit) {
+        await().atMost(timeout, TimeUnit.SECONDS)
+            .until {
+                try {
+                    fn.invoke()
+                    true
+                } catch (e: Error) {
+                    false
+                }
+            }
+    }
+
+    protected final inline fun <reified T> MvcResult.toObject(): T {
+        return objectMapper.readValue<T>(this.response.contentAsByteArray)
     }
 
     object Users {

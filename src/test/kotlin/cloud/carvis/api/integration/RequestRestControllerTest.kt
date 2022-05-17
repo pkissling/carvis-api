@@ -183,7 +183,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         val start = now()
 
         // when
-        val response = this.mockMvc
+        val returnedRequest = this.mockMvc
             .perform(
                 post("/requests")
                     .content(request.toJson())
@@ -192,7 +192,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON.toString()))
             .andReturn()
-        val returnedRequest = toObject<RequestDto>(response)
+            .toObject<RequestDto>()
 
         // then
         assertThat(requestRepository.count()).isEqualTo(1)
@@ -275,7 +275,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
         val request: TestData<RequestDto> = testDataGenerator.random()
 
         // when
-        val response = this.mockMvc
+        val returnedRequest = this.mockMvc
             .perform(
                 put("/requests/{id}", requestId)
                     .content(request.toJson())
@@ -316,7 +316,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("type").value(request.value().type))
             .andExpect(jsonPath("vision").value(request.value().vision))
             .andReturn()
-        val returnedRequest = toObject<RequestDto>(response)
+            .toObject<RequestDto>()
 
         // then
         assertThat(returnedRequest.updatedAt).isBetween(start, now())

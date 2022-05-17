@@ -32,12 +32,14 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     @Test
     @WithMockUser
     fun `images GET - image not found`() {
-        // given
-        testDataGenerator
-            .withEmptyBucket()
-
-        // when / then
-        this.mockMvc.perform(get("/images/{id}?size={size}", "c2371741-2d29-4830-8ef1-c0d75ea9499f", "500"))
+        this.mockMvc.perform(
+            get(
+                "/images/{imageId}?size={size}",
+                "ad3ff4c5-c9b3-4f89-a7ba-bab7d63f00aa",
+                "7e3a1154-7360-4ced-b075-4fba6819f756",
+                "500"
+            )
+        )
             .andExpect(status().isNotFound)
     }
 
@@ -46,21 +48,21 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     fun `images GET - with image`() {
         // given
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage()
             .getImage()
 
         // when
-        val result = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
+        val img = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.height").value(image.height.toString()))
             .andExpect(jsonPath("$.expiresAt", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
+            .toObject<ImageDto>()
 
         // then
-        val img: ImageDto = toObject(result)
         assertThat(img.expiresAt).isBetween(`in`(11, HOURS), `in`(13, HOURS))
     }
 
@@ -69,7 +71,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     fun `images POST - create presigned url success`() {
         // when
         val start = now()
-        val result = this.mockMvc.perform(
+        val img = this.mockMvc.perform(
             post("/images")
                 .contentType(MediaType.IMAGE_PNG)
         )
@@ -79,9 +81,9 @@ class ImageRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.expiresAt").exists())
             .andExpect(jsonPath("$.url").exists())
             .andReturn()
+            .toObject<ImageDto>()
 
         // then
-        val img: ImageDto = toObject(result)
         assertThat(img.expiresAt).isBetween(start, `in`(1, DAYS))
     }
 
@@ -99,7 +101,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         // given
         val imagesBucket = s3Properties.images
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage("mercedes.jpeg")
             .getImage()
 
@@ -124,7 +126,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         // given
         val imagesBucket = s3Properties.images
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage("portrait.jpg")
             .getImage()
 
@@ -148,7 +150,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         // given
         val imagesBucket = s3Properties.images
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage("mercedes.jpeg")
             .getImage()
 
@@ -171,20 +173,17 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     fun `images GET - with default image size`() {
         // given
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage()
             .getImage()
 
         // when / then
-        val response = this.mockMvc.perform(get("/images/{id}", image.id))
+        this.mockMvc.perform(get("/images/{id}", image.id))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.height").value("ORIGINAL"))
             .andExpect(jsonPath("$.expiresAt", notNullValue()))
             .andExpect(jsonPath("$.url", notNullValue()))
-            .andReturn().response
-
-        response.contentAsString
     }
 
     @Test
@@ -192,7 +191,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     fun `images GET - with invalid image size`() {
         // given
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage()
             .getImage()
 
@@ -206,27 +205,27 @@ class ImageRestControllerTest : AbstractApplicationTest() {
     fun `images GET - cache image url`() {
         // given
         val image = testDataGenerator
-            .withEmptyBucket()
+            .withEmptyBuckets()
             .withImage()
             .getImage()
 
         // when
-        val result0 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
+        val image0 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
-        val result1 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
+            .toObject<ImageDto>()
+        val image1 = this.mockMvc.perform(get("/images/{id}?size={size}", image.id, image.height))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(image.id.toString()))
             .andExpect(jsonPath("$.url", notNullValue()))
             .andReturn()
+            .toObject<ImageDto>()
 
         // then
-        val imageDto0: ImageDto = toObject(result0)
-        val imageDto1: ImageDto = toObject(result1)
-        assertThat(imageDto0.url).isEqualTo(imageDto1.url)
-        assertThat(imageDto0.expiresAt).isEqualTo(imageDto1.expiresAt)
+        assertThat(image0.url).isEqualTo(image1.url)
+        assertThat(image0.expiresAt).isEqualTo(image1.expiresAt)
     }
 
     private fun `in`(i: Long, unit: ChronoUnit) = now().plus(i, unit)
