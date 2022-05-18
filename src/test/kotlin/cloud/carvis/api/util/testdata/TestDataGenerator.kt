@@ -11,6 +11,8 @@ import cloud.carvis.api.model.entities.Entity
 import cloud.carvis.api.model.entities.NewUserEntity
 import cloud.carvis.api.model.entities.RequestEntity
 import cloud.carvis.api.model.events.CarvisCommand
+import cloud.carvis.api.model.events.CarvisCommandType
+import cloud.carvis.api.model.events.CarvisCommandType.ASSIGN_IMAGE_TO_CAR
 import cloud.carvis.api.model.events.CarvisCommandType.DELETE_IMAGE
 import cloud.carvis.api.model.events.UserSignupEvent
 import cloud.carvis.api.properties.S3Buckets
@@ -236,8 +238,16 @@ class TestDataGenerator(
         ).messages
     }
 
+    fun withAssignImageToCarCommand(carId: UUID, imageId: UUID): TestDataGenerator {
+        return withCarvisCommand(carId, ASSIGN_IMAGE_TO_CAR, imageId)
+    }
+
     fun withDeleteImageCommand(id: UUID): TestDataGenerator {
-        val command = CarvisCommand(id, DELETE_IMAGE)
+        return withCarvisCommand(id, DELETE_IMAGE)
+    }
+
+    private fun withCarvisCommand(id: UUID, type: CarvisCommandType, additionalData: Any? = null): TestDataGenerator {
+        val command = CarvisCommand(id, type, additionalData)
         queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
         last = command
         return this

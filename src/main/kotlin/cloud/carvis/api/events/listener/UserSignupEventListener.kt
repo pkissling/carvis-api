@@ -15,9 +15,9 @@ class UserSignupEventListener(
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val userSignupFunctions: List<Pair<String, (e: UserSignupEvent) -> Unit>> = listOf(
-        "notificationService.notifyUserSignup(event)" to { event -> notificationService.notifyUserSignup(event) },
-        "userService.persistNewUserSignup(event)" to { event -> userService.persistNewUserSignup(event) }
+    private val userSignupFunctions: List<(e: UserSignupEvent) -> Unit> = listOf(
+        { event -> notificationService.notifyUserSignup(event) },
+        { event -> userService.persistNewUserSignup(event) }
     )
 
     @SqsListener("\${sqs.queues.user-signup}", deletionPolicy = NO_REDRIVE)
@@ -25,18 +25,18 @@ class UserSignupEventListener(
         logger.info("received $event")
 
         val errors = userSignupFunctions
-            .mapNotNull { consumeEvent(event, it.first, it.second) }
+            .mapNotNull { consumeEvent(event, it) }
 
         if (errors.isNotEmpty()) {
             throw errors.first()
         }
     }
 
-    private fun consumeEvent(event: UserSignupEvent, fnDescription: String, fn: (event: UserSignupEvent) -> Unit): Exception? = try {
+    private fun consumeEvent(event: UserSignupEvent, fn: (event: UserSignupEvent) -> Unit): Exception? = try {
         fn.invoke(event)
         null
     } catch (e: Exception) {
-        logger.error(e) { "Error while executing function after receiving UserSignupEvent: $fnDescription" }
-        e
+        logger.error(e) { "Error while executing function after receiving UserSignupEvent: $event" }
+        null
     }
 }

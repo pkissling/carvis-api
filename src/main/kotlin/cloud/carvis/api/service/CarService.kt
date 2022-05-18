@@ -42,6 +42,7 @@ class CarService(
         return carMapper.toEntity(car)
             .let { carRepository.save(it) }
             .let { carMapper.toDto(it) }
+            .also { commandPublisher.assignImagesToCar(it.id ?: throw RuntimeException("Saved car has no ID"), it.images) }
     }
 
     @PreAuthorize("@authorization.canModifyCar(#carId)")
@@ -54,6 +55,10 @@ class CarService(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
         }
 
+        val addedImageIds = car.images.filter { !carToUpdate.images.contains(it) }
+        if (addedImageIds.isNotEmpty()) {
+            commandPublisher.assignImagesToCar(carId, addedImageIds)
+        }
         val removeImageIds = carToUpdate.images.filter { !car.images.contains(it) }
         if (removeImageIds.isNotEmpty()) {
             commandPublisher.deleteImages(removeImageIds)

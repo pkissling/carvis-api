@@ -192,5 +192,18 @@ class ImageService(
         }
         logger.debug { "Deleted image(s) with key: $key" }
     }
+
+    fun assignCarIdToImage(carId: UUID, imageId: String) {
+        logger.debug { "Assigning carId [$carId] to image: $imageId" }
+        val key = "$imageId/${ORIGINAL}"
+        val currentMetadata = s3Client.getObjectMetadata(bucketName, key)
+        s3Client.copyObject(
+            CopyObjectRequest(bucketName, key, bucketName, key)
+                .withNewObjectMetadata(currentMetadata.apply {
+                    addUserMetadata("carId", "$carId")
+                })
+        )
+        logger.debug { "Assigned carId [$carId] to image: $imageId" }
+    }
 }
 

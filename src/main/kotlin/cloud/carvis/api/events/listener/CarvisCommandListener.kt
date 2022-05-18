@@ -2,6 +2,8 @@ package cloud.carvis.api.events.listener
 
 import cloud.carvis.api.model.events.CarvisCommand
 import cloud.carvis.api.model.events.CarvisCommandType
+import cloud.carvis.api.model.events.CarvisCommandType.ASSIGN_IMAGE_TO_CAR
+import cloud.carvis.api.model.events.CarvisCommandType.DELETE_IMAGE
 import cloud.carvis.api.service.ImageService
 import io.awspring.cloud.messaging.listener.SqsMessageDeletionPolicy.NO_REDRIVE
 import io.awspring.cloud.messaging.listener.annotation.SqsListener
@@ -12,10 +14,9 @@ import org.springframework.stereotype.Service
 class CarvisCommandListener(private val imageService: ImageService) {
 
     private val logger = KotlinLogging.logger {}
-    private val commandProcessors: Map<CarvisCommandType, List<Pair<String, (e: CarvisCommand) -> Unit>>> = mapOf(
-        CarvisCommandType.DELETE_IMAGE to listOf(
-            "imageService.deleteImage(command.id)" to { command -> imageService.deleteImage(command.id) },
-        )
+    private val commandProcessors: Map<CarvisCommandType, List<(e: CarvisCommand) -> Unit>> = mapOf(
+        DELETE_IMAGE to listOf { command -> imageService.deleteImage(command.id) },
+        ASSIGN_IMAGE_TO_CAR to listOf { command -> imageService.assignCarIdToImage(command.id, command.additionalData as String) },
     )
 
     @SqsListener("\${sqs.queues.carvis-command}", deletionPolicy = NO_REDRIVE)
@@ -28,18 +29,18 @@ class CarvisCommandListener(private val imageService: ImageService) {
             return
         }
         val errors = processors
-            .mapNotNull { consumeEvent(command, it.first, it.second) }
+            .mapNotNull { consumeEvent(command, it) }
 
         if (errors.isNotEmpty()) {
             throw errors.first()
         }
     }
 
-    private fun consumeEvent(command: CarvisCommand, fnDescription: String, fn: (event: CarvisCommand) -> Unit): Exception? = try {
+    private fun consumeEvent(command: CarvisCommand, fn: (event: CarvisCommand) -> Unit): Exception? = try {
         fn.invoke(command)
         null
     } catch (e: Exception) {
-        logger.error(e) { "Error while executing function after receiving CarvisCommand: $fnDescription" }
+        logger.error(e) { "Error while executing function after receiving CarvisCommand: $command" }
         e
     }
 }

@@ -1,6 +1,7 @@
 package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
+import cloud.carvis.api.model.dtos.ImageHeight.ORIGINAL
 import cloud.carvis.api.properties.S3Buckets
 import com.amazonaws.services.s3.AmazonS3
 import org.assertj.core.api.Assertions.assertThat
@@ -42,6 +43,43 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
         // when
         testDataGenerator
             .withDeleteImageCommand(UUID.randomUUID())
+
+        // then
+        awaitAssert {
+            assertThat(testDataGenerator.getCarvisCommandDlqMessages()).hasSize(1)
+        }
+    }
+
+    @Test
+    fun `onMessage - ASSIGN_IMAGE_TO_CAR - success`() {
+        // given
+        val image = testDataGenerator
+            .withImage()
+            .getImage()
+        val car = testDataGenerator
+            .withCar()
+            .getCar()
+            .value()
+
+        // when
+        testDataGenerator
+            .withAssignImageToCarCommand(car.id!!, image.id)
+
+        // then
+        awaitAssert {
+            assertThat(amazonS3.getObjectMetadata(s3Buckets.images, "${image.id}/$ORIGINAL"))
+                .extracting { it.userMetadata["carId"] }.isEqualTo(car.id.toString())
+        }
+    }
+
+    @Test
+    fun `onMessage - ASSIGN_IMAGE_TO_CAR - processing error`() {
+        // given
+        testDataGenerator.withEmptyBuckets()
+
+        // when
+        testDataGenerator
+            .withAssignImageToCarCommand(UUID.randomUUID(), UUID.randomUUID())
 
         // then
         awaitAssert {

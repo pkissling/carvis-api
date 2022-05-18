@@ -75,14 +75,7 @@ abstract class AbstractApplicationTest {
 
     protected fun awaitAssert(timeout: Long = 10, fn: () -> Unit) {
         await().atMost(timeout, TimeUnit.SECONDS)
-            .until {
-                try {
-                    fn.invoke()
-                    true
-                } catch (e: Error) {
-                    false
-                }
-            }
+            .untilAsserted { fn.invoke() }
     }
 
     protected final inline fun <reified T> MvcResult.toObject(): T {

@@ -1,6 +1,7 @@
 package cloud.carvis.api.events.service
 
 import cloud.carvis.api.model.events.CarvisCommand
+import cloud.carvis.api.model.events.CarvisCommandType.ASSIGN_IMAGE_TO_CAR
 import cloud.carvis.api.model.events.CarvisCommandType.DELETE_IMAGE
 import cloud.carvis.api.properties.SqsQueues
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
@@ -19,6 +20,10 @@ class CarvisCommandPublisher(
     fun deleteImages(imageIds: List<UUID>) = imageIds.forEach { deleteImage(it) }
 
     fun deleteImage(imageId: UUID) = this.publish(CarvisCommand(imageId, DELETE_IMAGE))
+
+    fun assignImagesToCar(carId: UUID, imageIds: List<UUID>) = imageIds.forEach { assignImageToCar(carId, it) }
+
+    fun assignImageToCar(carId: UUID, imageId: UUID) = this.publish(CarvisCommand(carId, ASSIGN_IMAGE_TO_CAR, imageId))
 
     private fun publish(command: CarvisCommand) {
         logger.info { "Publishing: $command" }

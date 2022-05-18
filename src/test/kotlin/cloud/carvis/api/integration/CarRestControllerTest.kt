@@ -292,9 +292,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
             .getCar()
         car.value().images = listOf(imageId1)
-        assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
-        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId1/ORIGINAL")).isTrue
-        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId2/ORIGINAL")).isTrue
 
         this.mockMvc
             .perform(
@@ -374,9 +371,6 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .withImage(imageId2)
             .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
             .getCar()
-        assertThat(amazonS3.listObjects(imagesBucket).objectSummaries).hasSize(2)
-        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId1/ORIGINAL")).isTrue
-        assertThat(amazonS3.doesObjectExist(imagesBucket, "$imageId2/ORIGINAL")).isTrue
 
         this.mockMvc
             .perform(
@@ -389,6 +383,67 @@ class CarRestControllerTest : AbstractApplicationTest() {
             assertThat(amazonS3.listObjects(imagesBucket).objectSummaries.count()).isEqualTo(2)
             assertThat(amazonS3.doesObjectExist(imagesBucket, "deleted/$imageId1/ORIGINAL")).isTrue
             assertThat(amazonS3.doesObjectExist(imagesBucket, "deleted/$imageId2/ORIGINAL")).isTrue
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "patrick", roles = ["USER"])
+    fun `car POST - add carId to uploaded images`() {
+        // given
+        val imagesBucket = s3Properties.images
+        val imageId1 = UUID.randomUUID()
+        val imageId2 = UUID.randomUUID()
+        val car = testDataGenerator
+            .withImage(imageId1)
+            .withImage(imageId2)
+            .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
+            .getCar()
+
+        val createdCar = this.mockMvc
+            .perform(
+                post("/cars")
+                    .content(car.toJson())
+                    .contentType(APPLICATION_JSON)
+            )
+            .andExpect(status().isOk)
+            .andReturn()
+            .toObject<CarDto>()
+
+        awaitAssert {
+            assertThat(amazonS3.getObjectMetadata(imagesBucket, "$imageId1/ORIGINAL"))
+                .extracting { it.userMetadata["carId"] }.isEqualTo(createdCar.id.toString())
+            assertThat(amazonS3.getObjectMetadata(imagesBucket, "$imageId2/ORIGINAL"))
+                .extracting { it.userMetadata["carId"] }.isEqualTo(createdCar.id.toString())
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "patrick", roles = ["USER"])
+    fun `car PUT - add carId to new images`() {
+        // given
+        val imagesBucket = s3Properties.images
+        val existingImage = UUID.randomUUID()
+        val newImage = UUID.randomUUID()
+        val car = testDataGenerator
+            .withImage(existingImage)
+            .withImage(newImage)
+            .withCar(createdBy = "patrick", imageIds = listOf(existingImage))
+            .getCar()
+        car.value().images = listOf(existingImage, newImage)
+
+        val createdCar = this.mockMvc
+            .perform(
+                put("/cars/{carId}", car.value().id)
+                    .content(car.toJson())
+                    .contentType(APPLICATION_JSON)
+            )
+            .andExpect(status().isOk)
+            .andReturn()
+            .toObject<CarDto>()
+
+        awaitAssert {
+            assertThat(amazonS3.getObjectMetadata(imagesBucket, "$newImage/ORIGINAL"))
+                .extracting { it.userMetadata["carId"] }.isEqualTo(createdCar.id.toString())
         }
     }
 
