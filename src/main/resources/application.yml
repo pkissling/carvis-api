@@ -1,5 +1,7 @@
 auth:
-  audience: ukQnXHJoRrZwGf85Uh4Jpk8V932GsfKt
+  audiences:
+    user: ukQnXHJoRrZwGf85Uh4Jpk8V932GsfKt
+    system: https://system.carvis.cloud
   custom-role-claim-key: https://carvis.cloud/roles
   domain: https://carvis.eu.auth0.com/
   client-id: ${AUTH_CLIENT_ID}

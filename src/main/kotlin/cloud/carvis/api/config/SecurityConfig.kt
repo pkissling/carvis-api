@@ -2,6 +2,7 @@ package cloud.carvis.api.config
 
 import cloud.carvis.api.auth.AudienceValidator
 import cloud.carvis.api.auth.CustomAuth0RoleConverter
+import cloud.carvis.api.properties.AuthProperties
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -28,6 +29,7 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
             .csrf()
             .disable()
             .authorizeRequests()
+            .mvcMatchers("/actuator/prometheus").hasRole("SYSTEM")
             .mvcMatchers("/actuator/health").permitAll()
             .mvcMatchers("/my-user").permitAll()
             .anyRequest().hasAnyRole("USER", "ADMIN")
@@ -39,10 +41,10 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
 
     @Bean
     fun jwtDecoder(
-        @Value("\${auth.audience}") audience: String,
+        authProperties: AuthProperties,
         @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}") issuer: String
     ): JwtDecoder {
-        val withAudience: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)
+        val withAudience: OAuth2TokenValidator<Jwt> = AudienceValidator(authProperties)
         val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(issuer)
         val validator: OAuth2TokenValidator<Jwt> = DelegatingOAuth2TokenValidator(withAudience, withIssuer)
         val jwtDecoder = JwtDecoders.fromOidcIssuerLocation<JwtDecoder>(issuer) as NimbusJwtDecoder

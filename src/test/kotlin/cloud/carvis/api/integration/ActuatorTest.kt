@@ -36,7 +36,7 @@ class ActuatorTest : AbstractApplicationTest() {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = ["SYSTEM"])
     fun `actuator-prometheus GET`() {
         this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isOk)
@@ -46,5 +46,12 @@ class ActuatorTest : AbstractApplicationTest() {
     fun `actuator-prometheus GET - not accessible as unauthorized user`() {
         this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockUser(roles = ["USER"])
+    fun `actuator-prometheus GET - is forbidden as regular user`() {
+        this.mockMvc.perform(get("/actuator/prometheus"))
+            .andExpect(status().isForbidden)
     }
 }

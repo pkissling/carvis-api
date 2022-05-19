@@ -1,6 +1,7 @@
 package cloud.carvis.api.util.mocks
 
 import cloud.carvis.api.config.SecurityConfig
+import cloud.carvis.api.properties.AuthProperties
 import cloud.carvis.api.user.model.UserDto
 import cloud.carvis.api.user.model.UserRole
 import cloud.carvis.api.util.helpers.MockServerUtils
@@ -12,7 +13,6 @@ import org.mockserver.model.MediaType
 import org.mockserver.model.MediaType.APPLICATION_JSON
 import org.mockserver.verify.VerificationTimes
 import org.mockserver.verify.VerificationTimes.once
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.security.oauth2.jwt.JwtDecoder
@@ -30,9 +30,9 @@ class Auth0Mock {
         ManagementAPI(this.getUrl(), "dummy")
 
     @Bean
-    fun jwtDecoder(@Value("\${auth.audience}") audience: String): JwtDecoder {
+    fun jwtDecoder(authProperties: AuthProperties): JwtDecoder {
         this.mockOidcConfigEndpoint()
-        return SecurityConfig().jwtDecoder(audience, this.getUrl())
+        return SecurityConfig().jwtDecoder(authProperties, this.getUrl())
     }
 
     fun withRoleUsers(vararg users: UserDto): Auth0Mock {

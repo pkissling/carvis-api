@@ -37,6 +37,6 @@ class UserSignupEventListener(
         null
     } catch (e: Exception) {
         logger.error(e) { "Error while executing function after receiving UserSignupEvent: $event" }
-        null
+        e
     }
 }
