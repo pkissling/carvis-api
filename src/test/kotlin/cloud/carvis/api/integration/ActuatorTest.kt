@@ -22,15 +22,29 @@ class ActuatorTest : AbstractApplicationTest() {
     fun `actuator GET - verify exposed endpoints`() {
         this.mockMvc.perform(get("/actuator"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$._links.length()").value(3))
+            .andExpect(jsonPath("$._links.length()").value(4))
             .andExpect(jsonPath("$._links.self.href").value("http://localhost/actuator"))
             .andExpect(jsonPath("$._links.health.href").value("http://localhost/actuator/health"))
             .andExpect(jsonPath("$._links.health-path.href").value("http://localhost/actuator/health/{*path}"))
+            .andExpect(jsonPath("$._links.prometheus.href").value("http://localhost/actuator/prometheus"))
     }
 
     @Test
     fun `actuator GET - not accessible as unauthorized user`() {
         this.mockMvc.perform(get("/actuator"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockUser
+    fun `actuator-prometheus GET`() {
+        this.mockMvc.perform(get("/actuator/prometheus"))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `actuator-prometheus GET - not accessible as unauthorized user`() {
+        this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isUnauthorized)
     }
 }
