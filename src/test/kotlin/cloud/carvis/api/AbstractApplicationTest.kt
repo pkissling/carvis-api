@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.actuate.metrics.AutoConfigureMetrics
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit
     ]
 )
 @AutoConfigureMockMvc
+@AutoConfigureMetrics
 @TestInstance(PER_CLASS)
 abstract class AbstractApplicationTest {
 

@@ -28,7 +28,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("io.github.microutils:kotlin-logging-jvm:2.0.10")
+    implementation("io.github.microutils:kotlin-logging-jvm:2.1.21")
 
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -42,8 +42,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.amazonaws:aws-java-sdk-dynamodb")
     implementation("com.amazonaws:aws-java-sdk-s3")
-    implementation("io.sentry:sentry-spring-boot-starter:5.7.3")
-    implementation("io.sentry:sentry-logback:5.7.3")
+    implementation("io.sentry:sentry-spring-boot-starter:5.7.4")
+    implementation("io.sentry:sentry-logback:5.7.4")
     implementation("org.imgscalr:imgscalr-lib:4.2")
     implementation("com.auth0:auth0:1.41.0")
     implementation("com.github.ben-manes.caffeine:caffeine")
@@ -51,6 +51,7 @@ dependencies {
     implementation("io.awspring.cloud:spring-cloud-starter-aws-ses")
     implementation("org.springframework.cloud:spring-cloud-starter-sleuth")
     implementation("com.drewnoakes:metadata-extractor:2.18.0")
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -58,10 +59,10 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:1.17.1")
     testImplementation("org.testcontainers:localstack:1.17.1")
     testImplementation("org.testcontainers:junit-jupiter:1.17.1")
-    testImplementation("com.tyro.oss:arbitrater:1.0.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    testImplementation("com.tyro.oss:arbitrater:1.0.1")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
     testImplementation("org.mock-server:mockserver-junit-jupiter:5.13.2")
-    testImplementation("org.awaitility:awaitility:4.1.1")
+    testImplementation("org.awaitility:awaitility:4.2.0")
 }
 
 tasks.withType<KotlinCompile> {

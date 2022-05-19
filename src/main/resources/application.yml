@@ -76,3 +76,4 @@ management:
       exposure:
         include:
           - health
+          - prometheus
