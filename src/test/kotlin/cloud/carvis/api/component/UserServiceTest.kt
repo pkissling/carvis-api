@@ -3,7 +3,7 @@ package cloud.carvis.api.component
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
-import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.users.model.UserDto
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
 import org.springframework.security.test.context.support.WithMockUser

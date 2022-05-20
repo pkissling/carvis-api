@@ -1,8 +1,8 @@
 package cloud.carvis.api.util.mocks
 
-import cloud.carvis.api.properties.EmailProperties
-import cloud.carvis.api.properties.S3Buckets
-import cloud.carvis.api.properties.SqsQueues
+import cloud.carvis.api.common.properties.EmailProperties
+import cloud.carvis.api.common.properties.S3Buckets
+import cloud.carvis.api.common.properties.SqsQueues
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB

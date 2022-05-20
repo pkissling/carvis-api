@@ -1,9 +1,9 @@
 package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
-import cloud.carvis.api.dao.repositories.NewUserRepository
-import cloud.carvis.api.user.model.UserDto
-import cloud.carvis.api.user.model.UserRole
+import cloud.carvis.api.users.dao.NewUserRepository
+import cloud.carvis.api.users.model.UserDto
+import cloud.carvis.api.users.model.UserRole
 import cloud.carvis.api.util.helpers.SesHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

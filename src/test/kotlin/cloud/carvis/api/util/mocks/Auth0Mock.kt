@@ -1,9 +1,9 @@
 package cloud.carvis.api.util.mocks
 
-import cloud.carvis.api.config.SecurityConfig
-import cloud.carvis.api.properties.AuthProperties
-import cloud.carvis.api.user.model.UserDto
-import cloud.carvis.api.user.model.UserRole
+import cloud.carvis.api.common.config.SecurityConfig
+import cloud.carvis.api.common.properties.AuthProperties
+import cloud.carvis.api.users.model.UserDto
+import cloud.carvis.api.users.model.UserRole
 import cloud.carvis.api.util.helpers.MockServerUtils
 import com.auth0.client.mgmt.ManagementAPI
 import org.mockserver.model.HttpRequest

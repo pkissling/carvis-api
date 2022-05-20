@@ -1,10 +1,10 @@
 package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
-import cloud.carvis.api.clients.UserWithRoles
-import cloud.carvis.api.user.model.UserDto
-import cloud.carvis.api.user.model.UserRole.ADMIN
-import cloud.carvis.api.user.model.UserRole.USER
+import cloud.carvis.api.common.clients.UserWithRoles
+import cloud.carvis.api.users.model.UserDto
+import cloud.carvis.api.users.model.UserRole.ADMIN
+import cloud.carvis.api.users.model.UserRole.USER
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItems

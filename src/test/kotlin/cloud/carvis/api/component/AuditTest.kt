@@ -1,8 +1,8 @@
 package cloud.carvis.api.component
 
 import cloud.carvis.api.AbstractApplicationTest
-import cloud.carvis.api.dao.repositories.CarRepository
-import cloud.carvis.api.model.entities.CarEntity
+import cloud.carvis.api.cars.dao.CarRepository
+import cloud.carvis.api.cars.model.CarEntity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,8 +1,8 @@
 package cloud.carvis.api.integration
 
 import cloud.carvis.api.AbstractApplicationTest
-import cloud.carvis.api.model.dtos.ImageHeight.ORIGINAL
-import cloud.carvis.api.properties.S3Buckets
+import cloud.carvis.api.common.properties.S3Buckets
+import cloud.carvis.api.images.model.ImageHeight.ORIGINAL
 import com.amazonaws.services.s3.AmazonS3
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

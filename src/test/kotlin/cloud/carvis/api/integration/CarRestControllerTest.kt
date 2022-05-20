@@ -3,10 +3,10 @@ package cloud.carvis.api.integration
 import cloud.carvis.api.AbstractApplicationTest
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_ID
 import cloud.carvis.api.AbstractApplicationTest.Users.VALID_USER_NAME
-import cloud.carvis.api.dao.repositories.CarRepository
-import cloud.carvis.api.model.dtos.CarDto
-import cloud.carvis.api.properties.S3Buckets
-import cloud.carvis.api.user.model.UserDto
+import cloud.carvis.api.cars.dao.CarRepository
+import cloud.carvis.api.cars.model.CarDto
+import cloud.carvis.api.common.properties.S3Buckets
+import cloud.carvis.api.users.model.UserDto
 import cloud.carvis.api.util.testdata.TestData
 import com.amazonaws.services.s3.AmazonS3
 import org.assertj.core.api.Assertions.assertThat
