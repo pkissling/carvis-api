@@ -16,14 +16,14 @@ class ImageRestController(
 
     private val logger = KotlinLogging.logger {}
 
-    @GetMapping("/{id}")
+    @GetMapping("/{imageId}")
     fun fetchImage(
-        @PathVariable id: UUID,
+        @PathVariable imageId: UUID,
         @RequestParam(defaultValue = "ORIGINAL") height: ImageHeight
     ): ImageDto {
-        logger.info { "start fetchImage(id=$id,height=$height)" }
-        return imageService.fetchImage(id, height)
-            .also { logger.info { "end fetchImage(id=$id,height=$height), return=${it}" } }
+        logger.info { "start fetchImage(imageId=$imageId,height=$height)" }
+        return imageService.fetchImage(imageId, height)
+            .also { logger.info { "end fetchImage(imageId=$imageId,height=$height), return=${it}" } }
     }
 
     @PostMapping

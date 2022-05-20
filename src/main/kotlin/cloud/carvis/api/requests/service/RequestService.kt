@@ -42,7 +42,6 @@ class RequestService(
             .let { requestMapper.toDto(it) }
     }
 
-    @PreAuthorize("@authorization.canModifyRequest(#id)")
     fun updateRequest(id: UUID, request: RequestDto): RequestDto {
         val requestToUpdate = requestRepository.findByIdOrNull(id)
 
@@ -60,4 +59,7 @@ class RequestService(
     fun deleteRequest(id: UUID) {
         requestRepository.deleteById(id)
     }
+
+    fun requestsCount() = requestRepository.count()
+
 }

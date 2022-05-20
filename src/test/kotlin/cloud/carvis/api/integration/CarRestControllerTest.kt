@@ -287,8 +287,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val imageId1 = UUID.randomUUID()
         val imageId2 = UUID.randomUUID()
         val car = testDataGenerator
-            .withImage(imageId1)
-            .withImage(imageId2)
+            .withImage(imageId = imageId1)
+            .withImage(imageId = imageId2)
             .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
             .getCar()
         car.value().images = listOf(imageId1)
@@ -367,8 +367,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val imageId1 = UUID.randomUUID()
         val imageId2 = UUID.randomUUID()
         val car = testDataGenerator
-            .withImage(imageId1)
-            .withImage(imageId2)
+            .withImage(imageId = imageId1)
+            .withImage(imageId = imageId2)
             .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
             .getCar()
 
@@ -394,8 +394,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val imageId1 = UUID.randomUUID()
         val imageId2 = UUID.randomUUID()
         val car = testDataGenerator
-            .withImage(imageId1)
-            .withImage(imageId2)
+            .withImage(imageId = imageId1)
+            .withImage(imageId = imageId2)
             .withCar(createdBy = "patrick", imageIds = listOf(imageId1, imageId2))
             .getCar()
 
@@ -425,8 +425,8 @@ class CarRestControllerTest : AbstractApplicationTest() {
         val existingImage = UUID.randomUUID()
         val newImage = UUID.randomUUID()
         val car = testDataGenerator
-            .withImage(existingImage)
-            .withImage(newImage)
+            .withImage(imageId = existingImage)
+            .withImage(imageId = newImage)
             .withCar(createdBy = "patrick", imageIds = listOf(existingImage))
             .getCar()
         car.value().images = listOf(existingImage, newImage)

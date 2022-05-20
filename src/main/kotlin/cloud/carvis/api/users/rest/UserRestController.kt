@@ -5,6 +5,7 @@ import cloud.carvis.api.users.model.UserRole
 import cloud.carvis.api.users.service.UserService
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
 
@@ -23,54 +24,60 @@ class UserRestController(
             .also { logger.info { "end fetchOwnUser() return=${it}" } }
     }
 
-    @GetMapping("/users/{id}")
-    fun fetchUser(@PathVariable id: String): UserDto {
-        logger.info { "start fetchUser(id=$id)" }
-        return userService.fetchUser(id)
-            .also { logger.info { "end fetchUser(id=$id) return=${it}" } }
+    @GetMapping("/users/{userId}")
+    fun fetchUser(@PathVariable userId: String): UserDto {
+        logger.info { "start fetchUser(userId=$userId)" }
+        return userService.fetchUser(userId)
+            .also { logger.info { "end fetchUser(userId=$userId) return=${it}" } }
     }
 
-    @PutMapping("/users/{id}")
-    fun updateUser(@PathVariable id: String, @Valid @RequestBody user: UserDto): UserDto {
-        logger.info { "start updateUser(id=$id,user=$user)" }
-        return userService.updateUser(id, user)
-            .also { logger.info { "end updateUser(id=$id,user=$user), return=${it}" } }
+    @PutMapping("/users/{userId}")
+    @PreAuthorize("@authorization.canAccessAndModifyUser(#userId)")
+    fun updateUser(@PathVariable userId: String, @Valid @RequestBody user: UserDto): UserDto {
+        logger.info { "start updateUser(userId=$userId,user=$user)" }
+        return userService.updateUser(userId, user)
+            .also { logger.info { "end updateUser(userId=$userId,user=$user), return=${it}" } }
     }
 
     @GetMapping("/users")
+    @PreAuthorize("@authorization.isAdmin()")
     fun fetchAllUsers(): List<UserDto> {
         logger.info { "start fetchAllUsers()" }
         return userService.fetchAllUsers()
             .also { logger.info { "end fetchAllUsers() return=${it}" } }
     }
 
-    @PostMapping("/users/{id}/roles")
+    @PostMapping("/users/{userId}/roles")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun addUserRoles(@PathVariable id: String, @RequestBody addRoles: List<UserRole>) {
-        logger.info { "start addUserRoles(id=$id,addRoles=$addRoles)" }
-        return userService.addUserRoles(id, addRoles)
-            .also { logger.info { "end addUserRoles(id=$id,addRoles=$addRoles)" } }
+    @PreAuthorize("@authorization.isAdmin()")
+    fun addUserRoles(@PathVariable userId: String, @RequestBody addRoles: List<UserRole>) {
+        logger.info { "start addUserRoles(userId=$userId,addRoles=$addRoles)" }
+        return userService.addUserRoles(userId, addRoles)
+            .also { logger.info { "end addUserRoles(userId=$userId,addRoles=$addRoles)" } }
     }
 
-    @DeleteMapping("/users/{id}/roles")
+    @DeleteMapping("/users/{userId}/roles")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun removeUserRoles(@PathVariable id: String, @RequestBody removeRoles: List<UserRole>) {
-        logger.info { "start removeUserRoles(id=$id,removeRoles=$removeRoles)" }
-        userService.removeUserRoles(id, removeRoles)
-            .also { logger.info { "end removeUserRoles(id=$id,removeRoles=$removeRoles)" } }
+    @PreAuthorize("@authorization.isAdmin()")
+    fun removeUserRoles(@PathVariable userId: String, @RequestBody removeRoles: List<UserRole>) {
+        logger.info { "start removeUserRoles(userId=$userId,removeRoles=$removeRoles)" }
+        userService.removeUserRoles(userId, removeRoles)
+            .also { logger.info { "end removeUserRoles(userId=$userId,removeRoles=$removeRoles)" } }
     }
 
-    @DeleteMapping("/users/{id}")
-    fun deleteUser(@PathVariable id: String) {
-        logger.info { "start deleteUser(id=$id)" }
-        userService.deleteUser(id)
-            .also { logger.info { "end deleteUser(id=$id)" } }
+    @DeleteMapping("/users/{userId}")
+    @PreAuthorize("@authorization.isAdmin()")
+    fun deleteUser(@PathVariable userId: String) {
+        logger.info { "start deleteUser(userId=$userId)" }
+        userService.deleteUser(userId)
+            .also { logger.info { "end deleteUser(userId=$userId)" } }
     }
 
     @GetMapping("/new-users-count")
+    @PreAuthorize("@authorization.isAdmin()")
     fun fetchNewUsersCount(): Long {
         logger.info { "start fetchNewUsersCount()" }
-        return userService.fetchNewUsersCount()
+        return userService.newUsersCount()
             .also { logger.info { "end fetchNewUsersCount() return=${it}" } }
 
     }

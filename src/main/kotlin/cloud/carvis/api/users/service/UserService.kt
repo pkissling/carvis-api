@@ -11,7 +11,6 @@ import cloud.carvis.api.users.model.UserRole
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
@@ -25,7 +24,6 @@ class UserService(
 
     private val logger = KotlinLogging.logger {}
 
-    @PreAuthorize("@authorization.canAccessAndModifyUser(#userId)")
     fun updateUser(userId: String, user: UserDto): UserDto =
         userMapper.toEntity(user)
             .let { auth0RestClient.updateUser(userId, it) }
@@ -41,8 +39,7 @@ class UserService(
         return fetchUser(userId)
     }
 
-    @PreAuthorize("@authorization.isAdmin()")
-    fun fetchAllUsers(): List<UserDto> = auth0RestClient.fetchAllUsers()
+    fun fetchAllUsers(): List<UserDto> = auth0RestClient.fetchAllUsersWithRoles()
         .map { userMapper.toDto(it) }
 
     fun fetchUserSafe(userId: String): UserDto? = try {
@@ -52,7 +49,6 @@ class UserService(
         null
     }
 
-    @PreAuthorize("@authorization.isAdmin()")
     fun addUserRoles(userId: String, addRoles: List<UserRole>) {
         if (addRoles.isEmpty()) {
             logger.info { "No role to be added provided for userId: $userId" }
@@ -66,7 +62,6 @@ class UserService(
         }
     }
 
-    @PreAuthorize("@authorization.isAdmin()")
     fun removeUserRoles(userId: String, removeRoles: List<UserRole>) {
         if (removeRoles.isEmpty()) {
             logger.info { "No role to be removed provided for userId: $userId" }
@@ -75,7 +70,6 @@ class UserService(
         auth0RestClient.removeUserRole(userId, removeRoles)
     }
 
-    @PreAuthorize("@authorization.isAdmin()")
     fun deleteUser(userId: String) {
         auth0RestClient.deleteUser(userId)
         if (newUserRepository.existsById(userId)) {
@@ -83,8 +77,7 @@ class UserService(
         }
     }
 
-    @PreAuthorize("@authorization.isAdmin()")
-    fun fetchNewUsersCount(): Long =
+    fun newUsersCount(): Long =
         newUserRepository.count()
 
     fun persistNewUserSignup(event: UserSignupEvent) {
@@ -95,4 +88,6 @@ class UserService(
         }
         newUserRepository.save(NewUserEntity(userId = event.userId))
     }
+
+    fun usersCount() = auth0RestClient.fetchAllUsers().count()
 }

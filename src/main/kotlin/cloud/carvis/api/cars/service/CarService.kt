@@ -7,7 +7,6 @@ import cloud.carvis.api.common.events.service.CarvisCommandPublisher
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
@@ -28,7 +27,6 @@ class CarService(
     }
 
     fun fetchCar(carId: UUID): CarDto {
-
         val car = carRepository.findByIdOrNull(carId)
         if (car == null) {
             logger.info { "Car with id [$carId] not found" }
@@ -45,9 +43,8 @@ class CarService(
             .also { commandPublisher.assignImagesToCar(it.id ?: throw RuntimeException("Saved car has no ID"), it.images) }
     }
 
-    @PreAuthorize("@authorization.canModifyCar(#carId)")
-    fun updateCar(carId: UUID, car: CarDto): CarDto {
 
+    fun updateCar(carId: UUID, car: CarDto): CarDto {
         val carToUpdate = carRepository.findByIdOrNull(carId)
 
         if (carToUpdate == null) {
@@ -69,7 +66,6 @@ class CarService(
             .let { carMapper.toDto(it) }
     }
 
-    @PreAuthorize("@authorization.canModifyCar(#carId)")
     fun deleteCar(carId: UUID) {
         val car = carRepository.findByIdOrNull(carId)
         if (car != null) {
@@ -77,4 +73,6 @@ class CarService(
             commandPublisher.deleteImages(car.images)
         }
     }
+
+    fun carsCount() = carRepository.count()
 }

@@ -102,7 +102,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         val imagesBucket = s3Properties.images
         val image = testDataGenerator
             .withEmptyBuckets()
-            .withImage("mercedes.jpeg")
+            .withImage(testFilePath = "mercedes.jpeg")
             .getImage()
 
         // when
@@ -127,7 +127,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         val imagesBucket = s3Properties.images
         val image = testDataGenerator
             .withEmptyBuckets()
-            .withImage("portrait.jpg")
+            .withImage(testFilePath = "portrait.jpg")
             .getImage()
 
         // when
@@ -151,7 +151,7 @@ class ImageRestControllerTest : AbstractApplicationTest() {
         val imagesBucket = s3Properties.images
         val image = testDataGenerator
             .withEmptyBuckets()
-            .withImage("mercedes.jpeg")
+            .withImage(testFilePath = "mercedes.jpeg")
             .getImage()
 
         // when

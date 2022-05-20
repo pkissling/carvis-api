@@ -4,6 +4,7 @@ import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.requests.service.RequestService
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.validation.Valid
@@ -23,11 +24,11 @@ class RequestRestController(
             .also { logger.info { "end fetchAllRequests(), return=${it}" } }
     }
 
-    @GetMapping("/{id}")
-    fun fetchRequest(@PathVariable id: UUID): RequestDto {
-        logger.info { "start fetchRequest(id=$id)" }
-        return requestService.fetchRequest(id)
-            .also { logger.info { "end fetchRequest(id=$id) return=${it}" } }
+    @GetMapping("/{requestId}")
+    fun fetchRequest(@PathVariable requestId: UUID): RequestDto {
+        logger.info { "start fetchRequest(requestId=$requestId)" }
+        return requestService.fetchRequest(requestId)
+            .also { logger.info { "end fetchRequest(requestId=$requestId) return=${it}" } }
     }
 
     @PostMapping
@@ -38,18 +39,20 @@ class RequestRestController(
     }
 
 
-    @PutMapping("/{id}")
-    fun updateRequest(@PathVariable id: UUID, @Valid @RequestBody request: RequestDto): RequestDto {
-        logger.info { "start updateRequest(id=$id,request=$request)" }
-        return requestService.updateRequest(id, request)
-            .also { logger.info { "end updateRequest(id=$id,request=$request), return=${it}" } }
+    @PutMapping("/{requestId}")
+    @PreAuthorize("@authorization.canModifyRequest(#requestId)")
+    fun updateRequest(@PathVariable requestId: UUID, @Valid @RequestBody request: RequestDto): RequestDto {
+        logger.info { "start updateRequest(requestId=$requestId,request=$request)" }
+        return requestService.updateRequest(requestId, request)
+            .also { logger.info { "end updateRequest(requestId=$requestId,request=$request), return=${it}" } }
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @DeleteMapping("/{id}")
-    fun deleteRequest(@PathVariable id: UUID) {
-        logger.info { "start deleteRequest(id=$id)" }
-        requestService.deleteRequest(id)
-        logger.info { "end deleteRequest(id=$id)" }
+    @DeleteMapping("/{requestId}")
+    @PreAuthorize("@authorization.canModifyRequest(#requestId)")
+    fun deleteRequest(@PathVariable requestId: UUID) {
+        logger.info { "start deleteRequest(requestId=$requestId)" }
+        requestService.deleteRequest(requestId)
+        logger.info { "end deleteRequest(requestId=$requestId)" }
     }
 }

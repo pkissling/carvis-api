@@ -76,13 +76,8 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         return UserWithRoles(updatedUser, roles)
     }
 
-    fun fetchAllUsers(): List<UserWithRoles> {
-        val users = withErrorHandling {
-            managementApi.users()
-                .list(null)
-                .execute()
-                .items
-        }
+    fun fetchAllUsersWithRoles(): List<UserWithRoles> {
+        val users = fetchAllUsers()
 
         val roles = withErrorHandling {
             managementApi.roles()
@@ -110,6 +105,13 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
             .map { UserWithRoles(it, emptyList()) }
 
         return usersWithRole + usersWithoutRole
+    }
+
+    fun fetchAllUsers(): List<User> = withErrorHandling {
+        managementApi.users()
+            .list(null)
+            .execute()
+            .items
     }
 
     @CacheEvict("auth0-users", key = "#userId")

@@ -86,6 +86,31 @@ class TestDataGenerator(
         return this
     }
 
+    fun withDeletedImage(): TestDataGenerator {
+        return this.withImage(prefix = "deleted")
+    }
+
+    fun withImage(
+        prefix: String? = null,
+        imageId: UUID = UUID.randomUUID(),
+        height: ImageHeight = ImageHeight.ORIGINAL,
+        testFilePath: String? = null
+    ): TestDataGenerator {
+        val key = prefix?.let { "$it/$imageId/$height" } ?: "$imageId/$height"
+        if (testFilePath == null) {
+            amazonS3.putObject(s3Buckets.images, key, arbitrary<String>())
+        } else {
+            val file = File(TestDataGenerator::class.java.getResource("/images/$testFilePath")!!.file)
+            amazonS3.putObject(s3Buckets.images, key, file)
+        }
+        this.last = Image(imageId, height)
+        return this
+    }
+
+    fun getImage(): Image {
+        return getLast()
+    }
+
     fun withCar(createdBy: String? = null, imageIds: List<UUID> = emptyList()): TestDataGenerator {
         val car = random<CarEntity>()
         if (createdBy != null) {
@@ -98,41 +123,21 @@ class TestDataGenerator(
         return this
     }
 
-    private fun <T : Entity> save(entity: T) {
-        when (entity) {
-            is CarEntity -> carRepository.save(entity)
-            is RequestEntity -> requestRepository.save(entity)
-            is NewUserEntity -> newUserRepository.save(entity)
-            else -> throw RuntimeException("unable to save entity")
-        }.also { this.last = it }
-    }
-
     fun getCar(): TestData<CarEntity> {
         return TestData(objectMapper, getLast())
     }
 
-    fun withImage(imageId: UUID): TestDataGenerator {
-        val size = ImageHeight.ORIGINAL
-        amazonS3.putObject(s3Buckets.images, "$imageId/$size", arbitrary<String>())
-        this.last = Image(imageId, size)
+    fun withRequest(createdBy: String? = null): TestDataGenerator {
+        val request = random<RequestEntity>()
+        if (createdBy != null) {
+            request.value().createdBy = createdBy
+        }
+        save(request.value())
         return this
     }
 
-    fun withImage(): TestDataGenerator {
-        return withImage(UUID.randomUUID())
-    }
-
-    fun withImage(path: String): TestDataGenerator {
-        val file = File(TestDataGenerator::class.java.getResource("/images/$path")!!.file)
-        val imageId = UUID.randomUUID()
-        val height = ImageHeight.ORIGINAL
-        amazonS3.putObject(s3Buckets.images, "$imageId/$height", file)
-        this.last = Image(imageId, height)
-        return this
-    }
-
-    fun getImage(): Image {
-        return getLast()
+    fun getRequest(): TestData<RequestEntity> {
+        return TestData(objectMapper, this.getLast())
     }
 
     final inline fun <reified T : Any> random(): TestData<T> {
@@ -167,19 +172,6 @@ class TestDataGenerator(
             throw RuntimeException("last is not of correct type")
         }
         return last as T
-    }
-
-    fun withRequest(createdBy: String? = null): TestDataGenerator {
-        val request = random<RequestEntity>()
-        if (createdBy != null) {
-            request.value().createdBy = createdBy
-        }
-        save(request.value())
-        return this
-    }
-
-    fun getRequest(): TestData<RequestEntity> {
-        return TestData(objectMapper, this.getLast())
     }
 
     fun withUserSignupEvent(): TestDataGenerator {
@@ -246,13 +238,6 @@ class TestDataGenerator(
         return withCarvisCommand(id, DELETE_IMAGE)
     }
 
-    private fun withCarvisCommand(id: UUID, type: CarvisCommandType, additionalData: Any? = null): TestDataGenerator {
-        val command = CarvisCommand(id, type, additionalData)
-        queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
-        last = command
-        return this
-    }
-
     fun getCarvisCommandDlqMessages(): List<Message> {
         val queueUrl = amazonSqs.listQueues(sqsQueues.carvisCommand)
             .queueUrls
@@ -261,6 +246,22 @@ class TestDataGenerator(
             ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)
         ).messages
+    }
+
+    private fun <T : Entity> save(entity: T) {
+        when (entity) {
+            is CarEntity -> carRepository.save(entity)
+            is RequestEntity -> requestRepository.save(entity)
+            is NewUserEntity -> newUserRepository.save(entity)
+            else -> throw RuntimeException("unable to save entity")
+        }.also { this.last = it }
+    }
+
+    private fun withCarvisCommand(id: UUID, type: CarvisCommandType, additionalData: Any? = null): TestDataGenerator {
+        val command = CarvisCommand(id, type, additionalData)
+        queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
+        last = command
+        return this
     }
 
     data class Image(

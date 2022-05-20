@@ -199,4 +199,10 @@ class ImageService(
         )
         logger.debug { "Assigned carId [$carId] to image: $imageId" }
     }
+
+    fun imagesCount() = s3Client.listObjects(bucketName)
+        .objectSummaries
+        .map { it.key }
+        .count { !it.startsWith("deleted") }
+
 }
