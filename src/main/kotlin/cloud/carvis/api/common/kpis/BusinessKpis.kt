@@ -33,6 +33,9 @@ class BusinessKpis(
         carsCounter()
         usersCounter()
         newUsersCounter()
+        monthlyActiveUsersCounter()
+        dailyLoginsCounter()
+        currentlyActiveUsersCounter()
     }
 
     private fun imagesCounter() = register("images") { imageService.imagesCount() }
@@ -45,7 +48,13 @@ class BusinessKpis(
 
     private fun newUsersCounter() = register("users") { userService.usersCount() }
 
-    private fun register(tag: String, supplier: (() -> Number)) {
+    private fun monthlyActiveUsersCounter() = register("monthly_active_users") { userService.monthlyActiveUsersCount() }
+
+    private fun dailyLoginsCounter() = register("daily_logins") { userService.dailyLoginsCount() }
+
+    private fun currentlyActiveUsersCounter() = register("currently_active_users") { userService.fetchCurrentlyActiveUsersCount() }
+
+    private fun register(tag: String, supplier: () -> Number) {
         logger.info { "Registering Business KPI: $tag" }
         Gauge.builder(BUSINESS_OBJECTS_COUNT, supplier)
             .tag(BUSINESS_DOMAIN, tag)

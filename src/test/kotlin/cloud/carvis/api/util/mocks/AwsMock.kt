@@ -15,6 +15,7 @@ import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
 import com.amazonaws.services.sqs.model.CreateQueueRequest
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.test.context.TestConfiguration
@@ -107,9 +108,8 @@ class AwsMock {
         }
 
         @Bean
-        fun queueMessagingTemplate(amazonSqsAsync: AmazonSQSAsync): QueueMessagingTemplate =
-            QueueMessagingTemplate(amazonSqsAsync)
-
+        fun queueMessagingTemplate(amazonSqsAsync: AmazonSQSAsync, objectMapper: ObjectMapper): QueueMessagingTemplate =
+            QueueMessagingTemplate(amazonSqsAsync, null, objectMapper)
     }
 
     @Configuration

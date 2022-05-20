@@ -15,6 +15,9 @@ import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
+import java.time.temporal.ChronoUnit.DAYS
+import java.util.*
 
 @Service
 class Auth0RestClient(private val managementApi: ManagementAPI) {
@@ -34,7 +37,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
                 .listRoles(userId, null)
                 .execute()
                 .items
-                .map { UserRole.from(it.name) }
+                .mapNotNull { UserRole.from(it.name) }
         }
 
         return UserWithRoles(user, roles)
@@ -70,7 +73,7 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
                 .listRoles(userId, null)
                 .execute()
                 .items
-                .map { UserRole.from(it.name) }
+                .mapNotNull { UserRole.from(it.name) }
         }
 
         return UserWithRoles(updatedUser, roles)
@@ -93,9 +96,8 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
                     .execute()
                     .items
             }
-                .associate { user -> Pair(user.id, UserRole.from(role.name)) }
+                .associate { user -> Pair(user.id, UserRole.from(role.name) ?: throw RuntimeException("Unknown role: ${role.name}")) }
                 .asSequence()
-
         }
             .groupBy({ it.key }, { it.value })
             .map { (userId, roles) -> UserWithRoles(users.first { it.id == userId }, roles) }
@@ -153,6 +155,23 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
                 .delete(userId)
                 .execute()
         }
+    }
+
+    fun monthlyActiveUsersCount(): Int = withErrorHandling {
+        managementApi.stats()
+            .activeUsersCount
+            .execute()
+    }
+
+    fun dailyLoginsCount(): Int = withErrorHandling {
+        val today = Instant.now()
+        val yesterday = today.minus(1, DAYS).truncatedTo(DAYS)
+        managementApi.stats()
+            .getDailyStats(Date.from(yesterday), Date.from(today))
+            .execute()
+            .sortedByDescending { it.date }
+            .first()
+            .logins
     }
 
     private fun rolesFilter(vararg roles: UserRole): RolesFilter =

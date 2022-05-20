@@ -16,6 +16,10 @@ import org.mockserver.verify.VerificationTimes.once
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 
 @TestConfiguration
@@ -129,21 +133,24 @@ class Auth0Mock {
         statusCode = 200
     )
 
+    fun withActiveUsers(count: Int) = mockApiCall(
+        path = "/api/v2/stats/active-users",
+        body = "$count",
+        statusCode = 200
+    )
+
+    fun withDailyLogins(logins: Int) = mockApiCall(
+        path = "/api/v2/stats/daily",
+        body = dailyStatsJson(logins),
+        statusCode = 200
+    )
+
     fun verify(vararg requests: HttpRequest, times: VerificationTimes = once()) {
         mockServer.verify(*requests)
     }
 
     fun reset() =
         mockServer.reset()
-
-    private fun mockOidcConfigEndpoint() =
-        this.mockApiCall(
-            "/.well-known/openid-configuration",
-            MockServerUtils.createOidcConfigJson(this.getUrl())
-        )
-
-    private fun getUrl(): String =
-        "http://localhost:${mockServer.port}/"
 
     fun mockApiCall(
         path: String,
@@ -169,6 +176,17 @@ class Auth0Mock {
             )
         return this
     }
+
+
+    private fun mockOidcConfigEndpoint() =
+        this.mockApiCall(
+            "/.well-known/openid-configuration",
+            MockServerUtils.createOidcConfigJson(this.getUrl())
+        )
+
+    private fun getUrl(): String =
+        "http://localhost:${mockServer.port}/"
+
 
     private fun userJson(user: UserDto): String {
         val userMetadata = listOf(
@@ -210,6 +228,24 @@ class Auth0Mock {
         return """
             [
                 ${roleNames.joinToString(",\n") { roleJson(it) }}
+            ]
+            """
+    }
+
+    private fun dailyStatsJson(logins: Int): String {
+        val date = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+            .withZone(ZoneId.from(ZoneOffset.UTC))
+            .format(Instant.now())
+        return """
+           [
+              {
+                "date": "$date",
+                "logins": $logins,
+                "signups": 100,
+                "leaked_passwords": 100,
+                "updated_at": "2014-01-01T02:00:00.000Z",
+                "created_at": "2014-01-01T20:00:00.000Z"
+              }
             ]
             """
     }

@@ -142,7 +142,7 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
 
         // then
         awaitAssert {
-            assertThat(testDataGenerator.getUserSignupDlqMessages()).isNotEmpty
+            assertThat(testDataGenerator.getUserSignupDlqMessageCount()).isEqualTo(1)
             assertThat(newUserRepository.count()).isEqualTo(1L)
             assertThat(newUserRepository.existsById(event.userId)).isTrue
         }

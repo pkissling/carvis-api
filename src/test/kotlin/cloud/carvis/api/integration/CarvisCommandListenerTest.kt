@@ -46,7 +46,7 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
 
         // then
         awaitAssert {
-            assertThat(testDataGenerator.getCarvisCommandDlqMessages()).hasSize(1)
+            assertThat(testDataGenerator.getCarvisCommandDlqMessageCount()).isEqualTo(1)
         }
     }
 
@@ -83,7 +83,7 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
 
         // then
         awaitAssert {
-            assertThat(testDataGenerator.getCarvisCommandDlqMessages()).hasSize(1)
+            assertThat(testDataGenerator.getCarvisCommandDlqMessageCount()).isEqualTo(1)
         }
     }
 }

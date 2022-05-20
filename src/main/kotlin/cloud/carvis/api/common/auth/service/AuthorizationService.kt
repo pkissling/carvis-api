@@ -2,6 +2,7 @@ package cloud.carvis.api.common.auth.service
 
 import cloud.carvis.api.cars.dao.CarRepository
 import cloud.carvis.api.requests.dao.RequestRepository
+import cloud.carvis.api.users.model.UserRole.ADMIN
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -42,7 +43,7 @@ class AuthorizationService(
     fun isAdmin() =
         SecurityContextHolder.getContext().authentication.authorities
             .map { it.authority }
-            .any { it == ADMIN_ROLE }
+            .any { ADMIN.isRole(it) }
 
     fun getUserId(): String {
         val authentication = SecurityContextHolder.getContext().authentication
@@ -54,8 +55,4 @@ class AuthorizationService(
 
     fun isUser(getUserId: String): Boolean =
         getUserId() == getUserId
-
-    companion object {
-        const val ADMIN_ROLE = "ROLE_ADMIN"
-    }
 }

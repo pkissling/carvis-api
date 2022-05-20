@@ -26,8 +26,9 @@ dynamodb:
 
 sqs:
   queues:
-    user-signup: carvis-dev-user_signup
-    carvis-command: carvis-dev-carvis_command
+    prefix: carvis-dev
+    userSignup: ${sqs.queues.prefix}-user_signup
+    carvis-command: ${sqs.queues.prefix}-carvis_command
 
 spring:
   security:

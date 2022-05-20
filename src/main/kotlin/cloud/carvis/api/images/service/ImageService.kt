@@ -3,6 +3,7 @@ package cloud.carvis.api.images.service
 import cloud.carvis.api.common.properties.S3Buckets
 import cloud.carvis.api.images.model.ImageDto
 import cloud.carvis.api.images.model.ImageHeight
+import cloud.carvis.api.images.model.ImageHeight.ORIGINAL
 import com.amazonaws.HttpMethod
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.CopyObjectRequest
@@ -31,7 +32,7 @@ import javax.imageio.ImageIO
 
 @Service
 class ImageService(
-    private val s3Client: AmazonS3,
+    private val amazonS3: AmazonS3,
     s3Properties: S3Buckets
 ) {
 
@@ -48,11 +49,11 @@ class ImageService(
             return ImageDto(imageId, url, height, expiresAt)
         }
 
-        val originalExists = imageExists("$imageId/${ImageHeight.ORIGINAL}")
+        val originalExists = imageExists("$imageId/$ORIGINAL")
         if (originalExists) {
             logger.info { "Resizing image [$imageId] from ORIGINAL to [$height]" }
             val stopWatch = startTimer()
-            val (contentType, originalImage) = getObject("$imageId/${ImageHeight.ORIGINAL}")
+            val (contentType, originalImage) = getObject("$imageId/$ORIGINAL")
             val (resizedImage, resizedLength) = resizeImage(imageId, contentType, originalImage, height)
             putObject("$imageId/$height", resizedImage, contentType, resizedLength)
             val took = finishTimer(stopWatch)
@@ -66,7 +67,7 @@ class ImageService(
 
     fun generateImageUploadUrl(contentType: MediaType): ImageDto {
         val id = UUID.randomUUID()
-        val size = ImageHeight.ORIGINAL
+        val size = ORIGINAL
         val expiresAt = Instant.now().plus(12, ChronoUnit.HOURS)
         val key = "$id/$size"
         val url = generatePresignedUrl(key, HttpMethod.PUT, expiresAt, contentType)
@@ -92,7 +93,7 @@ class ImageService(
             this.contentType = contentType.toString()
             this.contentLength = length
         }
-        s3Client.putObject(this.bucketName, key, inputStream, metaData)
+        amazonS3.putObject(this.bucketName, key, inputStream, metaData)
             .also { logger.debug { "Saved s3 object [$key]" } }
     } catch (e: Exception) {
         logger.error(e) { "Unable to save file: $key" }
@@ -100,7 +101,7 @@ class ImageService(
     }
 
     private fun imageExists(key: String): Boolean = try {
-        s3Client.doesObjectExist(this.bucketName, key)
+        amazonS3.doesObjectExist(this.bucketName, key)
             .also { logger.debug { "Image [$key] exists: $it" } }
     } catch (e: Exception) {
         logger.error(e) { "Unable to check if image exists in s3: $key" }
@@ -108,7 +109,7 @@ class ImageService(
     }
 
     private fun generatePresignedUrl(key: String, method: HttpMethod, expiresAt: Instant, contentType: MediaType? = null): URL = try {
-        s3Client.generatePresignedUrl(
+        amazonS3.generatePresignedUrl(
             GeneratePresignedUrlRequest(this.bucketName, key)
                 .withMethod(method)
                 .withContentType(contentType?.toString())
@@ -124,7 +125,7 @@ class ImageService(
 
     private fun getObject(key: String): Pair<MediaType, ByteArray> {
         try {
-            val obj = s3Client.getObject(this.bucketName, key)
+            val obj = amazonS3.getObject(this.bucketName, key)
             val mediaType = MediaType.valueOf(obj.objectMetadata.contentType)
             return mediaType to IOUtils.toByteArray(obj.objectContent)
         } catch (e: Exception) {
@@ -168,30 +169,30 @@ class ImageService(
 
     private fun delete(key: String) {
         logger.debug { "Deleting image(s) with key: $key" }
-        val childs = s3Client.listObjects(bucketName, key)
+        val childs = amazonS3.listObjects(bucketName, key)
             .objectSummaries
             .map { it.key }
         if (childs.isEmpty()) {
             throw RuntimeException("Should have deleted key [$key], but it did not exist in S3")
         }
         childs.forEach { childKey ->
-            s3Client.copyObject(
+            amazonS3.copyObject(
                 CopyObjectRequest()
                     .withSourceBucketName(bucketName)
                     .withDestinationBucketName(bucketName)
                     .withSourceKey(childKey)
                     .withDestinationKey("deleted/$childKey")
             )
-            s3Client.deleteObject(bucketName, childKey)
+            amazonS3.deleteObject(bucketName, childKey)
         }
         logger.debug { "Deleted image(s) with key: $key" }
     }
 
     fun assignCarIdToImage(carId: UUID, imageId: String) {
         logger.debug { "Assigning carId [$carId] to image: $imageId" }
-        val key = "$imageId/${ImageHeight.ORIGINAL}"
-        val currentMetadata = s3Client.getObjectMetadata(bucketName, key)
-        s3Client.copyObject(
+        val key = "$imageId/$ORIGINAL"
+        val currentMetadata = amazonS3.getObjectMetadata(bucketName, key)
+        amazonS3.copyObject(
             CopyObjectRequest(bucketName, key, bucketName, key)
                 .withNewObjectMetadata(currentMetadata.apply {
                     addUserMetadata("carId", "$carId")
@@ -200,9 +201,22 @@ class ImageService(
         logger.debug { "Assigned carId [$carId] to image: $imageId" }
     }
 
-    fun imagesCount() = s3Client.listObjects(bucketName)
+    fun imagesCount() = amazonS3.listObjects(bucketName)
         .objectSummaries
         .map { it.key }
-        .count { !it.startsWith("deleted") }
+        .filter { !it.startsWith("deleted") }
+        .count { it.endsWith("$ORIGINAL") }
 
+    fun deleteImagesCount(): Int =
+        amazonS3.listObjects(bucketName, "deleted")
+            .objectSummaries
+            .count()
+
+    fun unassignedImagesCount(): Int =
+        amazonS3.listObjects(bucketName)
+            .objectSummaries
+            .filter { !it.key.startsWith("deleted") }
+            .filter { it.key.endsWith("$ORIGINAL") }
+            .map { amazonS3.getObjectMetadata(it.bucketName, it.key) }
+            .count()
 }

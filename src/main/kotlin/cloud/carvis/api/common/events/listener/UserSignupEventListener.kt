@@ -22,7 +22,7 @@ class UserSignupEventListener(
 
     @SqsListener("\${sqs.queues.user-signup}", deletionPolicy = NO_REDRIVE)
     fun onMessage(event: UserSignupEvent) {
-        logger.info("received $event")
+        logger.info("Received $event")
 
         val errors = userSignupFunctions
             .mapNotNull { consumeEvent(event, it) }

@@ -13,16 +13,20 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class UserService(
     private val auth0RestClient: Auth0RestClient,
     private val authorizationService: AuthorizationService,
     private val userMapper: UserMapper,
-    private val newUserRepository: NewUserRepository
+    private val newUserRepository: NewUserRepository,
 ) {
 
     private val logger = KotlinLogging.logger {}
+
+    private val currentlyActiveUsers = ConcurrentHashMap<String, Instant>()
 
     fun updateUser(userId: String, user: UserDto): UserDto =
         userMapper.toEntity(user)
@@ -90,4 +94,17 @@ class UserService(
     }
 
     fun usersCount() = auth0RestClient.fetchAllUsers().count()
+
+    fun monthlyActiveUsersCount(): Int = auth0RestClient.monthlyActiveUsersCount()
+
+    fun dailyLoginsCount(): Int = auth0RestClient.dailyLoginsCount()
+    fun fetchCurrentlyActiveUsersCount(): Int = currentlyActiveUsers
+        .filterValues { it.isAfter(Instant.now().minusSeconds(300)) }
+        .size
+
+    fun addCurrentlyActiveUser(userName: String): Boolean {
+        val newUser = !currentlyActiveUsers.contains(userName)
+        currentlyActiveUsers[userName] = Instant.now()
+        return newUser
+    }
 }

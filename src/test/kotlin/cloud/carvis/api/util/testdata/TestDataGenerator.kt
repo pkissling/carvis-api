@@ -23,15 +23,13 @@ import com.amazonaws.services.dynamodbv2.model.CreateTableRequest
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.sqs.AmazonSQSAsync
-import com.amazonaws.services.sqs.model.Message
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest
 import com.amazonaws.services.sqs.model.PurgeQueueRequest
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
 import org.awaitility.Awaitility.await
-import org.springframework.messaging.support.GenericMessage
 import org.springframework.stereotype.Service
 import java.io.File
 import java.util.*
@@ -176,8 +174,7 @@ class TestDataGenerator(
 
     fun withUserSignupEvent(): TestDataGenerator {
         val userSignup = random<UserSignupEvent>()
-        val msg = GenericMessage(userSignup.toJson())
-        queueMessagingTemplate.send(sqsQueues.userSignup, msg)
+        queueMessagingTemplate.convertAndSend(sqsQueues.userSignup, userSignup.value())
         last = userSignup.value()
         return this
     }
@@ -208,9 +205,8 @@ class TestDataGenerator(
         await().atMost(30, SECONDS)
             .until {
                 queues.queueUrls
-                    .map { amazonSqs.receiveMessage(it) }
-                    .map { it.messages }
-                    .all { it.isEmpty() }
+                    .map { getQueueMessageCount(it) }
+                    .all { it == 0 }
             }
         return this
     }
@@ -220,33 +216,38 @@ class TestDataGenerator(
         return this
     }
 
-    fun getUserSignupDlqMessages(): List<Message> {
-        val queueUrl = amazonSqs.listQueues(sqsQueues.userSignup)
-            .queueUrls
-            .first { it.endsWith("_dlq") }
-        return amazonSqs.receiveMessage(
-            ReceiveMessageRequest()
-                .withQueueUrl(queueUrl)
-        ).messages
-    }
-
-    fun withAssignImageToCarCommand(carId: UUID, imageId: UUID): TestDataGenerator {
+    fun withAssignImageToCarCommand(carId: UUID = UUID.randomUUID(), imageId: UUID = UUID.randomUUID()): TestDataGenerator {
         return withCarvisCommand(carId, ASSIGN_IMAGE_TO_CAR, imageId)
     }
 
-    fun withDeleteImageCommand(id: UUID): TestDataGenerator {
+    fun withDeleteImageCommand(id: UUID = UUID.randomUUID()): TestDataGenerator {
         return withCarvisCommand(id, DELETE_IMAGE)
     }
 
-    fun getCarvisCommandDlqMessages(): List<Message> {
-        val queueUrl = amazonSqs.listQueues(sqsQueues.carvisCommand)
-            .queueUrls
-            .first { it.endsWith("_dlq") }
-        return amazonSqs.receiveMessage(
-            ReceiveMessageRequest()
-                .withQueueUrl(queueUrl)
-        ).messages
+    fun getCarvisCommandDlqMessageCount(): Int {
+        val queueUrl = getQueueUrl(sqsQueues.carvisCommand, true)
+        return getQueueMessageCount(queueUrl)
     }
+
+    fun getCarvisCommandMessageCount(): Int {
+        val queueUrl = getQueueUrl(sqsQueues.carvisCommand, false)
+        return getQueueMessageCount(queueUrl)
+    }
+
+    fun getUserSignupMessageCount(): Int {
+        val queueUrl = getQueueUrl(sqsQueues.userSignup, false)
+        return getQueueMessageCount(queueUrl)
+    }
+
+    fun getUserSignupDlqMessageCount(): Int {
+        val queueUrl = getQueueUrl(sqsQueues.userSignup, true)
+        return getQueueMessageCount(queueUrl)
+    }
+
+    private fun getQueueUrl(queueName: String, isDlq: Boolean) =
+        amazonSqs.listQueues(queueName)
+            .queueUrls
+            .first { it.endsWith("_dlq") == isDlq }
 
     private fun <T : Entity> save(entity: T) {
         when (entity) {
@@ -262,6 +263,14 @@ class TestDataGenerator(
         queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
         last = command
         return this
+    }
+
+    private fun getQueueMessageCount(queueUrl: String): Int {
+        return amazonSqs.getQueueAttributes(
+            GetQueueAttributesRequest()
+                .withQueueUrl(queueUrl)
+                .withAttributeNames("ApproximateNumberOfMessages")
+        ).attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0
     }
 
     data class Image(

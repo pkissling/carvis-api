@@ -15,5 +15,4 @@ s3:
 
 sqs:
   queues:
-    userSignup: carvis-live-user_signup
-    carvis-command: carvis-live-carvis_command
+    prefix: carvis-live
