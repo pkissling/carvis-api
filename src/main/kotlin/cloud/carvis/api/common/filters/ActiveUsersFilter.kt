@@ -3,6 +3,7 @@ package cloud.carvis.api.common.filters
 import cloud.carvis.api.users.model.UserRole
 import cloud.carvis.api.users.service.UserService
 import mu.KotlinLogging
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import javax.servlet.Filter
@@ -16,12 +17,7 @@ class ActiveUsersFilter(private val userService: UserService) : Filter {
     val logger = KotlinLogging.logger {}
 
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
-        val isActualUser = SecurityContextHolder.getContext().authentication.authorities
-            .map { it.authority }
-            .mapNotNull { UserRole.from(it) }
-            .any { it.isActualUser() }
-
-        if (isActualUser) {
+        if (!isAnonymous() && isActualUser()) {
             val userName = SecurityContextHolder.getContext().authentication?.name ?: "n/a"
             val added = userService.addCurrentlyActiveUser(userName)
             if (added) {
@@ -31,4 +27,14 @@ class ActiveUsersFilter(private val userService: UserService) : Filter {
 
         chain.doFilter(request, response)
     }
+
+    fun isActualUser() =
+        SecurityContextHolder.getContext().authentication.authorities
+            .map { it.authority }
+            .mapNotNull { UserRole.from(it) }
+            .any { it.isActualUser() }
+
+    fun isAnonymous() =
+        SecurityContextHolder.getContext().authentication is AnonymousAuthenticationToken
+
 }
