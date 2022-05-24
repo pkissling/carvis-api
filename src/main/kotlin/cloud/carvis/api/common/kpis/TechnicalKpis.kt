@@ -72,16 +72,11 @@ class TechnicalKpis {
 
         @PostConstruct
         fun postConstruct() {
-            unassignedImagesCount()
             deleteImagesCount()
         }
 
         private fun deleteImagesCount() {
             registerKpi("deleted") { imageService.deleteImagesCount() }
-        }
-
-        private fun unassignedImagesCount() {
-            registerKpi("unassigned") { imageService.unassignedImagesCount() }
         }
 
         private fun registerKpi(type: String, supplier: () -> Number) {

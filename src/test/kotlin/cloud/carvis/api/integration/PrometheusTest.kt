@@ -169,19 +169,4 @@ class PrometheusTest : AbstractApplicationTest() {
             .andExpect(status().isOk)
             .andExpect(content().string(containsString("images_count{type=\"deleted\",} 3.0")))
     }
-
-    @Test
-    @WithMockUser(roles = ["SYSTEM"])
-    fun `actuator-prometheus GET - technical kpi - s3 unassigned images count`() {
-        // given
-        testDataGenerator
-            .withImage()
-            .withImage()
-            .withDeletedImage()
-
-        // when / then
-        this.mockMvc.perform(get("/actuator/prometheus"))
-            .andExpect(status().isOk)
-            .andExpect(content().string(containsString("images_count{type=\"unassigned\",} 2.0")))
-    }
 }

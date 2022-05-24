@@ -211,12 +211,4 @@ class ImageService(
         amazonS3.listObjects(bucketName, "deleted")
             .objectSummaries
             .count()
-
-    fun unassignedImagesCount(): Int =
-        amazonS3.listObjects(bucketName)
-            .objectSummaries
-            .filter { !it.key.startsWith("deleted") }
-            .filter { it.key.endsWith("$ORIGINAL") }
-            .map { amazonS3.getObjectMetadata(it.bucketName, it.key) }
-            .count()
 }
