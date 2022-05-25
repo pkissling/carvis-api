@@ -39,7 +39,7 @@ class ImageService(
     private val logger = KotlinLogging.logger {}
     private val bucketName = s3Properties.images
 
-    @Cacheable("imageUrls", sync = true)
+    @Cacheable("image-urls", sync = true)
     fun fetchImage(imageId: UUID, height: ImageHeight): ImageDto {
         val exists = imageExists("$imageId/$height")
         if (exists) {

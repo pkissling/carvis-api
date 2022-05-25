@@ -18,15 +18,15 @@ class AuthorizationService(
     private val requestRepository: RequestRepository
 ) {
 
-    @Cacheable("carsAuthorization", key = "#carId + '_' + @authorization.userId")
+    @Cacheable("cars-authorization", key = "#carId + '_' + @authorization.userId")
     fun canModifyCar(carId: UUID): Boolean =
         isAdmin() || isCarOwner(carId)
 
-    @Cacheable("requestsAuthorization", key = "#requestId + '_' + @authorization.userId")
+    @Cacheable("requests-authorization", key = "#requestId + '_' + @authorization.userId")
     fun canModifyRequest(requestId: UUID): Boolean =
         isAdmin() || isRequestOwner(requestId)
 
-    @Cacheable("usersAuthorization", key = "#userId + '_' + @authorization.userId")
+    @Cacheable("users-authorization", key = "#userId + '_' + @authorization.userId")
     fun canAccessAndModifyUser(userId: String): Boolean =
         isAdmin() || isUser(userId)
 

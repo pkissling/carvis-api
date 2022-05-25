@@ -10,9 +10,7 @@ dynamodb:
   table-name-prefix: live
 
 s3:
-  buckets:
-    images: carvis-live-images
+  prefix: carvis-live
 
 sqs:
-  queues:
-    prefix: carvis-live
+  prefix: carvis-live

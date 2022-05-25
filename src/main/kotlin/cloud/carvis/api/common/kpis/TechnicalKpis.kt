@@ -16,7 +16,7 @@ class TechnicalKpis {
     @Configuration
     class Queues(
         private val amazonSqs: AmazonSQS,
-        @Value("\${sqs.queues.prefix}") private val sqsPrefix: String,
+        @Value("\${sqs.prefix}") private val sqsPrefix: String,
         private val meterRegistry: MeterRegistry
     ) {
 

@@ -18,17 +18,18 @@ cors:
     - DELETE
 
 s3:
+  prefix: carvis-dev
   buckets:
-    images: carvis-dev-images
+    images: ${s3.prefix}-images
 
 dynamodb:
   table-name-prefix: dev
 
 sqs:
+  prefix: carvis-dev
   queues:
-    prefix: carvis-dev
-    userSignup: ${sqs.queues.prefix}-user_signup
-    carvis-command: ${sqs.queues.prefix}-carvis_command
+    userSignup: ${sqs.prefix}-user_signup
+    carvis-command: ${sqs.prefix}-carvis_command
 
 spring:
   security:
@@ -39,10 +40,10 @@ spring:
   cache:
     cache-names:
       - auth0-users
-      - imageUrls
-      - carsAuthorization
-      - requestsAuthorization
-      - usersAuthorization
+      - image-urls
+      - cars-authorization
+      - requests-authorization
+      - users-authorization
     caffeine:
       spec: maximumSize=500,expireAfterAccess=600s
 

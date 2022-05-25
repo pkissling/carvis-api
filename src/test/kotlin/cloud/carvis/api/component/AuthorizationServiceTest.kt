@@ -25,8 +25,8 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
             .andExpect(status().isForbidden)
 
         // then
-        assertThat(cache("carsAuthorization")).hasSize(1)
-        assertThat(cache("carsAuthorization")["${notExistingCarId}_foo"]).isEqualTo(false)
+        assertThat(cache("cars-authorization")).hasSize(1)
+        assertThat(cache("cars-authorization")["${notExistingCarId}_foo"]).isEqualTo(false)
     }
 
     @Test
@@ -43,9 +43,9 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
             .andExpect(status().isForbidden)
 
         // then
-        assertThat(cache("carsAuthorization")).hasSize(2)
-        assertThat(cache("carsAuthorization")["${aCarId}_foo"]).isEqualTo(false)
-        assertThat(cache("carsAuthorization")["${otherCarId}_foo"]).isEqualTo(false)
+        assertThat(cache("cars-authorization")).hasSize(2)
+        assertThat(cache("cars-authorization")["${aCarId}_foo"]).isEqualTo(false)
+        assertThat(cache("cars-authorization")["${otherCarId}_foo"]).isEqualTo(false)
     }
 
     @Test
@@ -61,8 +61,8 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
             .andExpect(status().isForbidden)
 
         // then
-        assertThat(cache("requestsAuthorization")).hasSize(1)
-        assertThat(cache("requestsAuthorization")["${notRequestId}_foo"]).isEqualTo(false)
+        assertThat(cache("requests-authorization")).hasSize(1)
+        assertThat(cache("requests-authorization")["${notRequestId}_foo"]).isEqualTo(false)
     }
 
     @Test
@@ -79,9 +79,9 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
             .andExpect(status().isForbidden)
 
         // then
-        assertThat(cache("requestsAuthorization")).hasSize(2)
-        assertThat(cache("requestsAuthorization")["${aRequestId}_foo"]).isEqualTo(false)
-        assertThat(cache("requestsAuthorization")["${otherRequestId}_foo"]).isEqualTo(false)
+        assertThat(cache("requests-authorization")).hasSize(2)
+        assertThat(cache("requests-authorization")["${aRequestId}_foo"]).isEqualTo(false)
+        assertThat(cache("requests-authorization")["${otherRequestId}_foo"]).isEqualTo(false)
     }
 
     private fun cache(key: String): Map<String, Boolean> {
