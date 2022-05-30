@@ -57,6 +57,8 @@ sentry:
   dsn: https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/6036448
   send-default-pii: true
   traces-sample-rate: 1.0
+  logging:
+    minimum-event-level: warn
 
 aws:
   region: eu-west-1
