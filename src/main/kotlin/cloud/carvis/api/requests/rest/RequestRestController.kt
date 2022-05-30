@@ -53,6 +53,6 @@ class RequestRestController(
     fun deleteRequest(@PathVariable requestId: UUID) {
         logger.info { "start deleteRequest(requestId=$requestId)" }
         requestService.deleteRequest(requestId)
-        logger.info { "end deleteRequest(requestId=$requestId)" }
+            .also { logger.info { "end deleteRequest(requestId=$requestId)" } }
     }
 }

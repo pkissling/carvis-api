@@ -53,6 +53,6 @@ class CarRestController(
     fun deleteCar(@PathVariable carId: UUID) {
         logger.info { "start deleteCar(carId=$carId)" }
         carService.deleteCar(carId)
-        logger.info { "end deleteCar(carId=$carId)" }
+            .also { logger.info { "end deleteCar(carId=$carId)" } }
     }
 }
