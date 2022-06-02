@@ -6,10 +6,15 @@ import cloud.carvis.api.users.model.UserDto
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.jupiter.api.Test
+import org.mockserver.model.HttpRequest
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit.DAYS
 
 
 class PrometheusTest : AbstractApplicationTest() {
@@ -109,11 +114,36 @@ class PrometheusTest : AbstractApplicationTest() {
     fun `actuator-prometheus GET - business kpi - daily logins`() {
         // given
         auth0Mock.withDailyLogins(111)
+        val date = Instant.now()
+            .atZone(ZoneId.of("UTC"))
+            .truncatedTo(DAYS)
+            .let { DateTimeFormatter.ofPattern("YYYYMMdd").format(it) }
+
+        // when
+        this.mockMvc.perform(get("/actuator/prometheus"))
+            .andExpect(status().isOk)
+            .andExpect(content().string(containsString("business_objects_count{domain=\"daily_logins\",} 111.0")))
+
+        // then
+        auth0Mock.verify(
+            HttpRequest.request()
+                .withPath("/api/v2/stats/daily")
+                .withQueryStringParameter("from", date)
+                .withQueryStringParameter("to", date)
+                .withMethod("GET")
+        )
+    }
+
+    @Test
+    @WithMockUser(roles = ["SYSTEM"])
+    fun `actuator-prometheus GET - business kpi - 0 daily logins`() {
+        // given
+        auth0Mock.withDailyLogins(null)
 
         // when / then
         this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isOk)
-            .andExpect(content().string(containsString("business_objects_count{domain=\"daily_logins\",} 111.0")))
+            .andExpect(content().string(containsString("business_objects_count{domain=\"daily_logins\",} 0.0")))
     }
 
     @Test

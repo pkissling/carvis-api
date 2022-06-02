@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit.DAYS
 import java.util.*
 
@@ -165,13 +166,18 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
 
     fun dailyLoginsCount(): Int = withErrorHandling {
         val today = Instant.now()
-        val yesterday = today.minus(1, DAYS).truncatedTo(DAYS)
+            .atZone(ZoneId.of("UTC"))
+            .truncatedTo(DAYS)
+            .toInstant()
+            .let { Date.from(it) }
+
         managementApi.stats()
-            .getDailyStats(Date.from(yesterday), Date.from(today))
+            .getDailyStats(today, today)
             .execute()
             .sortedByDescending { it.date }
-            .first()
-            .logins
+            .firstOrNull()
+            ?.logins
+            ?: 0
     }
 
     private fun rolesFilter(vararg roles: UserRole): RolesFilter =

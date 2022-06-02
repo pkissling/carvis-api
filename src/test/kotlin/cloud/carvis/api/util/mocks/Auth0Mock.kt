@@ -20,6 +20,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.math.log
 
 
 @TestConfiguration
@@ -139,7 +140,7 @@ class Auth0Mock {
         statusCode = 200
     )
 
-    fun withDailyLogins(logins: Int) = mockApiCall(
+    fun withDailyLogins(logins: Int?) = mockApiCall(
         path = "/api/v2/stats/daily",
         body = dailyStatsJson(logins),
         statusCode = 200
@@ -232,7 +233,10 @@ class Auth0Mock {
             """
     }
 
-    private fun dailyStatsJson(logins: Int): String {
+    private fun dailyStatsJson(logins: Int?): String {
+        if (logins == null) {
+            return "[]"
+        }
         val date = DateTimeFormatter.ISO_LOCAL_DATE_TIME
             .withZone(ZoneId.from(ZoneOffset.UTC))
             .format(Instant.now())
