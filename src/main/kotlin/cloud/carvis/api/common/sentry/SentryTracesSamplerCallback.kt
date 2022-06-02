@@ -7,8 +7,6 @@ import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointPr
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
 import javax.servlet.http.HttpServletRequest
-
-
 @EnableConfigurationProperties(SentryProperties::class)
 @Component
 class SentryTracesSamplerCallback(
@@ -17,7 +15,7 @@ class SentryTracesSamplerCallback(
 ) : TracesSamplerCallback {
 
     override fun sample(context: SamplingContext): Double? {
-        val request = context.customSamplingContext!!["request"] as HttpServletRequest?
+        val request = context.customSamplingContext?.get("request") as HttpServletRequest?
 
         return when (isActuatorCall(request)) {
             true -> 0.0
