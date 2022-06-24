@@ -1,5 +1,6 @@
 package cloud.carvis.api
 
+import cloud.carvis.api.util.helpers.Auth0PropertyOverrideContextInitializer
 import cloud.carvis.api.util.mocks.Auth0Mock
 import cloud.carvis.api.util.mocks.AwsMock
 import cloud.carvis.api.util.testdata.TestDataGenerator
@@ -16,9 +17,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.cache.CacheManager
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
-import java.util.concurrent.TimeUnit
+import java.time.Duration
 
 
 @SpringBootTest(
@@ -26,17 +28,24 @@ import java.util.concurrent.TimeUnit
     properties = [
         "spring.data.dynamodb.entity2ddl.auto=create-only",
         "spring.main.allow-bean-definition-overriding=true",
-        "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/invalidprojectid"
-    ],
-    classes = [
-        Auth0Mock::class,
-        AwsMock::class
+        "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/invalidprojectid",
+        "auth.client-id=dummy-clientId",
+        "auth.client-secret=dummy-secret"
     ]
+)
+@ContextConfiguration(
+    initializers = [Auth0PropertyOverrideContextInitializer::class],
+    classes = [AwsMock::class, Auth0Mock::class]
 )
 @AutoConfigureMockMvc
 @AutoConfigureMetrics
 @TestInstance(PER_CLASS)
 abstract class AbstractApplicationTest {
+
+    init {
+        Auth0Mock.withApiToken()
+        Auth0Mock.withOidcEndpoint()
+    }
 
     @Autowired
     protected lateinit var testDataGenerator: TestDataGenerator
@@ -62,7 +71,7 @@ abstract class AbstractApplicationTest {
     }
 
     @BeforeEach
-    fun cleanUp() {
+    fun cleanupTestData() {
         testDataGenerator
             .withEmptyDb()
             .withEmptyQueues()
@@ -70,13 +79,20 @@ abstract class AbstractApplicationTest {
             .withEmptyBuckets()
     }
 
+    @BeforeEach
+    fun mockAuth0() {
+        auth0Mock
+            .withApiToken()
+            .withOidcEndpoint()
+    }
+
     @AfterEach
-    fun afterEach() {
+    fun resetAuth0() {
         auth0Mock.reset()
     }
 
-    protected fun awaitAssert(timeout: Long = 10, fn: () -> Unit) {
-        await().atMost(timeout, TimeUnit.SECONDS)
+    protected fun awaitAssert(timeout: Duration = Duration.ofSeconds(10), fn: () -> Unit) {
+        await().atMost(timeout)
             .untilAsserted { fn.invoke() }
     }
 

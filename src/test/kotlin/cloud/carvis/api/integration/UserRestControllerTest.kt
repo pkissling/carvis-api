@@ -341,16 +341,19 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        auth0Mock.verify(
-            request()
-                .withPath("/api/v2/roles")
-                .withMethod("GET")
-                .withQueryStringParameter("name_filter", "user"),
-            request()
-                .withPath("/api/v2/users/d.joe/roles")
-                .withMethod("POST")
-                .withBody(json("""{ "roles" : [ "id_user" ] }"""))
-        )
+        auth0Mock
+            .verify(
+                request()
+                    .withPath("/api/v2/roles")
+                    .withMethod("GET")
+                    .withQueryStringParameter("name_filter", "user")
+            )
+            .verify(
+                request()
+                    .withPath("/api/v2/users/d.joe/roles")
+                    .withMethod("POST")
+                    .withBody(json("""{ "roles" : [ "id_user" ] }"""))
+            )
     }
 
     @Test
@@ -443,16 +446,19 @@ class UserRestControllerTest : AbstractApplicationTest() {
             .andExpect(status().isNoContent)
 
         // then
-        auth0Mock.verify(
-            request()
-                .withPath("/api/v2/roles")
-                .withMethod("GET")
-                .withQueryStringParameter("name_filter", "user"),
-            request()
-                .withPath("/api/v2/users/d.joe/roles")
-                .withMethod("DELETE")
-                .withBody(json("""{ "roles" : [ "id_user" ] }"""))
-        )
+        auth0Mock
+            .verify(
+                request()
+                    .withPath("/api/v2/roles")
+                    .withMethod("GET")
+                    .withQueryStringParameter("name_filter", "user")
+            )
+            .verify(
+                request()
+                    .withPath("/api/v2/users/d.joe/roles")
+                    .withMethod("DELETE")
+                    .withBody(json("""{ "roles" : [ "id_user" ] }"""))
+            )
     }
 
     @Test

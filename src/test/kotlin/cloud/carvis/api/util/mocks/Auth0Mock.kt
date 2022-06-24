@@ -1,11 +1,10 @@
 package cloud.carvis.api.util.mocks
 
-import cloud.carvis.api.common.config.SecurityConfig
-import cloud.carvis.api.common.properties.AuthProperties
 import cloud.carvis.api.users.model.UserDto
 import cloud.carvis.api.users.model.UserRole
 import cloud.carvis.api.util.helpers.MockServerUtils
-import com.auth0.client.mgmt.ManagementAPI
+import org.mockserver.matchers.Times
+import org.mockserver.matchers.Times.exactly
 import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
@@ -14,13 +13,10 @@ import org.mockserver.model.MediaType.APPLICATION_JSON
 import org.mockserver.verify.VerificationTimes
 import org.mockserver.verify.VerificationTimes.once
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.annotation.Bean
-import org.springframework.security.oauth2.jwt.JwtDecoder
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import kotlin.math.log
 
 
 @TestConfiguration
@@ -28,17 +24,53 @@ class Auth0Mock {
 
     companion object {
         private var mockServer = MockServerUtils.createMockServer()
+
+        fun getMockUrl(): String =
+            "http://localhost:${mockServer.port}/"
+
+        fun withApiToken() = mockApiCall(
+            path = "/oauth/token",
+            method = "POST",
+            body = """
+                  { 
+                    "access_token": "foobar",
+                    "expires_in": 9999
+                  }
+                  """
+        )
+
+        fun withOidcEndpoint() = mockApiCall(
+            path = "/.well-known/openid-configuration",
+            body = MockServerUtils.createOidcConfigJson(getMockUrl())
+        )
+
+        private fun mockApiCall(
+            path: String,
+            body: String = "",
+            method: String = "GET",
+            statusCode: Int = 200,
+            contentType: MediaType = APPLICATION_JSON,
+            queryParams: Map<String, String> = emptyMap(),
+            times: Times = Times.unlimited()
+        ) {
+            mockServer.`when`(
+                request()
+                    .withMethod(method)
+                    .withPath(path)
+                    .apply {
+                        queryParams.forEach { withQueryStringParameter(it.key, it.value) }
+                    },
+                times
+            )
+                .respond(
+                    response()
+                        .withStatusCode(statusCode)
+                        .withContentType(contentType)
+                        .withBody(body.trimIndent())
+                )
+        }
     }
 
-    @Bean
-    fun managementApi(): ManagementAPI =
-        ManagementAPI(this.getUrl(), "dummy")
-
-    @Bean
-    fun jwtDecoder(authProperties: AuthProperties): JwtDecoder {
-        this.mockOidcConfigEndpoint()
-        return SecurityConfig().jwtDecoder(authProperties, this.getUrl())
-    }
 
     fun withRoleUsers(vararg users: UserDto): Auth0Mock {
         val roles: Map<UserRole, List<UserDto>> = users
@@ -46,7 +78,7 @@ class Auth0Mock {
             .distinct()
             .associateWith { role -> users.filter { it.roles.contains(role) } }
         roles.forEach { (roleName, users) ->
-            this.mockApiCall(
+            mockApiCall(
                 path = "/api/v2/roles/id_$roleName/users",
                 body = usersJson(*users.toTypedArray())
             )
@@ -55,7 +87,7 @@ class Auth0Mock {
     }
 
     fun withUpdateResponse(user: UserDto): Auth0Mock {
-        this.mockApiCall(
+        mockApiCall(
             path = "/api/v2/users/${user.userId}",
             method = "PATCH",
             body = userJson(user)
@@ -64,7 +96,7 @@ class Auth0Mock {
     }
 
     fun withUsers(vararg users: UserDto): Auth0Mock {
-        this.mockApiCall(
+        mockApiCall(
             path = "/api/v2/users",
             body = usersJson(*users)
         )
@@ -75,7 +107,7 @@ class Auth0Mock {
     }
 
     fun withUser(user: UserDto): Auth0Mock {
-        this.mockApiCall(
+        mockApiCall(
             path = "/api/v2/users/${user.userId}",
             body = userJson(user)
         )
@@ -87,7 +119,7 @@ class Auth0Mock {
             .flatMap { it.roles }
             .distinct()
             .toTypedArray()
-        this.mockApiCall(
+        mockApiCall(
             path = "/api/v2/roles",
             body = rolesJson(*distinctRoles)
         )
@@ -146,48 +178,44 @@ class Auth0Mock {
         statusCode = 200
     )
 
-    fun verify(vararg requests: HttpRequest, times: VerificationTimes = once()) {
-        mockServer.verify(*requests)
-    }
-
-    fun reset() =
-        mockServer.reset()
-
-    fun mockApiCall(
-        path: String,
-        body: String = "",
-        method: String = "GET",
-        statusCode: Int = 200,
-        contentType: MediaType = APPLICATION_JSON,
-        queryParams: Map<String, String> = emptyMap()
-    ): Auth0Mock {
-        mockServer.`when`(
-            request()
-                .withMethod(method)
-                .withPath(path)
-                .apply {
-                    queryParams.forEach { withQueryStringParameter(it.key, it.value) }
-                }
+    fun withApiTokenError(times: Int): Auth0Mock {
+        mockApiCall(
+            path = "/oauth/token",
+            method = "POST",
+            statusCode = 500,
+            times = exactly(times)
         )
-            .respond(
-                response()
-                    .withStatusCode(statusCode)
-                    .withContentType(contentType)
-                    .withBody(body.trimIndent())
-            )
         return this
     }
 
+    fun withApiToken(): Auth0Mock {
+        Auth0Mock.withApiToken()
+        return this
+    }
 
-    private fun mockOidcConfigEndpoint() =
-        this.mockApiCall(
-            "/.well-known/openid-configuration",
-            MockServerUtils.createOidcConfigJson(this.getUrl())
+    fun withOidcEndpoint(): Auth0Mock {
+        Auth0Mock.withOidcEndpoint()
+        return this
+    }
+
+    fun withRolesError(queryParams: Map<String, String>): Auth0Mock {
+        mockApiCall(
+            path = "/api/v2/roles",
+            queryParams = queryParams,
+            statusCode = 500
         )
+        return this
+    }
 
-    private fun getUrl(): String =
-        "http://localhost:${mockServer.port}/"
+    fun verify(request: HttpRequest, times: VerificationTimes = once()): Auth0Mock {
+        mockServer.verify(request, times)
+        return this
+    }
 
+    fun reset(): Auth0Mock {
+        mockServer.reset()
+        return this
+    }
 
     private fun userJson(user: UserDto): String {
         val userMetadata = listOf(

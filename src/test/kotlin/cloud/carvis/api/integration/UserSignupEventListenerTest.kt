@@ -128,11 +128,10 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
     @Test
     fun `onMessage - processing error`() {
         // given
-        auth0Mock.mockApiCall(
-            path = "/api/v2/roles",
-            queryParams = mapOf("name_filter" to "admin"),
-            statusCode = 500
-        )
+        auth0Mock
+            .withRolesError(
+                mapOf("name_filter" to "admin")
+            )
 
         // when
         val event = testDataGenerator

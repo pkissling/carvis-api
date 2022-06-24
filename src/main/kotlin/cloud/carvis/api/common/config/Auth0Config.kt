@@ -2,14 +2,12 @@ package cloud.carvis.api.common.config
 
 import com.auth0.client.auth.AuthAPI
 import com.auth0.client.mgmt.ManagementAPI
-import com.auth0.net.AuthRequest
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.time.Duration
 import java.time.Instant
-import java.time.temporal.ChronoUnit.MINUTES
 import java.util.*
 import kotlin.concurrent.schedule
 
@@ -20,36 +18,65 @@ class Auth0Config {
     private val logger = KotlinLogging.logger {}
 
     @Bean
-    fun managementApi(
-        @Value("\${auth.domain}") domain: String,
+    fun authApi(
         @Value("\${auth.client-id}") clientId: String,
         @Value("\${auth.client-secret}") clientSecret: String,
+        @Value("\${auth.domain}") domain: String
+    ): AuthAPI = AuthAPI(domain, clientId, clientSecret)
+
+    @Bean
+    fun managementApi(
+        @Value("\${auth.client-id}") clientId: String,
+        @Value("\${auth.client-secret}") clientSecret: String,
+        @Value("\${auth.domain}") domain: String,
+        authAPI: AuthAPI
     ): ManagementAPI {
-        val authAPI = AuthAPI(domain, clientId, clientSecret)
-        val token = fetchAccessToken(authAPI, domain)
-        return ManagementAPI(domain, token.apiToken)
-            .also { scheduleTokenRenewal(token.expiresIn, it) { fetchAccessToken(authAPI, domain) } }
+        val (apiToken, expiresIn) = fetchAccessToken(authAPI, domain)
+        return ManagementAPI(domain, apiToken)
+            .also { scheduleTokenRenewal(expiresIn, authAPI, it, domain) }
     }
 
-    private fun scheduleTokenRenewal(expiresIn: Duration, managementApi: ManagementAPI, supplier: () -> Token) {
+    fun scheduleTokenRenewal(
+        expiresIn: Duration,
+        authApi: AuthAPI,
+        managementApi: ManagementAPI,
+        domain: String,
+        isRetry: Boolean = false
+    ) {
         logger.info { "Scheduling next renewal of Auth0 token at: ${Instant.now().plus(expiresIn)}" }
-        val delayInMs = expiresIn.minus(1, MINUTES).toMillis()
-        Timer("Auth0 token refresh", true).schedule(delayInMs) {
-            val token = supplier.invoke()
-            managementApi.setApiToken(token.apiToken)
-            logger.info("Renewed Auth0 token.")
-            scheduleTokenRenewal(token.expiresIn, managementApi, supplier)
+        Timer("Auth0 token refresh", true).schedule(expiresIn.toMillis()) {
+            try {
+                val (apiToken, newTokenExpiresIn) = fetchAccessToken(authApi, domain)
+                managementApi.setApiToken(apiToken)
+                logger.error("ErrRenewed Auth0 token.") // TODO
+                logger.warn("WarnRenewed Auth0 token.") // TODO
+                scheduleTokenRenewal(newTokenExpiresIn, authApi, managementApi, domain)
+            } catch (e: Exception) {
+                val retry = if (isRetry) {
+                    min(expiresIn.multipliedBy(2), Duration.ofMinutes(1))
+                } else {
+                    Duration.ofSeconds(1)
+                }
+                logger.error(e) { "Unable to renew Auth0 token. Rescheduling in ${retry}." }
+                scheduleTokenRenewal(retry, authApi, managementApi, domain, true)
+            }
         }
     }
 
-    private fun fetchAccessToken(authAPI: AuthAPI, domain: String): Token = try {
-        val authRequest: AuthRequest = authAPI.requestToken(domain + "api/v2/")
-        val holder = authRequest.execute()
-        Token(holder.accessToken, Duration.ofSeconds(holder.expiresIn))
+    private fun fetchAccessToken(authAPI: AuthAPI, domain: String): Pair<String, Duration> = try {
+        val authHolder = authAPI
+            .requestToken(domain + "api/v2/")
+            .execute()
+        authHolder.accessToken to Duration.ofSeconds(authHolder.expiresIn)
     } catch (e: Exception) {
         logger.error(e) { "Unable to fetch Auth0 accessToken" }
         throw e
     }
 
-    data class Token(val apiToken: String, val expiresIn: Duration)
+    private fun min(d1: Duration, d2: Duration) =
+        if (d1 > d2) {
+            d2
+        } else {
+            d1
+        }
 }
