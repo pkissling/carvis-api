@@ -138,7 +138,7 @@ class ImageService(
         try {
             val rotation = calculateRotation(bytes.inputStream())
             if (rotation == null) {
-                logger.warn { "Unable to determine extract orientation for imageId: $imageId" }
+                logger.warn { "Unable to extract orientation for imageId: $imageId" }
             }
             val image = ImageIO.read(bytes.inputStream())
             val resizedImage = Scalr.resize(image, height.toInt())
