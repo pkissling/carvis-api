@@ -9,7 +9,6 @@ import cloud.carvis.api.users.model.NewUserEntity
 import cloud.carvis.api.users.model.UserDto
 import cloud.carvis.api.users.model.UserRole
 import mu.KotlinLogging
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -85,8 +84,8 @@ class UserService(
         newUserRepository.count()
 
     fun persistNewUserSignup(event: UserSignupEvent) {
-        val entity = newUserRepository.findByIdOrNull(event.userId)
-        if (entity != null) {
+        val exists = newUserRepository.existsById(event.userId)
+        if (exists) {
             logger.warn { "New user already persisted with userId [${event.userId}]. Skipping..." }
             return
         }
