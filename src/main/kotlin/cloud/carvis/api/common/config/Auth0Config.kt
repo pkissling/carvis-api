@@ -48,8 +48,7 @@ class Auth0Config {
             try {
                 val (apiToken, newTokenExpiresIn) = fetchAccessToken(authApi, domain)
                 managementApi.setApiToken(apiToken)
-                logger.error("ErrRenewed Auth0 token.") // TODO
-                logger.warn("WarnRenewed Auth0 token.") // TODO
+                logger.info("Auth0 token.")
                 scheduleTokenRenewal(newTokenExpiresIn, authApi, managementApi, domain)
             } catch (e: Exception) {
                 val retry = if (isRetry) {
