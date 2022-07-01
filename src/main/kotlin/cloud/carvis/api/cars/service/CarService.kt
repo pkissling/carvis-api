@@ -3,9 +3,8 @@ package cloud.carvis.api.cars.service
 import cloud.carvis.api.cars.dao.CarRepository
 import cloud.carvis.api.cars.mapper.CarMapper
 import cloud.carvis.api.cars.model.CarDto
-import cloud.carvis.api.common.events.service.CarvisCommandPublisher
+import cloud.carvis.api.common.commands.publisher.CarvisCommandPublisher
 import mu.KotlinLogging
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -26,14 +25,9 @@ class CarService(
             .toList()
     }
 
-    fun fetchCar(carId: UUID): CarDto {
-        val car = carRepository.findByIdOrNull(carId)
-        if (car == null) {
-            logger.info { "Car with id [$carId] not found" }
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
-        }
-
-        return car.let { carMapper.toDto(it) }
+    fun fetchCar(carId: UUID): CarDto? {
+        return carRepository.findByHashKey(carId)
+            ?.let { carMapper.toDto(it) }
     }
 
     fun createCar(car: CarDto): CarDto {
@@ -45,7 +39,7 @@ class CarService(
 
 
     fun updateCar(carId: UUID, car: CarDto): CarDto {
-        val carToUpdate = carRepository.findByIdOrNull(carId)
+        val carToUpdate = carRepository.findByHashKey(carId)
 
         if (carToUpdate == null) {
             logger.info { "Car with id [$carId] not found" }
@@ -67,12 +61,13 @@ class CarService(
     }
 
     fun deleteCar(carId: UUID) {
-        val car = carRepository.findByIdOrNull(carId)
+        val car = carRepository.findByHashKey(carId)
         if (car != null) {
-            carRepository.deleteById(carId)
+            carRepository.deleteByHashKey(carId)
             commandPublisher.deleteImages(car.images)
         }
     }
 
     fun carsCount() = carRepository.count()
+
 }

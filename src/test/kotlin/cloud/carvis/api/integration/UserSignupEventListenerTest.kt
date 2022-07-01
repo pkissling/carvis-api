@@ -9,7 +9,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockserver.model.HttpRequest.request
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.repository.findByIdOrNull
 
 
 class UserSignupEventListenerTest : AbstractApplicationTest() {
@@ -88,7 +87,7 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
         // then
         awaitAssert {
             assertThat(newUserRepository.count()).isEqualTo(1L)
-            assertThat(newUserRepository.findByIdOrNull(event.userId)).isNotNull
+            assertThat(newUserRepository.findByHashKey(event.userId)).isNotNull
         }
     }
 
@@ -120,8 +119,8 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
         // then
         awaitAssert {
             assertThat(newUserRepository.findAll().count()).isEqualTo(2)
-            assertThat(newUserRepository.findByIdOrNull(eventTwo.userId)).isNotNull
-            assertThat(newUserRepository.findByIdOrNull(eventOne.userId)).isNotNull
+            assertThat(newUserRepository.findByHashKey(eventTwo.userId)).isNotNull
+            assertThat(newUserRepository.findByHashKey(eventOne.userId)).isNotNull
         }
     }
 
@@ -143,7 +142,7 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
         awaitAssert {
             assertThat(testDataGenerator.getUserSignupDlqMessageCount()).isEqualTo(1)
             assertThat(newUserRepository.count()).isEqualTo(1L)
-            assertThat(newUserRepository.existsById(event.userId)).isTrue
+            assertThat(newUserRepository.existsByHashKey(event.userId)).isTrue
         }
         auth0Mock.verify(
             request()

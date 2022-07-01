@@ -58,10 +58,10 @@ class UserService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "no roles to add provided")
         }
         auth0RestClient.addUserRole(userId, addRoles)
-        val hasNewUserEntity = newUserRepository.existsById(userId)
+        val hasNewUserEntity = newUserRepository.existsByHashKey(userId)
         if (hasNewUserEntity) {
             logger.info { "Deleting new user entity for userId: $userId" }
-            newUserRepository.deleteById(userId)
+            newUserRepository.deleteByHashKey(userId)
         }
     }
 
@@ -75,16 +75,16 @@ class UserService(
 
     fun deleteUser(userId: String) {
         auth0RestClient.deleteUser(userId)
-        if (newUserRepository.existsById(userId)) {
-            newUserRepository.deleteById(userId)
+        if (newUserRepository.existsByHashKey(userId)) {
+            newUserRepository.deleteByHashKey(userId)
         }
     }
 
-    fun newUsersCount(): Long =
+    fun newUsersCount(): Int =
         newUserRepository.count()
 
     fun persistNewUserSignup(event: UserSignupEvent) {
-        val exists = newUserRepository.existsById(event.userId)
+        val exists = newUserRepository.existsByHashKey(event.userId)
         if (exists) {
             logger.warn { "New user already persisted with userId [${event.userId}]. Skipping..." }
             return
@@ -105,5 +105,10 @@ class UserService(
         val newUser = !currentlyActiveUsers.contains(userName)
         currentlyActiveUsers[userName] = Instant.now()
         return newUser
+    }
+
+    fun updateOwnUser(user: UserDto): UserDto {
+        val userId = this.authorizationService.getUserId()
+        return this.updateUser(userId, user)
     }
 }

@@ -35,10 +35,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework:spring-context-support")
     implementation("org.springframework.security:spring-security-oauth2-resource-server")
     implementation("org.springframework.security:spring-security-oauth2-jose")
-    implementation("com.github.derjust:spring-data-dynamodb:5.1.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.amazonaws:aws-java-sdk-dynamodb")
     implementation("com.amazonaws:aws-java-sdk-s3")
@@ -52,6 +52,7 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-sleuth")
     implementation("com.drewnoakes:metadata-extractor:2.18.0")
     implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.5.20")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -63,6 +64,7 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
     testImplementation("org.mock-server:mockserver-junit-jupiter:5.13.2")
     testImplementation("org.awaitility:awaitility:4.2.0")
+    testImplementation("org.reflections:reflections:0.10.2")
 }
 
 tasks.withType<KotlinCompile> {

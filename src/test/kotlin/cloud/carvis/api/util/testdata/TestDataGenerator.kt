@@ -3,18 +3,20 @@ package cloud.carvis.api.util.testdata
 import cloud.carvis.api.cars.dao.CarRepository
 import cloud.carvis.api.cars.model.CarDto
 import cloud.carvis.api.cars.model.CarEntity
+import cloud.carvis.api.common.commands.model.AssignImageToCarCommand
+import cloud.carvis.api.common.commands.model.CarvisCommand
+import cloud.carvis.api.common.commands.model.DeleteImageCommand
 import cloud.carvis.api.common.dao.model.Entity
 import cloud.carvis.api.common.events.model.UserSignupEvent
 import cloud.carvis.api.common.properties.S3Buckets
 import cloud.carvis.api.common.properties.SqsQueues
 import cloud.carvis.api.images.model.ImageHeight
 import cloud.carvis.api.model.dtos.RequestDto
-import cloud.carvis.api.model.events.CarvisCommand
-import cloud.carvis.api.model.events.CarvisCommandType
-import cloud.carvis.api.model.events.CarvisCommandType.ASSIGN_IMAGE_TO_CAR
-import cloud.carvis.api.model.events.CarvisCommandType.DELETE_IMAGE
 import cloud.carvis.api.requests.dao.RequestRepository
 import cloud.carvis.api.requests.model.entities.RequestEntity
+import cloud.carvis.api.shareableLinks.dao.ShareableLinkRepository
+import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
+import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
 import cloud.carvis.api.users.dao.NewUserRepository
 import cloud.carvis.api.users.model.NewUserEntity
 import cloud.carvis.api.util.helpers.SesHelper
@@ -29,11 +31,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.tyro.oss.arbitrater.arbitrary
 import com.tyro.oss.arbitrater.arbitrater
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
+import org.apache.commons.lang3.RandomStringUtils
 import org.awaitility.Awaitility.await
 import org.springframework.stereotype.Service
 import java.io.File
 import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.Long.Companion.MAX_VALUE
 import kotlin.math.absoluteValue
 
 @Service
@@ -48,7 +54,8 @@ class TestDataGenerator(
     private val s3Buckets: S3Buckets,
     private val newUserRepository: NewUserRepository,
     private val amazonSqs: AmazonSQSAsync,
-    private val sesHelper: SesHelper
+    private val sesHelper: SesHelper,
+    private val shareableLinkRepository: ShareableLinkRepository
 ) {
 
     private var last: Any? = null
@@ -142,6 +149,10 @@ class TestDataGenerator(
         val value = T::class.arbitrater()
             .generateNulls(false)
             .useDefaultValues(false)
+            .apply {
+                registerGenerator { AtomicLong(ThreadLocalRandom.current().nextLong(0, MAX_VALUE)) }
+                registerGenerator { ShareableLinkReference(RandomStringUtils.random(8, true, false)) }
+            }
             .createInstance()
 
         return when (value) {
@@ -217,11 +228,11 @@ class TestDataGenerator(
     }
 
     fun withAssignImageToCarCommand(carId: UUID = UUID.randomUUID(), imageId: UUID = UUID.randomUUID()): TestDataGenerator {
-        return withCarvisCommand(carId, ASSIGN_IMAGE_TO_CAR, imageId)
+        return withCarvisCommand(AssignImageToCarCommand(carId, imageId))
     }
 
     fun withDeleteImageCommand(id: UUID = UUID.randomUUID()): TestDataGenerator {
-        return withCarvisCommand(id, DELETE_IMAGE)
+        return withCarvisCommand(DeleteImageCommand(id))
     }
 
     fun getCarvisCommandDlqMessageCount(): Int {
@@ -244,22 +255,34 @@ class TestDataGenerator(
         return getQueueMessageCount(queueUrl)
     }
 
+    fun withSharedLinkReference(carId: UUID = UUID.randomUUID()): TestDataGenerator {
+        val shareableLink = random<ShareableLinkEntity>().apply {
+            value().carId = carId
+        }
+        this.save(shareableLink.value())
+        return this
+    }
+
+    fun getSharedLinkReference(): TestData<ShareableLinkEntity> {
+        return TestData(objectMapper, this.getLast())
+    }
+
     private fun getQueueUrl(queueName: String, isDlq: Boolean) =
         amazonSqs.listQueues(queueName)
             .queueUrls
             .first { it.endsWith("_dlq") == isDlq }
 
-    private fun <T : Entity> save(entity: T) {
+    private fun <T : Entity<*>> save(entity: T) {
         when (entity) {
             is CarEntity -> carRepository.save(entity)
             is RequestEntity -> requestRepository.save(entity)
             is NewUserEntity -> newUserRepository.save(entity)
+            is ShareableLinkEntity -> shareableLinkRepository.save(entity)
             else -> throw RuntimeException("unable to save entity")
         }.also { this.last = it }
     }
 
-    private fun withCarvisCommand(id: UUID, type: CarvisCommandType, additionalData: Any? = null): TestDataGenerator {
-        val command = CarvisCommand(id, type, additionalData)
+    private fun <T> withCarvisCommand(command: CarvisCommand<T>): TestDataGenerator {
         queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
         last = command
         return this

@@ -1,9 +1,33 @@
 package cloud.carvis.api.requests.dao
 
+import cloud.carvis.api.common.dao.BaseRepository
+import cloud.carvis.api.common.dao.DynamoDbDao
 import cloud.carvis.api.requests.model.entities.RequestEntity
-import org.socialsignin.spring.data.dynamodb.repository.EnableScan
-import org.springframework.data.repository.CrudRepository
+import org.springframework.stereotype.Repository
 import java.util.*
 
-@EnableScan
-interface RequestRepository : CrudRepository<RequestEntity, UUID>
+@Repository
+class RequestRepository(
+    private val dynamoDbDao: DynamoDbDao<RequestEntity, UUID>
+) : BaseRepository<RequestEntity, UUID> {
+
+    override fun save(entity: RequestEntity): RequestEntity {
+        return dynamoDbDao.save(entity)
+    }
+
+    override fun findAll(): List<RequestEntity> {
+        return dynamoDbDao.findAll(RequestEntity::class.java)
+    }
+
+    override fun findByHashKey(hashKey: UUID): RequestEntity? {
+        return dynamoDbDao.find(RequestEntity::class.java, hashKey)
+    }
+
+    override fun deleteByHashKey(hashKey: UUID) {
+        dynamoDbDao.delete(RequestEntity::class.java, hashKey)
+    }
+
+    override fun count(): Int =
+        dynamoDbDao.count(RequestEntity::class.java)
+
+}

@@ -4,7 +4,6 @@ import cloud.carvis.api.model.dtos.RequestDto
 import cloud.carvis.api.requests.dao.RequestRepository
 import cloud.carvis.api.requests.mapper.RequestMapper
 import mu.KotlinLogging
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -26,7 +25,7 @@ class RequestService(
     }
 
     fun fetchRequest(id: UUID): RequestDto {
-        val request = requestRepository.findByIdOrNull(id)
+        val request = requestRepository.findByHashKey(id)
         if (request == null) {
             logger.info { "Request with id [$id] not found" }
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "request not found")
@@ -43,7 +42,7 @@ class RequestService(
     }
 
     fun updateRequest(id: UUID, request: RequestDto): RequestDto {
-        val requestToUpdate = requestRepository.findByIdOrNull(id)
+        val requestToUpdate = requestRepository.findByHashKey(id)
 
         if (requestToUpdate == null) {
             logger.info { "Request with id [$id] not found" }
@@ -57,7 +56,7 @@ class RequestService(
 
     @PreAuthorize("@authorization.canModifyRequest(#id)")
     fun deleteRequest(id: UUID) {
-        requestRepository.deleteById(id)
+        requestRepository.deleteByHashKey(id)
     }
 
     fun requestsCount() = requestRepository.count()

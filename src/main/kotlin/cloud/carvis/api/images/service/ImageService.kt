@@ -188,7 +188,7 @@ class ImageService(
         logger.debug { "Deleted image(s) with key: $key" }
     }
 
-    fun assignCarIdToImage(carId: UUID, imageId: String) {
+    fun assignCarIdToImage(carId: UUID, imageId: UUID) {
         logger.debug { "Assigning carId [$carId] to image: $imageId" }
         val key = "$imageId/$ORIGINAL"
         val currentMetadata = amazonS3.getObjectMetadata(bucketName, key)

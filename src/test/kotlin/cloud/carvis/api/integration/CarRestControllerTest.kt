@@ -14,7 +14,6 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItem
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.ResultMatcher
@@ -163,6 +162,16 @@ class CarRestControllerTest : AbstractApplicationTest() {
     }
 
     @Test
+    @WithMockUser
+    fun `cars POST - no payload yields bad requests`() {
+        this.mockMvc
+            .perform(
+                post("/cars")
+            )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
     @WithMockUser(username = VALID_USER_ID)
     fun `car PUT - update existing car`() {
         // given
@@ -256,7 +265,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.createdBy").value("bar"))
 
         // then
-        val updatedCar = carRepository.findByIdOrNull(car.id!!)!!
+        val updatedCar = carRepository.findByHashKey(car.id!!)!!
         assertThat(updatedCar.createdBy).isEqualTo("bar")
         assertThat(updatedCar.createdAt).isEqualTo(car.createdAt)
         assertThat(updatedCar.updatedBy).isEqualTo("foo")
@@ -378,7 +387,7 @@ class CarRestControllerTest : AbstractApplicationTest() {
             )
             .andExpect(status().isNoContent)
 
-        assertThat(carRepository.existsById(car.value().id!!)).isFalse
+        assertThat(carRepository.existsByHashKey(car.value().id!!)).isFalse
         awaitAssert {
             assertThat(amazonS3.listObjects(imagesBucket).objectSummaries.count()).isEqualTo(2)
             assertThat(amazonS3.doesObjectExist(imagesBucket, "deleted/$imageId1/ORIGINAL")).isTrue

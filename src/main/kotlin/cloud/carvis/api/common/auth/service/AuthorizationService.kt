@@ -4,7 +4,6 @@ import cloud.carvis.api.cars.dao.CarRepository
 import cloud.carvis.api.requests.dao.RequestRepository
 import cloud.carvis.api.users.model.UserRole.ADMIN
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -26,17 +25,13 @@ class AuthorizationService(
     fun canModifyRequest(requestId: UUID): Boolean =
         isAdmin() || isRequestOwner(requestId)
 
-    @Cacheable("users-authorization", key = "#userId + '_' + @authorization.userId")
-    fun canAccessAndModifyUser(userId: String): Boolean =
-        isAdmin() || isUser(userId)
-
     private fun isRequestOwner(id: UUID): Boolean {
-        val request = requestRepository.findByIdOrNull(id) ?: return false
+        val request = requestRepository.findByHashKey(id) ?: return false
         return request.createdBy == getUserId()
     }
 
     fun isCarOwner(id: UUID): Boolean {
-        val car = carRepository.findByIdOrNull(id) ?: return false
+        val car = carRepository.findByHashKey(id) ?: return false
         return car.createdBy == getUserId()
     }
 
@@ -52,7 +47,4 @@ class AuthorizationService(
         }
         return authentication.name
     }
-
-    fun isUser(getUserId: String): Boolean =
-        getUserId() == getUserId
 }
