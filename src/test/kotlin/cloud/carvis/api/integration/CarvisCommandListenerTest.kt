@@ -36,7 +36,7 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
     }
 
     @Test
-    fun `onMessage - DELETE_IMAGE - processing error`() {
+    fun `onMessage - DeleteImageCommand - processing error`() {
         // given
         testDataGenerator.withEmptyBuckets()
 
@@ -51,7 +51,7 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
     }
 
     @Test
-    fun `onMessage - ASSIGN_IMAGE_TO_CAR - success`() {
+    fun `onMessage - AssignImageToCarCommand - success`() {
         // given
         val image = testDataGenerator
             .withImage()
@@ -73,7 +73,7 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
     }
 
     @Test
-    fun `onMessage - ASSIGN_IMAGE_TO_CAR - processing error`() {
+    fun `onMessage - AssignImageToCarCommand - processing error`() {
         // given
         testDataGenerator.withEmptyBuckets()
 

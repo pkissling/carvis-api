@@ -7,6 +7,10 @@ import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable
+import com.amazonaws.services.dynamodbv2.model.*
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
@@ -18,6 +22,8 @@ import com.amazonaws.services.sqs.model.GetQueueAttributesRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
 import org.assertj.core.api.Assertions.assertThat
+import org.reflections.Reflections
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,6 +35,11 @@ import org.testcontainers.utility.DockerImageName
 import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.pathString
+import kotlin.reflect.KClass
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.jvm.javaField
+
 
 @TestConfiguration
 @Testcontainers
@@ -57,12 +68,58 @@ class AwsMock {
     @Configuration
     class DynamoDb {
 
+        @Autowired
+        lateinit var tableNameOverride: TableNameOverride
+
         @Bean
         fun amazonDynamoDB(localStack: CarvisLocalStack): AmazonDynamoDB =
             AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(localStack.getEndpointConfiguration(DYNAMODB))
                 .withCredentials(localStack.getDefaultCredentialsProvider())
                 .build()
+                .also { createTables(it) }
+
+        private fun createTables(dynamoDb: AmazonDynamoDB) {
+            Reflections("cloud.carvis.api")
+                .getTypesAnnotatedWith(DynamoDBTable::class.java)
+                .map { it.kotlin }
+                .map {
+                    val tableName = fetchTableName(it)
+                    val hashKey = extractHashKeyAttributeName(it)
+                    CreateTableRequest()
+                        .withTableName(tableName)
+                        .withAttributeDefinitions(
+                            AttributeDefinition()
+                                .withAttributeType(ScalarAttributeType.S)
+                                .withAttributeName(hashKey)
+                        )
+                        .withKeySchema(
+                            KeySchemaElement()
+                                .withKeyType(KeyType.HASH)
+                                .withAttributeName(hashKey)
+                        )
+                        .withProvisionedThroughput(
+                            ProvisionedThroughput()
+                                .withReadCapacityUnits(1L)
+                                .withWriteCapacityUnits(1L)
+                        )
+                }
+                .forEach { dynamoDb.createTable(it) }
+        }
+
+
+        private fun fetchTableName(clazz: KClass<*>) =
+            clazz.findAnnotation<DynamoDBTable>()
+                ?.tableName
+                ?.let { tableNameOverride.tableNamePrefix + it }
+                ?: throw RuntimeException("could not extract tableName from $clazz")
+
+        private fun extractHashKeyAttributeName(clazz: KClass<*>) =
+            clazz.declaredMemberProperties
+                .filter { it.javaField != null }
+                .firstOrNull { it.javaField?.annotations?.any { ann -> ann is DynamoDBHashKey } ?: false }
+                ?.name
+                ?: throw RuntimeException("unable to extract hashKey")
     }
 
     @Configuration

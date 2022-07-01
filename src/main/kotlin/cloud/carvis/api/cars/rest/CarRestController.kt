@@ -3,9 +3,11 @@ package cloud.carvis.api.cars.rest
 import cloud.carvis.api.cars.model.CarDto
 import cloud.carvis.api.cars.service.CarService
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.NO_CONTENT
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import java.util.*
 import javax.validation.Valid
 
@@ -30,6 +32,7 @@ class CarRestController(
         logger.info { "start fetchCar(carId=$carId)" }
         return carService.fetchCar(carId)
             .also { logger.info { "end fetchCar(carId=$carId) return=${it}" } }
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "car not found")
     }
 
     @PostMapping

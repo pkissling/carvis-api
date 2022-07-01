@@ -8,12 +8,13 @@ import cloud.carvis.api.requests.model.entities.RequestEntity
 import cloud.carvis.api.users.service.UserService
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class RequestMapper(
     private val authorizationService: AuthorizationService,
     private val userService: UserService
-) : EntityMapper<RequestDto, RequestEntity> {
+) : EntityMapper<UUID, RequestDto, RequestEntity> {
 
     private val logger = KotlinLogging.logger {}
 

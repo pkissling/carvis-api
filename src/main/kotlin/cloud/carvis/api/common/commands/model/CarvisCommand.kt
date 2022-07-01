@@ -1,14 +1,24 @@
-package cloud.carvis.api.model.events
+package cloud.carvis.api.common.commands.model
 
+import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS
 import java.util.*
 
-data class CarvisCommand(
-    val id: UUID,
-    val type: CarvisCommandType,
-    val additionalData: Any? = null
+@JsonTypeInfo(use = CLASS)
+sealed class CarvisCommand<T>(
+    open val id: T,
 )
 
-enum class CarvisCommandType {
-    DELETE_IMAGE,
-    ASSIGN_IMAGE_TO_CAR
-}
+data class DeleteImageCommand(
+    override val id: UUID,
+) : CarvisCommand<UUID>(id)
+
+data class AssignImageToCarCommand(
+    override val id: UUID,
+    val imageId: UUID
+) : CarvisCommand<UUID>(id)
+
+data class IncreaseVisitorCountCommand(
+    override val id: ShareableLinkReference,
+) : CarvisCommand<ShareableLinkReference>(id)

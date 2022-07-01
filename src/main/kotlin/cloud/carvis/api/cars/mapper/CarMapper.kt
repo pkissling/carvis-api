@@ -5,9 +5,10 @@ import cloud.carvis.api.cars.model.CarEntity
 import cloud.carvis.api.common.dao.mapper.EntityMapper
 import cloud.carvis.api.users.service.UserService
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
-class CarMapper(private val userService: UserService) : EntityMapper<CarDto, CarEntity> {
+class CarMapper(private val userService: UserService) : EntityMapper<UUID, CarDto, CarEntity> {
 
     override fun toDto(entity: CarEntity): CarDto =
         CarDto(

@@ -44,7 +44,6 @@ spring:
       - image-urls
       - cars-authorization
       - requests-authorization
-      - users-authorization
     caffeine:
       spec: maximumSize=500,expireAfterAccess=600s
 

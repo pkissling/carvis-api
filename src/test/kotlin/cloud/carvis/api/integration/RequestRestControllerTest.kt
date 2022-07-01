@@ -10,7 +10,6 @@ import cloud.carvis.api.util.testdata.TestData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.ResultActions
@@ -254,7 +253,7 @@ class RequestRestControllerTest : AbstractApplicationTest() {
             .andExpect(jsonPath("$.createdBy").value("bar"))
 
         // then
-        val updatedRequest = requestRepository.findByIdOrNull(request.id!!)!!
+        val updatedRequest = requestRepository.findByHashKey(request.id!!)!!
         assertThat(updatedRequest.createdBy).isEqualTo("bar")
         assertThat(updatedRequest.createdAt).isEqualTo(request.createdAt)
         assertThat(updatedRequest.updatedBy).isEqualTo("foo")
