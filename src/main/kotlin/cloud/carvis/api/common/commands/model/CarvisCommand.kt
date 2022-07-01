@@ -1,6 +1,5 @@
 package cloud.carvis.api.common.commands.model
 
-import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS
 import java.util.*
@@ -20,5 +19,5 @@ data class AssignImageToCarCommand(
 ) : CarvisCommand<UUID>(id)
 
 data class IncreaseVisitorCountCommand(
-    override val id: ShareableLinkReference,
-) : CarvisCommand<ShareableLinkReference>(id)
+    override val id: String,
+) : CarvisCommand<String>(id)

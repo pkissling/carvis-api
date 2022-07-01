@@ -74,8 +74,9 @@ class DynamoDbDao<T : Entity<HashKey>, HashKey>(
             .toList()
 
     fun delete(clazz: Class<T>, hashKey: Any, rangeKey: Any? = null) {
-        val entity = this.find(clazz, hashKey, rangeKey)
-        dynamoDbMapper.batchDelete(entity)
+        val entity: T = this.find(clazz, hashKey, rangeKey)
+            ?: throw RuntimeException("unable to find entity [$clazz] with HashKey: $hashKey")
+        dynamoDbMapper.delete(entity)
     }
 
     fun count(clazz: Class<T>): Int =

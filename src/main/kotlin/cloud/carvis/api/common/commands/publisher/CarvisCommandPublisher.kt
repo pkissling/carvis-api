@@ -5,7 +5,6 @@ import cloud.carvis.api.common.commands.model.CarvisCommand
 import cloud.carvis.api.common.commands.model.DeleteImageCommand
 import cloud.carvis.api.common.commands.model.IncreaseVisitorCountCommand
 import cloud.carvis.api.common.properties.SqsQueues
-import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -27,7 +26,7 @@ class CarvisCommandPublisher(
 
     fun assignImageToCar(carId: UUID, imageId: UUID) = this.publish(AssignImageToCarCommand(carId, imageId))
 
-    fun increaseVisitorCounter(reference: ShareableLinkReference) = this.publish(IncreaseVisitorCountCommand(reference))
+    fun increaseVisitorCounter(reference: String) = this.publish(IncreaseVisitorCountCommand(reference))
 
     private fun <T> publish(command: CarvisCommand<T>) {
         logger.info { "Publishing: $command" }

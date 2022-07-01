@@ -4,7 +4,11 @@ import cloud.carvis.api.cars.model.CarDto
 import cloud.carvis.api.cars.service.CarService
 import cloud.carvis.api.common.commands.publisher.CarvisCommandPublisher
 import cloud.carvis.api.shareableLinks.dao.ShareableLinkRepository
-import cloud.carvis.api.shareableLinks.model.*
+import cloud.carvis.api.shareableLinks.mapper.ShareableLinkMapper
+import cloud.carvis.api.shareableLinks.model.CarDetails
+import cloud.carvis.api.shareableLinks.model.CreateShareableLinkRequestDto
+import cloud.carvis.api.shareableLinks.model.ShareableLinkDto
+import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.NOT_FOUND
@@ -17,7 +21,8 @@ import java.util.concurrent.atomic.AtomicLong
 class ShareableLinkService(
     private val shareableLinkRepository: ShareableLinkRepository,
     private val carService: CarService,
-    private val carvisCommandPublisher: CarvisCommandPublisher
+    private val carvisCommandPublisher: CarvisCommandPublisher,
+    private val mapper: ShareableLinkMapper
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -35,7 +40,7 @@ class ShareableLinkService(
 
         val savedEntity = entity.shareableLinkReference
             ?.let { shareableLinkRepository.findByHashKey(it) }
-            ?: throw RuntimeException("TODO")
+            ?: throw RuntimeException("Unable to read saved shared link entity")
         return ShareableLinkDto(
             shareableLinkReference = savedEntity.shareableLinkReference,
             carId = savedEntity.carId,
@@ -50,7 +55,7 @@ class ShareableLinkService(
         )
     }
 
-    fun fetchCarFromShareableLinkReference(shareableLinkReference: ShareableLinkReference): CarDto {
+    fun fetchCarFromShareableLinkReference(shareableLinkReference: String): CarDto {
         val carId = shareableLinkRepository.findByHashKey(shareableLinkReference)
             ?.carId
             ?: throw ResponseStatusException(NOT_FOUND, "shareable link not found")
@@ -60,7 +65,7 @@ class ShareableLinkService(
             ?: throw ResponseStatusException(BAD_REQUEST, "car not found")
     }
 
-    fun increaseVisitorCount(shareableLinkReference: ShareableLinkReference) {
+    fun increaseVisitorCount(shareableLinkReference: String) {
         val reference = shareableLinkRepository.findByHashKey(shareableLinkReference)
             ?: throw RuntimeException("unable to find entity for shareable link reference: $shareableLinkReference")
 
@@ -81,5 +86,18 @@ class ShareableLinkService(
                 .also { throw RuntimeException(it) }
         }
         logger.info { "Increase counter to ${visitorCount.get()} for shareable link reference: $shareableLinkReference" }
+    }
+
+    fun fetchShareableLinks(): List<ShareableLinkDto> =
+        shareableLinkRepository.findAll()
+            .map { mapper.toDto(it) }
+            .toList()
+
+    fun deleteShareableLink(shareableLinkReference: String) {
+        val exists = shareableLinkRepository.existsByHashKey(shareableLinkReference)
+        if (!exists) {
+            throw ResponseStatusException(NOT_FOUND, "shareable link not found")
+        }
+        shareableLinkRepository.deleteByHashKey(shareableLinkReference)
     }
 }

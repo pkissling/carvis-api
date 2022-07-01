@@ -1,7 +1,6 @@
 package cloud.carvis.api.shareableLinks.controller
 
 import cloud.carvis.api.cars.model.CarDto
-import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
 import cloud.carvis.api.shareableLinks.service.ShareableLinkService
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,7 +17,7 @@ class ShareableLinkRestController(
     private val logger = KotlinLogging.logger {}
 
     @GetMapping("/{shareableLinkReference}/car")
-    fun fetchCarFromShareableLink(@PathVariable shareableLinkReference: ShareableLinkReference): CarDto {
+    fun fetchCarFromShareableLink(@PathVariable shareableLinkReference: String): CarDto {
         logger.info { "start fetchCarFromShareableLink(shareableLinkReference=$shareableLinkReference)" }
         return shareableLinkService.fetchCarFromShareableLinkReference(shareableLinkReference)
             .also { logger.info { "end fetchCarFromShareableLink(carId=$shareableLinkReference), return=${it}" } }

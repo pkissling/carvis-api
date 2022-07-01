@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.*
 
 data class ShareableLinkDto(
-    val shareableLinkReference: ShareableLinkReference? = null,
+    val shareableLinkReference: String? = null,
     val carId: UUID? = null,
     val carDetails: CarDetails? = null,
     val visitorCount: Long? = null,

@@ -16,7 +16,6 @@ import cloud.carvis.api.requests.dao.RequestRepository
 import cloud.carvis.api.requests.model.entities.RequestEntity
 import cloud.carvis.api.shareableLinks.dao.ShareableLinkRepository
 import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
-import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
 import cloud.carvis.api.users.dao.NewUserRepository
 import cloud.carvis.api.users.model.NewUserEntity
 import cloud.carvis.api.util.helpers.SesHelper
@@ -151,7 +150,6 @@ class TestDataGenerator(
             .useDefaultValues(false)
             .apply {
                 registerGenerator { AtomicLong(ThreadLocalRandom.current().nextLong(0, MAX_VALUE)) }
-                registerGenerator { ShareableLinkReference(RandomStringUtils.random(8, true, false)) }
             }
             .createInstance()
 
@@ -171,6 +169,9 @@ class TestDataGenerator(
                 horsePower = horsePower!!.absoluteValue
                 capacity = capacity!!.absoluteValue
                 mileage = mileage!!.absoluteValue
+            }
+            is ShareableLinkEntity -> value.apply {
+                shareableLinkReference = RandomStringUtils.random(8, true, false)
             }
             else -> value
         }.let { TestData(objectMapper, it) }

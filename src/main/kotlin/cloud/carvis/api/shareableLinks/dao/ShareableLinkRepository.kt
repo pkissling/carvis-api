@@ -3,13 +3,12 @@ package cloud.carvis.api.shareableLinks.dao
 import cloud.carvis.api.common.dao.BaseRepository
 import cloud.carvis.api.common.dao.DynamoDbDao
 import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
-import cloud.carvis.api.shareableLinks.model.ShareableLinkReference
 import org.springframework.stereotype.Repository
 
 @Repository
 class ShareableLinkRepository(
-    private val dynamoDbDao: DynamoDbDao<ShareableLinkEntity, ShareableLinkReference>
-) : BaseRepository<ShareableLinkEntity, ShareableLinkReference> {
+    private val dynamoDbDao: DynamoDbDao<ShareableLinkEntity, String>
+) : BaseRepository<ShareableLinkEntity, String> {
     override fun save(entity: ShareableLinkEntity): ShareableLinkEntity {
         return dynamoDbDao.save(entity)
     }
@@ -18,11 +17,11 @@ class ShareableLinkRepository(
         return dynamoDbDao.findAll(ShareableLinkEntity::class.java)
     }
 
-    override fun findByHashKey(hashKey: ShareableLinkReference): ShareableLinkEntity? {
+    override fun findByHashKey(hashKey: String): ShareableLinkEntity? {
         return dynamoDbDao.find(ShareableLinkEntity::class.java, hashKey)
     }
 
-    override fun deleteByHashKey(hashKey: ShareableLinkReference) {
+    override fun deleteByHashKey(hashKey: String) {
         dynamoDbDao.delete(ShareableLinkEntity::class.java, hashKey)
     }
 
