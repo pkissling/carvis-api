@@ -84,6 +84,7 @@ class AuthorizationServiceTest : AbstractApplicationTest() {
         assertThat(cache("requests-authorization")["${otherRequestId}_foo"]).isEqualTo(false)
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun cache(key: String): Map<String, Boolean> {
         val cache: Cache<String, Boolean> = cacheManager.getCache(key)!!.nativeCache as Cache<String, Boolean>
         return cache.asMap()

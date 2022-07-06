@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.math.absoluteValue
 import kotlin.reflect.KClass
+import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 
 @Service
 class TestDataGenerator(
@@ -147,6 +148,7 @@ class TestDataGenerator(
         return TestData(objectMapper, this.getLast(RequestEntity::class))
     }
 
+    @OptIn(ExperimentalReflectionOnLambdas::class)
     final inline fun <reified T : Any> random(): TestData<T> {
         val value = T::class.arbitrater()
             .generateNulls(false)
@@ -163,11 +165,13 @@ class TestDataGenerator(
                 mileage = mileage!!.absoluteValue
                 price = price!!.abs()
             }
+
             is RequestDto -> value.apply {
                 horsePower = horsePower!!.absoluteValue
                 capacity = capacity!!.absoluteValue
                 mileage = mileage!!.absoluteValue
             }
+
             is CarEntity -> value.apply {
                 horsePower = horsePower!!.absoluteValue
                 capacity = capacity!!.absoluteValue
@@ -221,7 +225,7 @@ class TestDataGenerator(
         await().atMost(30, SECONDS)
             .until {
                 queues.queueUrls
-                    .map { getQueueMessageCount(it) }
+                    .map { (getQueueMessageCount(it) ?: 0) + amazonSqs.receiveMessage(it).messages.size }
                     .all { it == 0 }
             }
         return this
@@ -240,32 +244,32 @@ class TestDataGenerator(
         return withCarvisCommand(DeleteImageCommand(id))
     }
 
-    fun getCarvisCommandDlqMessageCount(): Int {
+    fun getCarvisCommandDlqMessageCount(): Int? {
         val queueUrl = getQueueUrl(sqsQueues.carvisCommand, true)
         return getQueueMessageCount(queueUrl)
     }
 
-    fun getCarvisCommandMessageCount(): Int {
+    fun getCarvisCommandMessageCount(): Int? {
         val queueUrl = getQueueUrl(sqsQueues.carvisCommand, false)
         return getQueueMessageCount(queueUrl)
     }
 
-    fun getUserSignupMessageCount(): Int {
+    fun getUserSignupMessageCount(): Int? {
         val queueUrl = getQueueUrl(sqsQueues.userSignup, false)
         return getQueueMessageCount(queueUrl)
     }
 
-    fun getUserSignupDlqMessageCount(): Int {
+    fun getUserSignupDlqMessageCount(): Int? {
         val queueUrl = getQueueUrl(sqsQueues.userSignup, true)
         return getQueueMessageCount(queueUrl)
     }
 
-    fun getCarvisEventMessageCount(): Int {
+    fun getCarvisEventMessageCount(): Int? {
         val queueUrl = getQueueUrl(sqsQueues.carvisEvent, false)
         return getQueueMessageCount(queueUrl)
     }
 
-    fun getCarvisEventDlqMessageCount(): Int {
+    fun getCarvisEventDlqMessageCount(): Int? {
         val queueUrl = getQueueUrl(sqsQueues.carvisEvent, true)
         return getQueueMessageCount(queueUrl)
     }
@@ -314,12 +318,12 @@ class TestDataGenerator(
     }
 
 
-    private fun getQueueMessageCount(queueUrl: String): Int {
+    private fun getQueueMessageCount(queueUrl: String): Int? {
         return amazonSqs.getQueueAttributes(
             GetQueueAttributesRequest()
                 .withQueueUrl(queueUrl)
                 .withAttributeNames("ApproximateNumberOfMessages")
-        ).attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0
+        ).attributes["ApproximateNumberOfMessages"]?.toInt()
     }
 
     private fun <T> addLast(last: T) {

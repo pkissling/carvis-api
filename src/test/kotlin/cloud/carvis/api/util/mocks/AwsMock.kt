@@ -4,6 +4,8 @@ import cloud.carvis.api.common.properties.EmailProperties
 import cloud.carvis.api.common.properties.S3Buckets
 import cloud.carvis.api.common.properties.SqsQueues
 import com.amazonaws.auth.AWSCredentialsProvider
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
@@ -56,7 +58,7 @@ class AwsMock {
         @JvmStatic
         @Container
         var localStackContainer: LocalStackContainer =
-            LocalStackContainer(DockerImageName.parse("localstack/localstack:0.14.2"))
+            LocalStackContainer(DockerImageName.parse("localstack/localstack:0.14.4"))
                 .withServices(SQS, S3, DYNAMODB, SES)
                 .withEnv("DATA_DIR", "/data")
                 .withFileSystemBind(tempDir.pathString, "/data")
@@ -155,7 +157,11 @@ class AwsMock {
         }
 
         private fun createDlq(amazonSqs: AmazonSQSAsync, queueName: String): String {
-            val dlq = amazonSqs.createQueue("${queueName}_dlq")
+            val dlq = amazonSqs.createQueue(
+                CreateQueueRequest()
+                    .withQueueName("${queueName}_dlq")
+                    .withAttributes(mapOf("VisibilityTimeout" to "0"))
+            )
             return amazonSqs.getQueueAttributes(
                 GetQueueAttributesRequest(dlq.queueUrl)
                     .withAttributeNames("QueueArn")
@@ -210,11 +216,13 @@ class AwsMock {
         private val localStackContainer: LocalStackContainer,
         private val dataDir: Path
     ) {
-        fun getEndpointConfiguration(service: LocalStackContainer.Service): AwsClientBuilder.EndpointConfiguration =
-            localStackContainer.getEndpointConfiguration(service)
+        fun getEndpointConfiguration(service: LocalStackContainer.Service): AwsClientBuilder.EndpointConfiguration {
+            val endpoint = localStackContainer.getEndpointOverride(service)
+            return AwsClientBuilder.EndpointConfiguration(endpoint.toString(), localStackContainer.region)
+        }
 
         fun getDefaultCredentialsProvider(): AWSCredentialsProvider =
-            localStackContainer.defaultCredentialsProvider
+            AWSStaticCredentialsProvider(BasicAWSCredentials(localStackContainer.accessKey, localStackContainer.secretKey))
 
         fun execInContainer(vararg args: String): Int =
             localStackContainer.execInContainer(*args).exitCode

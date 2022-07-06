@@ -43,12 +43,10 @@ class UserSignupEventListenerTest : AbstractApplicationTest() {
         // then
         val mail = sesHelper.latestMail()
         assertThat(mail.read<String>("Source")).isEqualTo("usersignup@carvis.cloud")
-        assertThat(mail.read<List<String>>("Destinations.ToAddresses")).hasSize(1)
-        assertThat(mail.read<List<String>>("Destinations.ToAddresses")[0]).isEqualTo("dummy@dummy.com")
-        assertThat(mail.read<List<String>>("Destinations.CcAddresses")).isEmpty()
-        assertThat(mail.read<List<String>>("Destinations.BccAddresses")).isEmpty()
+        assertThat(mail.read<List<String>>("Destination.ToAddresses")).hasSize(1)
+        assertThat(mail.read<List<String>>("Destination.ToAddresses")[0]).isEqualTo("dummy@dummy.com")
         assertThat(mail.read<String>("Subject")).isEqualTo("Neuer Nutzer")
-        assertThat(mail.read<String>("Body")).isEqualTo(
+        assertThat(mail.read<String>("Body.text_part")).isEqualTo(
             """
             Hi,
 

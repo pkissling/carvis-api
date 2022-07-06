@@ -153,7 +153,7 @@ class PrometheusTest : AbstractApplicationTest() {
         // when / then
         this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isOk)
-            .andExpect(content().string(containsString("business_objects_count{domain=\"currently_active_users\",} 0.0")))
+            .andExpect(content().string(containsString("business_objects_count{domain=\"currently_active_users\",}")))
     }
 
 

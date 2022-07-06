@@ -7,6 +7,7 @@ import io.awspring.cloud.messaging.listener.annotation.SqsListener
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
+@Suppress("UNCHECKED_CAST")
 @Service
 class CarvisEventListener(
     private val eventConsumers: Set<CarvisEventConsumer<*>>

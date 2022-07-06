@@ -40,11 +40,10 @@ class CarvisEventListenerTest : AbstractApplicationTest() {
 
         // then
         awaitAssert {
-            assertThat(shareableLinkRepository.count()).isEqualTo(0L)
+            assertThat(shareableLinkRepository.count()).isEqualTo(0)
             assertThat(amazonS3.doesObjectExist(s3Properties.images, "${image.id}/${image.height}")).isFalse
             assertThat(amazonS3.doesObjectExist(s3Properties.images, "deleted/${image.id}/${image.height}")).isTrue
-            assertThat(testDataGenerator.getCarvisEventMessageCount()).isEqualTo(0L)
-            assertThat(testDataGenerator.getCarvisEventDlqMessageCount()).isEqualTo(0L)
+            assertThat(testDataGenerator.getCarvisEventMessageCount()).isEqualTo(0)
         }
     }
 
@@ -64,7 +63,8 @@ class CarvisEventListenerTest : AbstractApplicationTest() {
 
         // then
         awaitAssert {
-            assertThat(shareableLinkRepository.count()).isEqualTo(0L)
+            assertThat(shareableLinkRepository.count()).isEqualTo(0)
+            assertThat(testDataGenerator.getCarvisEventMessageCount()).isEqualTo(0)
             assertThat(testDataGenerator.getCarvisEventDlqMessageCount()).isEqualTo(1)
         }
     }
