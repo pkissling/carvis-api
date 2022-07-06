@@ -270,7 +270,7 @@ class TestDataGenerator(
         return getQueueMessageCount(queueUrl)
     }
 
-    fun withSharedLinkReference(carId: UUID = UUID.randomUUID()): TestDataGenerator {
+    fun withShareableLink(carId: UUID = UUID.randomUUID()): TestDataGenerator {
         val shareableLink = random<ShareableLinkEntity>().apply {
             value().carId = carId
         }

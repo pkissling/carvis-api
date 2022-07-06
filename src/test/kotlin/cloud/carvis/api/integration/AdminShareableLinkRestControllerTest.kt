@@ -194,11 +194,11 @@ class AdminShareableLinkRestControllerTest : AbstractApplicationTest() {
     fun `admin-shareable-links-reference DELETE - success`() {
         // given
         val reference0 = testDataGenerator
-            .withSharedLinkReference()
+            .withShareableLink()
             .getSharedLinkReference()
             .value()
         val reference1 = testDataGenerator
-            .withSharedLinkReference()
+            .withShareableLink()
             .getSharedLinkReference()
             .value()
 

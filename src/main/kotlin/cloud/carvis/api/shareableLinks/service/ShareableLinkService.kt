@@ -107,4 +107,6 @@ class ShareableLinkService(
     fun delete(vararg shareableLinkEntities: ShareableLinkEntity) =
         shareableLinkRepository.delete(*shareableLinkEntities)
 
+    fun shareableLinksCount(): Int =
+        shareableLinkRepository.count()
 }

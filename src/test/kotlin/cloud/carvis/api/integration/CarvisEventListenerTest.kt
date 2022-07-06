@@ -32,8 +32,8 @@ class CarvisEventListenerTest : AbstractApplicationTest() {
             .getCar()
             .value()
         testDataGenerator
-            .withSharedLinkReference(car.id!!)
-            .withSharedLinkReference(car.id!!)
+            .withShareableLink(car.id!!)
+            .withShareableLink(car.id!!)
 
         // when
         testDataGenerator.withCarDeletedEvent(car.id!!, listOf(image.id))
@@ -56,7 +56,7 @@ class CarvisEventListenerTest : AbstractApplicationTest() {
             .getCar()
             .value()
         testDataGenerator
-            .withSharedLinkReference(car.id!!)
+            .withShareableLink(car.id!!)
 
         // when
         testDataGenerator

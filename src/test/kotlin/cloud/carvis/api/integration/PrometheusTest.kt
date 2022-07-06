@@ -150,13 +150,10 @@ class PrometheusTest : AbstractApplicationTest() {
     @Test
     @WithMockUser(roles = ["SYSTEM"])
     fun `actuator-prometheus GET - business kpi - currently active users`() {
-        // given
-        auth0Mock.withDailyLogins(111)
-
         // when / then
         this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isOk)
-            .andExpect(content().string(containsString("business_objects_count{domain=\"currently_active_users\",}")))
+            .andExpect(content().string(containsString("business_objects_count{domain=\"currently_active_users\",} 0.0")))
     }
 
 
@@ -203,5 +200,21 @@ class PrometheusTest : AbstractApplicationTest() {
         this.mockMvc.perform(get("/actuator/prometheus"))
             .andExpect(status().isOk)
             .andExpect(content().string(containsString("images_count{type=\"deleted\",} 3.0")))
+    }
+
+    @Test
+    @WithMockUser(roles = ["SYSTEM"])
+    fun `actuator-prometheus GET - business kpi - shareable links`() {
+        // given
+        testDataGenerator
+            .withShareableLink()
+            .withShareableLink()
+            .withShareableLink()
+            .withShareableLink()
+
+        // when / then
+        this.mockMvc.perform(get("/actuator/prometheus"))
+            .andExpect(status().isOk)
+            .andExpect(content().string(containsString("business_objects_count{domain=\"shareable_links\",} 4.0")))
     }
 }

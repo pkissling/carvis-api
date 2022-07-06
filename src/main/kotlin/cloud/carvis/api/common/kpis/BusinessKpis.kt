@@ -3,6 +3,7 @@ package cloud.carvis.api.common.kpis
 import cloud.carvis.api.cars.service.CarService
 import cloud.carvis.api.images.service.ImageService
 import cloud.carvis.api.requests.service.RequestService
+import cloud.carvis.api.shareableLinks.service.ShareableLinkService
 import cloud.carvis.api.users.service.UserService
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
@@ -16,7 +17,8 @@ class BusinessKpis(
     private val requestService: RequestService,
     private val carService: CarService,
     private val userService: UserService,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
+    private val shareableLinkService: ShareableLinkService
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -36,6 +38,7 @@ class BusinessKpis(
         monthlyActiveUsersCounter()
         dailyLoginsCounter()
         currentlyActiveUsersCounter()
+        shareableLinksCounter()
     }
 
     private fun imagesCounter() = register("images") { imageService.imagesCount() }
@@ -53,6 +56,8 @@ class BusinessKpis(
     private fun dailyLoginsCounter() = register("daily_logins") { userService.dailyLoginsCount() }
 
     private fun currentlyActiveUsersCounter() = register("currently_active_users") { userService.fetchCurrentlyActiveUsersCount() }
+
+    private fun shareableLinksCounter() = register("shareable_links") { shareableLinkService.shareableLinksCount() }
 
     private fun register(tag: String, supplier: () -> Number) {
         logger.info { "Registering Business KPI: $tag" }

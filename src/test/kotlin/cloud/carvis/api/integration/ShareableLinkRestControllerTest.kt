@@ -27,7 +27,7 @@ class ShareableLinkRestControllerTest : AbstractApplicationTest() {
     fun `shareable-links-ref-car GET - not existing car yields 400`() {
         // given
         val shareableLink = testDataGenerator
-            .withSharedLinkReference()
+            .withShareableLink()
             .getSharedLinkReference()
             .value()
 
@@ -46,7 +46,7 @@ class ShareableLinkRestControllerTest : AbstractApplicationTest() {
             .getCar()
             .value()
         val shareableLink = testDataGenerator
-            .withSharedLinkReference(car.id!!)
+            .withShareableLink(car.id!!)
             .getSharedLinkReference()
             .value()
         val visitorCount = shareableLink.visitorCount!!.get()
