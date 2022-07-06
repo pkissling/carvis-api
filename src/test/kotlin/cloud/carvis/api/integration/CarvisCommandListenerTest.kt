@@ -19,7 +19,7 @@ class CarvisCommandListenerTest : AbstractApplicationTest() {
     private lateinit var s3Buckets: S3Buckets
 
     @Test
-    fun `onMessage - DELETE_IMAGE - success`() {
+    fun `onMessage - DeleteImageCommand - success`() {
         // given
         val image = testDataGenerator
             .withImage()

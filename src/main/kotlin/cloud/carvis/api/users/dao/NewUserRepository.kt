@@ -17,6 +17,10 @@ class NewUserRepository(
         return dynamoDbDao.findAll(NewUserEntity::class.java)
     }
 
+    override fun delete(vararg entities: NewUserEntity) {
+        dynamoDbDao.delete(*entities)
+    }
+
     override fun findByHashKey(hashKey: String): NewUserEntity? {
         return dynamoDbDao.find(NewUserEntity::class.java, hashKey)
     }

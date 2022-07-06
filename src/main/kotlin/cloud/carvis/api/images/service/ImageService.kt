@@ -79,6 +79,10 @@ class ImageService(
         this.delete("$imageId")
     }
 
+    fun deleteImages(imageIds: List<UUID>) {
+        imageIds.map { deleteImage(it) }
+    }
+
     private fun finishTimer(stopWatch: StopWatch): Long {
         stopWatch.stop()
         return stopWatch.totalTimeMillis

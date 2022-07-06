@@ -10,6 +10,8 @@ interface BaseRepository<T, HashKey> {
 
     fun deleteByHashKey(hashKey: HashKey)
 
+    fun delete(vararg entities: T)
+
     fun count(): Int
 
     fun existsByHashKey(hashKey: HashKey) = findByHashKey(hashKey) !== null

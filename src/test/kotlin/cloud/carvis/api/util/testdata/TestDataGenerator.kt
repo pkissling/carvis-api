@@ -7,6 +7,8 @@ import cloud.carvis.api.common.commands.model.AssignImageToCarCommand
 import cloud.carvis.api.common.commands.model.CarvisCommand
 import cloud.carvis.api.common.commands.model.DeleteImageCommand
 import cloud.carvis.api.common.dao.model.Entity
+import cloud.carvis.api.common.events.model.CarDeletedEvent
+import cloud.carvis.api.common.events.model.CarvisEvent
 import cloud.carvis.api.common.events.model.UserSignupEvent
 import cloud.carvis.api.common.properties.S3Buckets
 import cloud.carvis.api.common.properties.SqsQueues
@@ -40,6 +42,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.math.absoluteValue
+import kotlin.reflect.KClass
 
 @Service
 class TestDataGenerator(
@@ -57,7 +60,7 @@ class TestDataGenerator(
     private val shareableLinkRepository: ShareableLinkRepository
 ) {
 
-    private var last: Any? = null
+    private var last: MutableMap<KClass<*>, Any> = mutableMapOf()
 
     fun withEmptyDb(): TestDataGenerator {
         val tables = amazonDynamoDB.listTables()
@@ -107,12 +110,12 @@ class TestDataGenerator(
             val file = File(TestDataGenerator::class.java.getResource("/images/$testFilePath")!!.file)
             amazonS3.putObject(s3Buckets.images, key, file)
         }
-        this.last = Image(imageId, height)
+        this.last[Image::class] = Image(imageId, height)
         return this
     }
 
     fun getImage(): Image {
-        return getLast()
+        return getLast(Image::class)
     }
 
     fun withCar(createdBy: String? = null, imageIds: List<UUID> = emptyList()): TestDataGenerator {
@@ -128,7 +131,7 @@ class TestDataGenerator(
     }
 
     fun getCar(): TestData<CarEntity> {
-        return TestData(objectMapper, getLast())
+        return TestData(objectMapper, getLast(CarEntity::class))
     }
 
     fun withRequest(createdBy: String? = null): TestDataGenerator {
@@ -141,7 +144,7 @@ class TestDataGenerator(
     }
 
     fun getRequest(): TestData<RequestEntity> {
-        return TestData(objectMapper, this.getLast())
+        return TestData(objectMapper, this.getLast(RequestEntity::class))
     }
 
     final inline fun <reified T : Any> random(): TestData<T> {
@@ -170,29 +173,30 @@ class TestDataGenerator(
                 capacity = capacity!!.absoluteValue
                 mileage = mileage!!.absoluteValue
             }
+
             is ShareableLinkEntity -> value.apply {
                 shareableLinkReference = RandomStringUtils.random(8, true, false)
             }
+
             else -> value
         }.let { TestData(objectMapper, it) }
     }
 
-    private inline fun <reified T> getLast(): T {
-        if (this.last !is T) {
-            throw RuntimeException("last is not of correct type")
-        }
+    private inline fun <reified T> getLast(clazz: KClass<*>): T {
+        val last = this.last[clazz]
+            ?: throw RuntimeException("last is not of correct type")
         return last as T
     }
 
     fun withUserSignupEvent(): TestDataGenerator {
         val userSignup = random<UserSignupEvent>()
         queueMessagingTemplate.convertAndSend(sqsQueues.userSignup, userSignup.value())
-        last = userSignup.value()
+        addLast(userSignup.value())
         return this
     }
 
     fun getUserSignupEvent(): TestData<UserSignupEvent> {
-        return TestData(objectMapper, this.getLast())
+        return TestData(objectMapper, this.getLast(UserSignupEvent::class))
     }
 
     fun withNewUsers(count: Int): TestDataGenerator {
@@ -256,6 +260,16 @@ class TestDataGenerator(
         return getQueueMessageCount(queueUrl)
     }
 
+    fun getCarvisEventMessageCount(): Int {
+        val queueUrl = getQueueUrl(sqsQueues.carvisEvent, false)
+        return getQueueMessageCount(queueUrl)
+    }
+
+    fun getCarvisEventDlqMessageCount(): Int {
+        val queueUrl = getQueueUrl(sqsQueues.carvisEvent, true)
+        return getQueueMessageCount(queueUrl)
+    }
+
     fun withSharedLinkReference(carId: UUID = UUID.randomUUID()): TestDataGenerator {
         val shareableLink = random<ShareableLinkEntity>().apply {
             value().carId = carId
@@ -265,7 +279,11 @@ class TestDataGenerator(
     }
 
     fun getSharedLinkReference(): TestData<ShareableLinkEntity> {
-        return TestData(objectMapper, this.getLast())
+        return TestData(objectMapper, this.getLast(ShareableLinkEntity::class))
+    }
+
+    fun withCarDeletedEvent(carId: UUID = UUID.randomUUID(), imageIds: List<UUID> = emptyList()): TestDataGenerator {
+        return withCarvisEvent(CarDeletedEvent(carId, imageIds))
     }
 
     private fun getQueueUrl(queueName: String, isDlq: Boolean) =
@@ -280,14 +298,21 @@ class TestDataGenerator(
             is NewUserEntity -> newUserRepository.save(entity)
             is ShareableLinkEntity -> shareableLinkRepository.save(entity)
             else -> throw RuntimeException("unable to save entity")
-        }.also { this.last = it }
+        }.also { addLast(it) }
     }
 
-    private fun <T> withCarvisCommand(command: CarvisCommand<T>): TestDataGenerator {
+    private fun withCarvisCommand(command: CarvisCommand): TestDataGenerator {
         queueMessagingTemplate.convertAndSend(sqsQueues.carvisCommand, command)
-        last = command
+        addLast(command)
         return this
     }
+
+    private fun withCarvisEvent(event: CarvisEvent): TestDataGenerator {
+        queueMessagingTemplate.convertAndSend(sqsQueues.carvisEvent, event)
+        addLast(event)
+        return this
+    }
+
 
     private fun getQueueMessageCount(queueUrl: String): Int {
         return amazonSqs.getQueueAttributes(
@@ -295,6 +320,10 @@ class TestDataGenerator(
                 .withQueueUrl(queueUrl)
                 .withAttributeNames("ApproximateNumberOfMessages")
         ).attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0
+    }
+
+    private fun <T> addLast(last: T) {
+        this.last[last!!::class] = last
     }
 
     data class Image(

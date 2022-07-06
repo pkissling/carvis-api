@@ -3,7 +3,6 @@ package cloud.carvis.api.common.commands.publisher
 import cloud.carvis.api.common.commands.model.AssignImageToCarCommand
 import cloud.carvis.api.common.commands.model.CarvisCommand
 import cloud.carvis.api.common.commands.model.DeleteImageCommand
-import cloud.carvis.api.common.commands.model.IncreaseVisitorCountCommand
 import cloud.carvis.api.common.properties.SqsQueues
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
 import mu.KotlinLogging
@@ -26,9 +25,7 @@ class CarvisCommandPublisher(
 
     fun assignImageToCar(carId: UUID, imageId: UUID) = this.publish(AssignImageToCarCommand(carId, imageId))
 
-    fun increaseVisitorCounter(reference: String) = this.publish(IncreaseVisitorCountCommand(reference))
-
-    private fun <T> publish(command: CarvisCommand<T>) {
+    private fun publish(command: CarvisCommand) {
         logger.info { "Publishing: $command" }
         template.convertAndSend(sqsQueues.carvisCommand, command)
     }

@@ -5,19 +5,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS
 import java.util.*
 
 @JsonTypeInfo(use = CLASS)
-sealed class CarvisCommand<T>(
-    open val id: T,
-)
+sealed class CarvisCommand
 
 data class DeleteImageCommand(
-    override val id: UUID,
-) : CarvisCommand<UUID>(id)
+    val imageId: UUID,
+) : CarvisCommand()
 
 data class AssignImageToCarCommand(
-    override val id: UUID,
+    val carId: UUID,
     val imageId: UUID
-) : CarvisCommand<UUID>(id)
-
-data class IncreaseVisitorCountCommand(
-    override val id: String,
-) : CarvisCommand<String>(id)
+) : CarvisCommand()

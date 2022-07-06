@@ -19,6 +19,10 @@ class RequestRepository(
         return dynamoDbDao.findAll(RequestEntity::class.java)
     }
 
+    override fun delete(vararg entities: RequestEntity) {
+        dynamoDbDao.delete(*entities)
+    }
+
     override fun findByHashKey(hashKey: UUID): RequestEntity? {
         return dynamoDbDao.find(RequestEntity::class.java, hashKey)
     }

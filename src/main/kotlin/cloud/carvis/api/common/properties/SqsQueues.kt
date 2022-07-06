@@ -17,6 +17,9 @@ class SqsQueues : Iterable<String> {
     @NotNull
     lateinit var carvisCommand: String
 
+    @NotNull
+    lateinit var carvisEvent: String
+
     override fun iterator(): Iterator<String> =
         SqsQueues::class.declaredMemberProperties
             .map { it.getValue(this, it) }

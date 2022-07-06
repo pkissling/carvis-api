@@ -19,6 +19,10 @@ class CarRepository(
         return dynamoDbDao.findAll(CarEntity::class.java)
     }
 
+    override fun delete(vararg entities: CarEntity) {
+        dynamoDbDao.delete(*entities)
+    }
+
     override fun findByHashKey(hashKey: UUID): CarEntity? {
         return dynamoDbDao.find(CarEntity::class.java, hashKey)
     }

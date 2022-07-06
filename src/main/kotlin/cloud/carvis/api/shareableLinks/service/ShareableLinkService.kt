@@ -2,7 +2,7 @@ package cloud.carvis.api.shareableLinks.service
 
 import cloud.carvis.api.cars.model.CarDto
 import cloud.carvis.api.cars.service.CarService
-import cloud.carvis.api.common.commands.publisher.CarvisCommandPublisher
+import cloud.carvis.api.common.events.publisher.CarvisEventPublisher
 import cloud.carvis.api.shareableLinks.dao.ShareableLinkRepository
 import cloud.carvis.api.shareableLinks.mapper.ShareableLinkMapper
 import cloud.carvis.api.shareableLinks.model.CarDetails
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 class ShareableLinkService(
     private val shareableLinkRepository: ShareableLinkRepository,
     private val carService: CarService,
-    private val carvisCommandPublisher: CarvisCommandPublisher,
+    private val carvisEventPublisher: CarvisEventPublisher,
     private val mapper: ShareableLinkMapper
 ) {
 
@@ -61,7 +61,7 @@ class ShareableLinkService(
             ?: throw ResponseStatusException(NOT_FOUND, "shareable link not found")
 
         return carService.fetchCar(carId)
-            .also { carvisCommandPublisher.increaseVisitorCounter(shareableLinkReference) }
+            .also { carvisEventPublisher.shareableLinkVisited(shareableLinkReference) }
             ?: throw ResponseStatusException(BAD_REQUEST, "car not found")
     }
 
@@ -100,4 +100,11 @@ class ShareableLinkService(
         }
         shareableLinkRepository.deleteByHashKey(shareableLinkReference)
     }
+
+    fun findByCarId(carId: UUID): List<ShareableLinkEntity> =
+        shareableLinkRepository.findByCarId(carId)
+
+    fun delete(vararg shareableLinkEntities: ShareableLinkEntity) =
+        shareableLinkRepository.delete(*shareableLinkEntities)
+
 }

@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression
+import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -79,7 +80,22 @@ class DynamoDbDao<T : Entity<HashKey>, HashKey>(
         dynamoDbMapper.delete(entity)
     }
 
+    fun delete(vararg entities: T) {
+        val failedBatches = dynamoDbMapper.batchDelete(*entities)
+        if (failedBatches.isNotEmpty()) {
+            throw RuntimeException("Failed to delete entities", failedBatches.first().exception)
+        }
+    }
+
     fun count(clazz: Class<T>): Int =
         dynamoDbMapper.count(clazz, DynamoDBScanExpression())
 
+    fun findByAttribute(clazz: Class<T>, attribute: Pair<String, AttributeValue>): List<T> {
+        val (key, value) = attribute
+        return dynamoDbMapper.scan(
+            clazz, DynamoDBScanExpression()
+                .withFilterExpression("$key = :$key")
+                .withExpressionAttributeValues(mapOf(":$key" to value))
+        )
+    }
 }

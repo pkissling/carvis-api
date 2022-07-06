@@ -15,6 +15,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit.DAYS
+import java.util.*
 
 
 class PrometheusTest : AbstractApplicationTest() {
@@ -169,11 +170,13 @@ class PrometheusTest : AbstractApplicationTest() {
             .withDeleteImageCommand()
             .withAssignImageToCarCommand()
             .withAssignImageToCarCommand()
+            .withCarDeletedEvent(imageIds = listOf(UUID.randomUUID()))
         awaitAssert {
             assertThat(testDataGenerator.getUserSignupMessageCount()).isEqualTo(0)
             assertThat(testDataGenerator.getUserSignupDlqMessageCount()).isEqualTo(2)
             assertThat(testDataGenerator.getCarvisCommandMessageCount()).isEqualTo(0)
             assertThat(testDataGenerator.getCarvisCommandDlqMessageCount()).isEqualTo(3)
+            assertThat(testDataGenerator.getCarvisEventDlqMessageCount()).isEqualTo(1)
         }
 
         // when / then
@@ -183,6 +186,8 @@ class PrometheusTest : AbstractApplicationTest() {
             .andExpect(content().string(containsString("queue_messages_count{queue_name=\"carvis-dev-user_signup_dlq\",} 2.0")))
             .andExpect(content().string(containsString("queue_messages_count{queue_name=\"carvis-dev-carvis_command\",} 0.0")))
             .andExpect(content().string(containsString("queue_messages_count{queue_name=\"carvis-dev-carvis_command_dlq\",} 3.0")))
+            .andExpect(content().string(containsString("queue_messages_count{queue_name=\"carvis-dev-carvis_event\",} 0.0")))
+            .andExpect(content().string(containsString("queue_messages_count{queue_name=\"carvis-dev-carvis_event_dlq\",} 1.0")))
     }
 
     @Test
