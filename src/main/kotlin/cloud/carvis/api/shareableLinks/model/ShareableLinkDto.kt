@@ -9,6 +9,7 @@ data class ShareableLinkDto(
     val carDetails: CarDetails? = null,
     val visitorCount: Long? = null,
     val recipientName: String? = null,
+    val ownerName: String? = null,
     val createdBy: String? = null,
     val createdAt: Instant? = null
 )

@@ -5,11 +5,15 @@ import cloud.carvis.api.common.dao.mapper.EntityMapper
 import cloud.carvis.api.shareableLinks.model.CarDetails
 import cloud.carvis.api.shareableLinks.model.ShareableLinkDto
 import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
+import cloud.carvis.api.users.service.UserService
 import org.springframework.stereotype.Service
 import java.util.concurrent.atomic.AtomicLong
 
 @Service
-class ShareableLinkMapper(private val carService: CarService) :
+class ShareableLinkMapper(
+    private val carService: CarService,
+    private val userService: UserService
+) :
     EntityMapper<String, ShareableLinkDto, ShareableLinkEntity> {
 
     override fun toDto(entity: ShareableLinkEntity): ShareableLinkDto =
@@ -26,6 +30,7 @@ class ShareableLinkMapper(private val carService: CarService) :
                 },
             visitorCount = entity.visitorCount?.get(),
             recipientName = entity.recipientName,
+            ownerName = entity.createdBy?.let { userService.fetchUserSafe(it)?.name } ?: entity.createdBy,
             createdBy = entity.createdBy,
             createdAt = entity.createdAt
         )

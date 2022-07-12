@@ -102,9 +102,8 @@ class UserService(
         .size
 
     fun addCurrentlyActiveUser(userName: String): Boolean {
-        val newUser = !currentlyActiveUsers.contains(userName)
-        currentlyActiveUsers[userName] = Instant.now()
-        return newUser
+        return !currentlyActiveUsers.containsKey(userName)
+            .also { currentlyActiveUsers[userName] = Instant.now() }
     }
 
     fun updateOwnUser(user: UserDto): UserDto {

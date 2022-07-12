@@ -5,7 +5,6 @@ import cloud.carvis.api.cars.service.CarService
 import cloud.carvis.api.common.events.publisher.CarvisEventPublisher
 import cloud.carvis.api.shareableLinks.dao.ShareableLinkRepository
 import cloud.carvis.api.shareableLinks.mapper.ShareableLinkMapper
-import cloud.carvis.api.shareableLinks.model.CarDetails
 import cloud.carvis.api.shareableLinks.model.CreateShareableLinkRequestDto
 import cloud.carvis.api.shareableLinks.model.ShareableLinkDto
 import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
@@ -28,8 +27,10 @@ class ShareableLinkService(
     private val logger = KotlinLogging.logger {}
 
     fun createShareableLink(carId: UUID, request: CreateShareableLinkRequestDto): ShareableLinkDto {
-        val car = carService.fetchCar(carId)
-            ?: throw ResponseStatusException(NOT_FOUND, "car not found")
+        if (carService.fetchCar(carId) == null) {
+            throw ResponseStatusException(NOT_FOUND, "car not found")
+        }
+
         val entity = ShareableLinkEntity(
             carId = carId,
             recipientName = request.recipientName,
@@ -38,21 +39,10 @@ class ShareableLinkService(
 
         shareableLinkRepository.save(entity)
 
-        val savedEntity = entity.shareableLinkReference
+        return entity.shareableLinkReference
             ?.let { shareableLinkRepository.findByHashKey(it) }
+            ?.let { mapper.toDto(it) }
             ?: throw RuntimeException("Unable to read saved shared link entity")
-        return ShareableLinkDto(
-            shareableLinkReference = savedEntity.shareableLinkReference,
-            carId = savedEntity.carId,
-            carDetails = CarDetails(
-                brand = car.brand,
-                type = car.type
-            ),
-            visitorCount = savedEntity.visitorCount?.toLong(),
-            recipientName = savedEntity.recipientName,
-            createdAt = savedEntity.createdAt,
-            createdBy = savedEntity.createdBy
-        )
     }
 
     fun fetchCarFromShareableLinkReference(shareableLinkReference: String): CarDto {
