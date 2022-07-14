@@ -34,6 +34,7 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
             .mvcMatchers("/actuator/health").permitAll()
             .mvcMatchers("/my-user").permitAll()
             .mvcMatchers("/shareable-links/*/car").permitAll()
+            .mvcMatchers("/shareable-links/*/images/*").permitAll()
             .anyRequest().hasAnyRole("USER", "ADMIN")
             .and()
             .oauth2ResourceServer()

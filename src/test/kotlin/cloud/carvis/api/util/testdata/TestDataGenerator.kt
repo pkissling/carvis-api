@@ -282,7 +282,7 @@ class TestDataGenerator(
         return this
     }
 
-    fun getSharedLinkReference(): TestData<ShareableLinkEntity> {
+    fun getShareableLink(): TestData<ShareableLinkEntity> {
         return TestData(objectMapper, this.getLast(ShareableLinkEntity::class))
     }
 

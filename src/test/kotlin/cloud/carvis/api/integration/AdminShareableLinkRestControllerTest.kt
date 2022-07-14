@@ -225,11 +225,11 @@ class AdminShareableLinkRestControllerTest : AbstractApplicationTest() {
         // given
         val reference0 = testDataGenerator
             .withShareableLink()
-            .getSharedLinkReference()
+            .getShareableLink()
             .value()
         val reference1 = testDataGenerator
             .withShareableLink()
-            .getSharedLinkReference()
+            .getShareableLink()
             .value()
 
         // when

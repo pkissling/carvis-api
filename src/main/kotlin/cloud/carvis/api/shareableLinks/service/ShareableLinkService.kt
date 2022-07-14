@@ -3,14 +3,16 @@ package cloud.carvis.api.shareableLinks.service
 import cloud.carvis.api.cars.model.CarDto
 import cloud.carvis.api.cars.service.CarService
 import cloud.carvis.api.common.events.publisher.CarvisEventPublisher
+import cloud.carvis.api.images.model.ImageDto
+import cloud.carvis.api.images.model.ImageHeight
+import cloud.carvis.api.images.service.ImageService
 import cloud.carvis.api.shareableLinks.dao.ShareableLinkRepository
 import cloud.carvis.api.shareableLinks.mapper.ShareableLinkMapper
 import cloud.carvis.api.shareableLinks.model.CreateShareableLinkRequestDto
 import cloud.carvis.api.shareableLinks.model.ShareableLinkDto
 import cloud.carvis.api.shareableLinks.model.ShareableLinkEntity
 import mu.KotlinLogging
-import org.springframework.http.HttpStatus.BAD_REQUEST
-import org.springframework.http.HttpStatus.NOT_FOUND
+import org.springframework.http.HttpStatus.*
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
@@ -21,7 +23,8 @@ class ShareableLinkService(
     private val shareableLinkRepository: ShareableLinkRepository,
     private val carService: CarService,
     private val carvisEventPublisher: CarvisEventPublisher,
-    private val mapper: ShareableLinkMapper
+    private val mapper: ShareableLinkMapper,
+    private val imageService: ImageService
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -99,4 +102,14 @@ class ShareableLinkService(
 
     fun shareableLinksCount(): Int =
         shareableLinkRepository.count()
+
+    fun fetchImage(shareableLinkReference: String, imageId: UUID, height: ImageHeight): ImageDto {
+        val carId = shareableLinkRepository.findByHashKey(shareableLinkReference)
+            ?.carId
+            ?: throw ResponseStatusException(NOT_FOUND, "shareable link not found")
+
+        carService.fetchCar(carId) ?: throw ResponseStatusException(GONE, "car not found")
+
+        return imageService.fetchImage(imageId, height)
+    }
 }
