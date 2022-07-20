@@ -1,5 +1,6 @@
 package cloud.carvis.api.shareableLinks.mapper
 
+import cloud.carvis.api.cars.model.CarDto
 import cloud.carvis.api.cars.service.CarService
 import cloud.carvis.api.common.dao.mapper.EntityMapper
 import cloud.carvis.api.shareableLinks.model.CarDetails
@@ -16,16 +17,35 @@ class ShareableLinkMapper(
 ) :
     EntityMapper<String, ShareableLinkDto, ShareableLinkEntity> {
 
-    override fun toDto(entity: ShareableLinkEntity): ShareableLinkDto =
+    override fun toDto(entity: ShareableLinkEntity): ShareableLinkDto {
+        val car = entity.carId
+            ?.let { carService.fetchCar(it) }
+        return this.toDto(entity, car)
+    }
+
+    override fun toEntity(dto: ShareableLinkDto): ShareableLinkEntity =
+        ShareableLinkEntity(
+            carId = dto.carId,
+            visitorCount = dto.visitorCount?.let { AtomicLong(it) },
+            recipientName = dto.recipientName,
+        )
+
+    fun toDtos(entities: List<ShareableLinkEntity>): List<ShareableLinkDto> {
+        val cars = carService.fetchAllCars()
+        return entities
+            .associateWith { link -> cars.firstOrNull { it.id == link.carId } }
+            .map { (link, car) -> this.toDto(link, car) }
+    }
+
+    fun toDto(entity: ShareableLinkEntity, car: CarDto?): ShareableLinkDto =
         ShareableLinkDto(
             shareableLinkReference = entity.shareableLinkReference,
             carId = entity.carId,
-            carDetails = entity.carId
-                ?.let { carService.fetchCar(it) }
+            carDetails = car
                 ?.let {
                     CarDetails(
-                        brand = it.brand,
-                        type = it.type
+                        brand = car.brand,
+                        type = car.type
                     )
                 },
             visitorCount = entity.visitorCount?.get(),
@@ -33,13 +53,5 @@ class ShareableLinkMapper(
             ownerName = entity.createdBy?.let { userService.fetchUserSafe(it)?.name } ?: entity.createdBy,
             createdBy = entity.createdBy,
             createdAt = entity.createdAt
-        )
-
-
-    override fun toEntity(dto: ShareableLinkDto): ShareableLinkEntity =
-        ShareableLinkEntity(
-            carId = dto.carId,
-            visitorCount = dto.visitorCount?.let { AtomicLong(it) },
-            recipientName = dto.recipientName,
         )
 }
