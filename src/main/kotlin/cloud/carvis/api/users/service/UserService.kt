@@ -86,7 +86,7 @@ class UserService(
     fun persistNewUserSignup(event: UserSignupEvent) {
         val exists = newUserRepository.existsByHashKey(event.userId)
         if (exists) {
-            logger.warn { "New user already persisted with userId [${event.userId}]. Skipping..." }
+            logger.info { "New user already persisted with userId [${event.userId}]. Skipping..." }
             return
         }
         newUserRepository.save(NewUserEntity(userId = event.userId))
