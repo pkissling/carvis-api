@@ -74,9 +74,11 @@ cloud:
       static: ${aws.region}
 
 email:
-  enabled: true
+  enabled: false
   user-signup:
     from-mail: usersignup@carvis.cloud
+    to-mails:
+      - dennis@carvis.cloud
     user-management-url: https://carvis.cloud/user-management
 
 management:

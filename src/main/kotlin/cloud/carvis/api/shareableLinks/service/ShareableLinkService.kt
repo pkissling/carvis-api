@@ -83,7 +83,7 @@ class ShareableLinkService(
 
     fun fetchShareableLinks(): List<ShareableLinkDto> =
         shareableLinkRepository.findAll()
-            .let { mapper.toDtos(it) }
+            .let { mapper.toDto(it) }
 
     fun deleteShareableLink(shareableLinkReference: String) {
         val exists = shareableLinkRepository.existsByHashKey(shareableLinkReference)

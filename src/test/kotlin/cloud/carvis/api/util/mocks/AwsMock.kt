@@ -3,6 +3,7 @@ package cloud.carvis.api.util.mocks
 import cloud.carvis.api.common.properties.EmailProperties
 import cloud.carvis.api.common.properties.S3Buckets
 import cloud.carvis.api.common.properties.SqsQueues
+import cloud.carvis.api.util.helpers.SesHelper
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
@@ -23,12 +24,12 @@ import com.amazonaws.services.sqs.model.CreateQueueRequest
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate
-import org.assertj.core.api.Assertions.assertThat
 import org.reflections.Reflections
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.testcontainers.containers.Container.ExecResult
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.localstack.LocalStackContainer.Service.*
 import org.testcontainers.junit.jupiter.Container
@@ -195,21 +196,14 @@ class AwsMock {
         @Bean
         fun amazonSimpleEmailService(
             localStack: CarvisLocalStack,
-            emailProperties: EmailProperties
+            emailProperties: EmailProperties,
+            sesHelper: SesHelper
         ): AmazonSimpleEmailService =
             AmazonSimpleEmailServiceClientBuilder.standard()
                 .withEndpointConfiguration(localStack.getEndpointConfiguration(SES))
                 .withCredentials(localStack.getDefaultCredentialsProvider())
                 .build()
-                .also { verifyEmail(localStack, emailProperties.userSignup.fromMail) }
-
-        private fun verifyEmail(localStack: CarvisLocalStack, fromMail: String) {
-            val exitCode = localStack.execInContainer(
-                "awslocal", "ses", "verify-email-identity",
-                "--email-address", fromMail, "--endpoint-url=http://localhost:4566"
-            )
-            assertThat(exitCode).isEqualTo(0)
-        }
+                .also { sesHelper.verifyEmailIdentity(emailProperties.userSignup.fromMail) }
     }
 
     class CarvisLocalStack(
@@ -224,8 +218,10 @@ class AwsMock {
         fun getDefaultCredentialsProvider(): AWSCredentialsProvider =
             AWSStaticCredentialsProvider(BasicAWSCredentials(localStackContainer.accessKey, localStackContainer.secretKey))
 
-        fun execInContainer(vararg args: String): Int =
-            localStackContainer.execInContainer(*args).exitCode
+        fun aws(vararg args: String): ExecResult {
+            val allArgs = arrayOf("awslocal", *args, "--endpoint-url=http://localhost:4566")
+            return localStackContainer.execInContainer(*allArgs)
+        }
 
         fun getDataDir(): Path =
             dataDir

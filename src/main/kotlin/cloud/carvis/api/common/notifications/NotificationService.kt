@@ -1,6 +1,5 @@
 package cloud.carvis.api.common.notifications
 
-import cloud.carvis.api.common.clients.Auth0RestClient
 import cloud.carvis.api.common.events.model.UserSignupEvent
 import cloud.carvis.api.common.properties.EmailProperties
 import mu.KotlinLogging
@@ -10,25 +9,18 @@ import org.springframework.stereotype.Service
 @Service
 class NotificationService(
     private val emailService: EmailService,
-    private val auth0RestClient: Auth0RestClient,
-    private val emailProperties: EmailProperties,
+    private val emailProperties: EmailProperties
 ) {
 
     private val logger = KotlinLogging.logger {}
 
     fun notifyUserSignup(event: UserSignupEvent) {
-        val adminEmails = auth0RestClient.fetchAllAdmins()
-            .map { it.email }
-            .filter { it.isNotEmpty() }
+        val toMails = emailProperties.userSignup.toMails
 
-        if (adminEmails.isEmpty()) {
-            throw RuntimeException("No admin with mail address found in auth0!")
-        }
-
-        logger.info { "Sending email for user signup of [${event.email}] to: $adminEmails" }
+        logger.info { "Sending email for user signup of [${event.email}] to: $toMails" }
 
         emailService.sendMail(SimpleMailMessage().apply {
-            setTo(*adminEmails.toTypedArray())
+            setTo(*toMails.toTypedArray())
             setFrom(emailProperties.userSignup.fromMail)
             setSubject("Neuer Nutzer")
             setText(

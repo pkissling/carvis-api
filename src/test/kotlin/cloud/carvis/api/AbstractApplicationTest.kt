@@ -30,7 +30,8 @@ import java.time.Duration
         "spring.main.allow-bean-definition-overriding=true",
         "sentry.dsn=https://329f4264c94b452f8756d77a0c736606@o582664.ingest.sentry.io/invalidprojectid",
         "auth.client-id=dummy-clientId",
-        "auth.client-secret=dummy-secret"
+        "auth.client-secret=dummy-secret",
+        "email.enabled=true"
     ]
 )
 @ContextConfiguration(
@@ -77,6 +78,7 @@ abstract class AbstractApplicationTest {
             .withEmptyQueues()
             .withNoMails()
             .withEmptyBuckets()
+            .withVerifiedEmails()
     }
 
     @BeforeEach

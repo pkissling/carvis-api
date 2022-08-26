@@ -30,7 +30,7 @@ class ShareableLinkMapper(
             recipientName = dto.recipientName,
         )
 
-    fun toDtos(entities: List<ShareableLinkEntity>): List<ShareableLinkDto> {
+    fun toDto(entities: List<ShareableLinkEntity>): List<ShareableLinkDto> {
         val cars = carService.fetchAllCars()
         return entities
             .associateWith { link -> cars.firstOrNull { it.id == link.carId } }

@@ -10,6 +10,7 @@ import cloud.carvis.api.common.dao.model.Entity
 import cloud.carvis.api.common.events.model.CarDeletedEvent
 import cloud.carvis.api.common.events.model.CarvisEvent
 import cloud.carvis.api.common.events.model.UserSignupEvent
+import cloud.carvis.api.common.properties.EmailProperties
 import cloud.carvis.api.common.properties.S3Buckets
 import cloud.carvis.api.common.properties.SqsQueues
 import cloud.carvis.api.images.model.ImageHeight
@@ -58,7 +59,8 @@ class TestDataGenerator(
     private val newUserRepository: NewUserRepository,
     private val amazonSqs: AmazonSQSAsync,
     private val sesHelper: SesHelper,
-    private val shareableLinkRepository: ShareableLinkRepository
+    private val shareableLinkRepository: ShareableLinkRepository,
+    private val emailProperties: EmailProperties
 ) {
 
     private var last: MutableMap<KClass<*>, Any> = mutableMapOf()
@@ -288,6 +290,14 @@ class TestDataGenerator(
 
     fun withCarDeletedEvent(carId: UUID = UUID.randomUUID(), imageIds: List<UUID> = emptyList()): TestDataGenerator {
         return withCarvisEvent(CarDeletedEvent(carId, imageIds))
+    }
+
+    fun withEmailError() {
+        sesHelper.deleteIdentity(emailProperties.userSignup.fromMail)
+    }
+
+    fun withVerifiedEmails() {
+        sesHelper.verifyEmailIdentity(emailProperties.userSignup.fromMail)
     }
 
     private fun getQueueUrl(queueName: String, isDlq: Boolean) =

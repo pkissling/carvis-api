@@ -14,3 +14,6 @@ s3:
 
 sqs:
   prefix: carvis-live
+
+email:
+  enabled: true

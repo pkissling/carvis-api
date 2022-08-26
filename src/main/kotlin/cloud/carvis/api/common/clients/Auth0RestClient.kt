@@ -1,7 +1,6 @@
 package cloud.carvis.api.common.clients
 
 import cloud.carvis.api.users.model.UserRole
-import cloud.carvis.api.users.model.UserRole.ADMIN
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.client.mgmt.filter.RolesFilter
 import com.auth0.exception.APIException
@@ -42,23 +41,6 @@ class Auth0RestClient(private val managementApi: ManagementAPI) {
         }
 
         return UserWithRoles(user, roles)
-    }
-
-    fun fetchAllAdmins(): List<User> = try {
-        val adminRole = managementApi.roles()
-            .list(rolesFilter(ADMIN))
-            .execute()
-            .items
-            .firstOrNull()
-            ?: throw RuntimeException("Auth0 did return not return an roleId from role 'admin'")
-
-        managementApi.roles()
-            .listUsers(adminRole.id, null)
-            .execute()
-            .items
-    } catch (e: Exception) {
-        logger.error(e) { "Unable to fetch all admins from Auth0" }
-        emptyList()
     }
 
     @CachePut("auth0-users", key = "#userId")
